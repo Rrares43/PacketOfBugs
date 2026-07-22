@@ -18,7 +18,7 @@ public class Comment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
-    private User author;
+    private Account author;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false)
@@ -34,18 +34,13 @@ public class Comment {
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Transient
-    private VoteTracker voteTracker;
-
     public Comment() {
-        this.voteTracker = new VoteTracker();
     }
 
-    public Comment(String content, User author, Post post) {
+    public Comment(String content, Account author, Post post) {
         this.content = content;
         this.author = author;
         this.post = post;
-        this.voteTracker = new VoteTracker();
     }
 
     public void setContent(String newContent) {
@@ -65,7 +60,7 @@ public class Comment {
         return content;
     }
 
-    public User getAuthor() {
+    public Account getAuthor() {
         return author;
     }
 
@@ -87,26 +82,5 @@ public class Comment {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
-    }
-
-    public int getUpvotes() {
-        if (voteTracker == null) {
-            voteTracker = new VoteTracker();
-        }
-        return voteTracker.getUpvotes();
-    }
-
-    public int getDownvotes() {
-        if (voteTracker == null) {
-            voteTracker = new VoteTracker();
-        }
-        return voteTracker.getDownvotes();
-    }
-
-    public VoteTracker getVoteTracker() {
-        if (this.voteTracker == null) {
-            this.voteTracker = new VoteTracker();
-        }
-        return this.voteTracker;
     }
 }

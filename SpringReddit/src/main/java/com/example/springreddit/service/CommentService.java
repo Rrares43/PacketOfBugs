@@ -1,8 +1,11 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Comment;
+import com.example.springreddit.model.Post;
 import com.example.springreddit.repository.CommentRepository;
 import com.example.springreddit.repository.PostRepository;
+import com.example.springreddit.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,9 +21,9 @@ public class CommentService {
 
     public void comment(Long postId, String text) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Postarea cu ID-ul " + postId + " nu există!"));
+                .orElseThrow(() -> new RuntimeException("Post with ID-ul " + postId + " not found"));
 
-        User author = null;
+        Account author = null;
 
         Comment newComment = new Comment(text, author, post);
         commentRepository.save(newComment);
@@ -32,12 +35,12 @@ public class CommentService {
 
     public void replyToComment(Long postId, Long parentCommentId, String text) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Postarea nu există!"));
+                .orElseThrow(() -> new RuntimeException("Post not found"));
 
         Comment parentComment = commentRepository.findById(parentCommentId)
-                .orElseThrow(() -> new RuntimeException("Comentariul părinte nu există!"));
+                .orElseThrow(() -> new RuntimeException("Original comment not found"));
 
-        User author = null;
+        Account author = null;
 
         Comment reply = new Comment(text, author, post);
         parentComment.addReply(reply);
@@ -47,10 +50,10 @@ public class CommentService {
 
     public void editComment(Long postId, Long commentId, String newText) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comentariul nu a fost găsit!"));
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
 
         if (!comment.getPost().getId().equals(postId)) {
-            throw new RuntimeException("Comentariul nu aparține acestei postări!");
+            throw new RuntimeException("Comment does not belong to this post");
         }
 
         comment.setContent(newText);
