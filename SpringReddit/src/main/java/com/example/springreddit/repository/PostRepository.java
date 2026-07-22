@@ -1,4 +1,4 @@
-package com.example.demo.interaction;
+package com.example.springreddit.repository;
 
 import com.example.demo.model.Post;
 import org.springframework.data.jpa.repository.JpaRepository;

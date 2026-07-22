@@ -1,5 +1,8 @@
-package com.example.demo.interaction;
+package com.example.springreddit.service;
 
+import com.example.springreddit.model.Comment;
+import com.example.springreddit.repository.CommentRepository;
+import com.example.springreddit.repository.PostRepository;
 import org.springframework.stereotype.Service;
 
 @Service
