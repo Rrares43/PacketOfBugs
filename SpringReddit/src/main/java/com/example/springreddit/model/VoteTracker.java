@@ -1,4 +1,4 @@
-package com.example.demo.interaction;
+package com.example.springreddit.model;
 
 public class VoteTracker {
     private int upvotes;
