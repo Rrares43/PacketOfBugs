@@ -3,7 +3,9 @@ package com.example.springreddit.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "comment_votes")
+@Table(name = "comment_votes", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"comment_id", "account_id"})
+})
 public class CommentVote {
 
     @Id
@@ -21,7 +23,8 @@ public class CommentVote {
     @Column(name = "vote_direction", nullable = false)
     private int voteDirection;
 
-    public CommentVote() {}
+    protected CommentVote() {
+    }
 
     public CommentVote(Comment comment, Account account, int voteDirection) {
         this.comment = comment;
@@ -29,10 +32,23 @@ public class CommentVote {
         this.voteDirection = voteDirection;
     }
 
-    public Long getId() { return id; }
-    public Comment getComment() { return comment; }
-    public Account getAccount() { return account; }
-    public int getVoteDirection() { return voteDirection; }
+    public Long getId() {
+        return id;
+    }
 
-    public void setVoteDirection(int voteDirection) { this.voteDirection = voteDirection; }
+    public Comment getComment() {
+        return comment;
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public int getVoteDirection() {
+        return voteDirection;
+    }
+
+    public void setVoteDirection(int voteDirection) {
+        this.voteDirection = voteDirection;
+    }
 }
