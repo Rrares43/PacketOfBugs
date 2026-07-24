@@ -12,36 +12,35 @@ import java.util.Optional;
 
 @Service
 public class PostVoteService {
+
     private final PostVoteRepository postVoteRepository;
     private final PostRepository postRepository;
 
     public PostVoteService(PostVoteRepository postVoteRepository, PostRepository postRepository) {
         this.postVoteRepository = postVoteRepository;
         this.postRepository = postRepository;
-
     }
+
     @Transactional
-    public void vote(Long postId, Long accountId, int voteDirection) {
+    public void vote(Long postId, Account currentAccount, boolean isUpvote) {
+
         Post post = postRepository.findById(postId)
-                .orElseThrow(()-> new IllegalArgumentException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Postarea nu a fost găsită cu ID-ul: " + postId));
 
-        Account account = null;
-        Optional<PostVote> existingVoteOpt =  postVoteRepository.findByPostAndAccount(post, account);
-        if(existingVoteOpt.isPresent()) {
+        Optional<PostVote> existingVoteOpt = postVoteRepository.findByPostAndAccount(post, currentAccount);
+
+        if (existingVoteOpt.isPresent()) {
             PostVote existingVote = existingVoteOpt.get();
-            if (existingVote.getVoteDirection() == voteDirection) {
-                postVoteRepository.delete(existingVote);
 
-            } else {
-                existingVote.setVoteDirection(voteDirection);
-                postVoteRepository.save(existingVote);
+            if (existingVote.isUpvote() == isUpvote) {
+                postVoteRepository.delete(existingVote);
             }
-        }
-            else
-            {
-                PostVote newVote = new PostVote(post,account,voteDirection);
+            else {
+                PostVote newVote = new PostVote(isUpvote, post, currentAccount);
+
                 postVoteRepository.save(newVote);
             }
         }
-    }
 
+    }
+}

@@ -1,23 +1,51 @@
 package com.example.springreddit.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
-// am facut aici asa de test clasa asta post o modifici tu cand e doar ca sa imi dispara erorile alea de import si ca clasa nu exista
+import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
+@Table(name = "posts")
 public class Post {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    public Post() {
+    @Column(nullable = false)
+    private String title;
+
+    @Lob
+    private String content;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id")
+    private Account author;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subreddit_id")
+    private Subreddit subreddit;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
+    protected Post() {
     }
 
-    public Long getId() {
-        return id;
+    public Post(String title, String content, Account author, Subreddit subreddit) {
+        this.title = title;
+        this.content = content;
+        this.author = author;
+        this.subreddit = subreddit;
+    }
+    public Long getId() { return id; }
+    public String getTitle() { return title; }
+    public String getContent() { return content; }
+    public Account getAuthor() { return author; }
+    public Subreddit getSubreddit() { return subreddit; }
+    public List<Comment> getComments() { return comments; }
+    public void editPostContent(String newTitle, String newContent) {
+        this.title = newTitle;
+        this.content = newContent;
     }
 }
