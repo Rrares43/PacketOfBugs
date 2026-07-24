@@ -3,7 +3,6 @@ package com.example.springreddit.service;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Comment;
 import com.example.springreddit.model.CommentVote;
-import com.example.springreddit.repository.AccountRepository;
 import com.example.springreddit.repository.CommentRepository;
 import com.example.springreddit.repository.CommentVoteRepository;
 import org.springframework.stereotype.Service;
@@ -24,11 +23,10 @@ public class CommentVoteService {
     }
 
     @Transactional
-    public void vote(Long commentId, Long accountId, int voteDirection) {
+    public void vote(Long commentId, Account account, int voteDirection) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found with id: " + commentId));
 
-        Account account = null;
         Optional<CommentVote> existingVoteOpt = commentVoteRepository.findByCommentAndAccount(comment, account);
 
         if (existingVoteOpt.isPresent()) {

@@ -44,6 +44,11 @@ public class Post {
     public Account getAuthor() { return author; }
     public Subreddit getSubreddit() { return subreddit; }
     public List<Comment> getComments() { return comments; }
+
+    public void addComment(Comment comment) {
+        this.comments.add(comment);
+    }
+
     public void editPostContent(String newTitle, String newContent) {
         this.title = newTitle;
         this.content = newContent;
