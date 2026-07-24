@@ -1,4 +1,4 @@
-package com.example.springreddit.service; // Sau unde ai tu pachetul de servicii
+package com.example.springreddit.service;
 
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Comment;
