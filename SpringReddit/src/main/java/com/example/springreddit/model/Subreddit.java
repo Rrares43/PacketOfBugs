@@ -25,6 +25,13 @@ public class Subreddit {
     @Column(nullable = false, length = 255)
     private String description;
 
+    @Column(name = "creator_id", nullable = false)
+    private Long creatorId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creator_id", insertable = false, updatable = false)
+    private Account creator;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -24,19 +24,42 @@ public class SubredditService {
             throw new IllegalArgumentException("Subreddit already exists");
         }
 
-        /* maybe add sub creator in the future
         Optional<Account> creator = Optional.of(accountRepository.findById(request.getCreatorId())
                 .orElseThrow(() -> new IllegalArgumentException("Creator not found")));
-         */
+
 
         Subreddit subreddit = new Subreddit();
         subreddit.setName(request.getSubredditName());
         subreddit.setDescription(request.getDescription());
+        subreddit.setCreator(creator.get());
 
         return subredditRepository.save(subreddit);
     }
 
     public List<Subreddit> getAllSubreddits(){
         return subredditRepository.findAll();
+    }
+
+    public Subreddit getSubredditByName(String subredditName){
+        String searchName = subredditName.startsWith("/r") ? subredditName : "r/" + subredditName;
+        return subredditRepository.findBySubredditName(searchName)
+                .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
+    }
+
+    public Subreddit editSubreddit(Long subredditId, SubredditDto.EditSubredditRequest request){
+        Subreddit subreddit = subredditRepository.findById(subredditId)
+                .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
+
+        subreddit.setName(request.getSubredditName());
+        subreddit.setDescription(request.getDescription());
+
+        return subredditRepository.save(subreddit);
+    }
+
+    public void deleteSubreddit(Long subredditId){
+        if (!subredditRepository.existsById(subredditId)){
+            throw new IllegalArgumentException("Subreddit not found");
+        }
+        subredditRepository.deleteById(subredditId);
     }
 }
