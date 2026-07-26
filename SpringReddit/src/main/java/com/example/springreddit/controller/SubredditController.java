@@ -49,4 +49,37 @@ public class SubredditController {
 
         return response;
     }
+
+    @GetMapping("/{name}")
+    public ResponseEntity<?> getSubredditByName(@PathVariable String name){
+        try{
+            Subreddit subreddit = subredditService.getSubredditByName(name);
+            return ResponseEntity.ok(mapToResponse(subreddit));
+        }
+        catch(IllegalArgumentException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editSubreddit(@PathVariable Long id, @RequestBody SubredditDto.EditSubredditRequest request){
+        try{
+            Subreddit editedSubreddit = subredditService.editSubreddit(id, request);
+            return ResponseEntity.ok(mapToResponse(editedSubreddit));
+        }
+        catch(IllegalArgumentException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteSubreddit(@PathVariable Long id){
+        try{
+            subredditService.deleteSubreddit(id);
+            return ResponseEntity.ok("Subreddit deleted successfully");
+        }
+        catch (IllegalArgumentException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 }

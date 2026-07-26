@@ -21,4 +21,10 @@ public class SubredditDto {
         private LocalDateTime createdAt;
     }
 
+    @Data
+    public static class EditSubredditRequest{
+        private String subredditName;
+        private String description;
+    }
+
 }

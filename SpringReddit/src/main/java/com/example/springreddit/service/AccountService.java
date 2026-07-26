@@ -41,4 +41,18 @@ public class AccountService {
         }
         throw new IllegalArgumentException("Invalid credentials");
     }
+
+    public void changePassword(AccountDto.ChangePasswordRequest request){
+        Account accountFromEmail = accountRepository.findByEmail(request.getEmail());
+
+        // Verify the old password matches what is currently in the database (Plain text)
+        if (!request.getOldPassword().equals(accountFromEmail.getPassword())) {
+            throw new IllegalArgumentException("Old password does not match");
+        }
+
+        // Set the new password and save it (Plain text)
+        accountFromEmail.setPassword(request.getNewPassword());
+        accountRepository.save(accountFromEmail);
+
+    }
 }
