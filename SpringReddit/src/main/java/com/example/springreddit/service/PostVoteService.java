@@ -10,6 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+/**
+ * Mirrors CLI {@code PostVoteServiceImpl} vote semantics (choice 1 = add/change, 2 = remove).
+ */
 @Service
 public class PostVoteService {
 
@@ -22,25 +25,47 @@ public class PostVoteService {
     }
 
     @Transactional
-    public void vote(Long postId, Account currentAccount, boolean isUpvote) {
-
+    public String vote(Long postId, Account currentAccount, boolean isUpvote, int choice) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Postarea nu a fost găsită cu ID-ul: " + postId));
+                .orElseThrow(() -> new IllegalArgumentException("Post with ID " + postId + " does not exist."));
 
         Optional<PostVote> existingVoteOpt = postVoteRepository.findByPostAndAccount(post, currentAccount);
+        String voteTypeStr = isUpvote ? "upvote" : "downvote";
 
-        if (existingVoteOpt.isPresent()) {
-            PostVote existingVote = existingVoteOpt.get();
-
-            if (existingVote.isUpvote() == isUpvote) {
-                postVoteRepository.delete(existingVote);
+        if (choice == 1) {
+            if (existingVoteOpt.isPresent()) {
+                PostVote existingVote = existingVoteOpt.get();
+                if (existingVote.isUpvote() == isUpvote) {
+                    return "You have already voted! You cannot " + voteTypeStr + " twice.";
+                }
+                existingVote.setUpvote(isUpvote);
+                postVoteRepository.save(existingVote);
+                return "Vote changed to " + voteTypeStr + " successfully.";
             }
-            else {
-                PostVote newVote = new PostVote(isUpvote, post, currentAccount);
-
-                postVoteRepository.save(newVote);
-            }
+            postVoteRepository.save(new PostVote(isUpvote, post, currentAccount));
+            return voteTypeStr.substring(0, 1).toUpperCase() + voteTypeStr.substring(1) + " added successfully.";
         }
 
+        if (choice == 2) {
+            if (existingVoteOpt.isEmpty()) {
+                return "Error: You have not voted on this post, so you cannot remove a vote";
+            }
+            PostVote existingVote = existingVoteOpt.get();
+            if (existingVote.isUpvote() != isUpvote) {
+                return "Error: You are trying to remove an " + voteTypeStr + ", but you cast the opposite vote";
+            }
+            postVoteRepository.delete(existingVote);
+            return voteTypeStr.substring(0, 1).toUpperCase() + voteTypeStr.substring(1) + " removed successfully";
+        }
+
+        return "Invalid choice";
+    }
+
+    public long countUpvotes(Long postId) {
+        return postVoteRepository.countByPost_IdAndVoteType(postId, PostVote.UPVOTE);
+    }
+
+    public long countDownvotes(Long postId) {
+        return postVoteRepository.countByPost_IdAndVoteType(postId, PostVote.DOWNVOTE);
     }
 }

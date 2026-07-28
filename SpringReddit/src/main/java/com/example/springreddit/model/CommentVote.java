@@ -60,4 +60,8 @@ public class CommentVote {
     public boolean isUpvote() {
         return voteType == UPVOTE;
     }
+
+    public void setUpvote(boolean upvote) {
+        setVoteType(upvote ? UPVOTE : DOWNVOTE);
+    }
 }

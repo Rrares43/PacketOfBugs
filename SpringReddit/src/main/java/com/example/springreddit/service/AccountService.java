@@ -5,8 +5,7 @@ import com.example.springreddit.model.Account;
 import com.example.springreddit.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AccountService {
@@ -14,12 +13,9 @@ public class AccountService {
     @Autowired
     private AccountRepository accountRepository;
 
-    public Account registerAccount(AccountDto.RegistrationRequest request){
-        if(accountRepository.existsByUsername(request.getUsername())){
+    public Account registerAccount(AccountDto.RegistrationRequest request) {
+        if (accountRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
-        }
-        if(accountRepository.existsByEmail(request.getEmail())){
-            throw new IllegalArgumentException("Email already exists");
         }
 
         Account newAccount = new Account();
@@ -27,32 +23,50 @@ public class AccountService {
         newAccount.setEmail(request.getEmail());
         newAccount.setPassword(request.getPassword());
 
-        return accountRepository.save(newAccount);
+        Account saved = accountRepository.save(newAccount);
+        // email is @Transient — restore from request for the response payload
+        saved.setEmail(request.getEmail());
+        return saved;
     }
 
-    public Account authenticateUser(AccountDto.LoginRequest request){
-        Optional<Account> accountOptional = accountRepository.findByUsername(request.getUsername());
+    public Account authenticateUser(AccountDto.LoginRequest request) {
+        Account account = accountRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
-        if(accountOptional.isPresent()){
-            Account account = accountOptional.get();
-            if(account.getPassword().equals(request.getPassword())){
-                return account;
-            }
+        if (!account.getPassword().equals(request.getPassword())) {
+            throw new IllegalArgumentException("Invalid credentials");
         }
-        throw new IllegalArgumentException("Invalid credentials");
+        return account;
     }
 
-    public void changePassword(AccountDto.ChangePasswordRequest request){
-        Account accountFromEmail = accountRepository.findByEmail(request.getEmail());
+    public Account getByUsername(String username) {
+        return accountRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+    }
 
-        // Verify the old password matches what is currently in the database (Plain text)
-        if (!request.getOldPassword().equals(accountFromEmail.getPassword())) {
+    public Account getById(Long id) {
+        return accountRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+    }
+
+    @Transactional
+    public void changePassword(AccountDto.ChangePasswordRequest request) {
+        Account account = accountRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        if (!request.getOldPassword().equals(account.getPassword())) {
             throw new IllegalArgumentException("Old password does not match");
         }
 
-        // Set the new password and save it (Plain text)
-        accountFromEmail.setPassword(request.getNewPassword());
-        accountRepository.save(accountFromEmail);
+        account.setPassword(request.getNewPassword());
+        accountRepository.save(account);
+    }
 
+    @Transactional
+    public void deleteAccount(String username) {
+        if (!accountRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Account not found");
+        }
+        accountRepository.deleteByUsername(username);
     }
 }

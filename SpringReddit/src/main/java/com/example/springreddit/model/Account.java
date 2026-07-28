@@ -23,11 +23,10 @@ public class Account {
     private String username;
 
     /**
-     * Present in the CLI domain model and existing Spring services.
-     * Not in CLI_Reddit/schema.sql — ensure the Neon column exists
-     * (or remove this field) before enabling ddl-auto validation.
+     * CLI domain field only — not stored in Neon (no email column).
+     * Kept on the Java object so account/UI logic can still use it.
      */
-    @Column(unique = true, length = 100)
+    @Transient
     private String email;
 
     @Column(nullable = false, length = 100)

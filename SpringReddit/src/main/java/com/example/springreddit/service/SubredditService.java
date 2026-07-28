@@ -40,8 +40,12 @@ public class SubredditService {
         return subredditRepository.findAll();
     }
 
+    public List<Subreddit> getSubredditsByCreatorUsername(String username) {
+        return subredditRepository.findByCreator_Username(username);
+    }
+
     public Subreddit getSubredditByName(String subredditName){
-        String searchName = subredditName.startsWith("/r") ? subredditName : "r/" + subredditName;
+        String searchName = subredditName.startsWith("r/") ? subredditName : "r/" + subredditName;
         return subredditRepository.findByName(searchName)
                 .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
     }
