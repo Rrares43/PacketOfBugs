@@ -85,6 +85,7 @@ public class AccountCreator {
             int status = response.statusCode();
 
             if (RedditApiClient.isSuccess(status)) {
+                account.repository.AccountRepository.upsertLocalAccount(username, email, password);
                 output.write("Account saved successfully!");
             } else if (RedditApiClient.isClientError(status)) {
                 output.write(response.body());

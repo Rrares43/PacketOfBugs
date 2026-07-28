@@ -16,7 +16,6 @@ import io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class PostInteractionController {
     private final StringReader stringReader;
@@ -94,8 +93,7 @@ public class PostInteractionController {
             output.write("\nWhich subreddit would you like to browse?");
             output.write("Available subreddits:");
             for (Subreddit subreddit : subreddits) {
-                output.write("- " + subreddit.getName() + " (Owner: " + subreddit.getOwner() + ")"
-                        + " Number of posts: " + findNrOfPostsinSubreddit(subreddit.getName()));
+                output.write("- " + subreddit.getName() + " (Owner: " + subreddit.getOwner() + ")" + " Number of posts: " + findNrOfPostsinSubreddit(subreddit.getName()));
             }
 
             String input = stringReader.readString("Enter subreddit name (or 0 to cancel): ");
@@ -104,29 +102,32 @@ public class PostInteractionController {
                 return null;
             }
 
-            String normalized = util.SubredditNames.normalize(input);
-            Optional<Subreddit> match = SubredditRepository.findByName(normalized);
-            if (match.isPresent()) {
-                return match.get().getName();
+            String normalized = normalizeSubredditName(input);
+            for (Subreddit subreddit : subreddits) {
+                if (subreddit.getName().equals(normalized)) {
+                    return subreddit.getName();
+                }
             }
 
             output.write("Invalid subreddit. Please try again.");
         }
     }
 
+    private String normalizeSubredditName(String name) {
+        if (name == null) {
+            return "";
+        }
+        if (!name.startsWith("r/")) {
+            return "r/" + name;
+        }
+        return name;
+    }
+
     private void handlePostMenu(int postID, String subredditName) {
         while (true) {
-            Post currentPost = null;
-            List<Post> posts = postRepo.findPostsBySubreddit(subredditName);
-            for (Post p : posts) {
-                if (p.getId() == postID) {
-                    currentPost = p;
-                    break;
-                }
-            }
-
+            Post currentPost = postRepo.findPostById(postID);
             if (currentPost == null) {
-                output.write("Error: Post no longer exists.");
+                output.write("Returning to subreddit...");
                 break;
             }
 
@@ -145,6 +146,12 @@ public class PostInteractionController {
             if (command != null) {
                 try {
                     command.execute(postID);
+                    // Deletion already confirmed above; leave menu without a phantom "missing post" error.
+                    if ("5".equals(choice)) {
+                        break;
+                    }
+                    // DatabaseSync may remap IDs on the same Post instance after dual-write.
+                    postID = currentPost.getId();
                 } catch (Exception e) {
                     output.write("Error: " + e.getMessage());
                 }

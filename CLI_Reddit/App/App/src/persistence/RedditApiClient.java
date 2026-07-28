@@ -7,6 +7,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.cdimascio.dotenv.Dotenv;
+import logger.LogLevel;
+import logger.Logger;
 import util.SubredditNames;
 
 import java.net.URI;
@@ -402,5 +404,11 @@ public final class RedditApiClient {
     /** Exposed for callers that need raw Gson serialization of local models. */
     public static Gson gson() {
         return GSON;
+    }
+
+    public static void logFailure(String entity, Exception e) {
+        String message = "API dual-write failed for " + entity + ": " + e.getMessage();
+        System.err.println(message);
+        Logger.getInstance().log(LogLevel.ERROR, message);
     }
 }

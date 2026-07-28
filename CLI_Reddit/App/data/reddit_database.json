@@ -1,6 +1,6 @@
 [
   {
-    "Id": 1,
+    "Id": 15,
     "title": "Al 2 lea edit",
     "content": "Am editat din nou postul asta",
     "author": "FlorinUser",
@@ -8,15 +8,16 @@
     "downvotes": 0,
     "comments": [
       {
-        "Id": 1,
+        "Id": 11,
         "text": "Comentariu!",
         "author": "Marcel2",
         "replies": [
           {
-            "Id": 3,
+            "Id": 12,
             "text": "xxxxxxx",
             "author": "FlorinUser",
-            "replies": []
+            "replies": [],
+            "postId": 15
           }
         ],
         "votes": [
@@ -25,26 +26,30 @@
             "commentId": 1,
             "isUpvote": true
           }
-        ]
+        ],
+        "postId": 15
       },
       {
-        "Id": 2,
+        "Id": 13,
         "text": "ccccccc",
         "author": "FlorinUser",
         "replies": [
           {
-            "Id": 4,
+            "Id": 14,
             "text": "fffffff",
             "author": "FlorinUser",
-            "replies": []
+            "replies": [],
+            "postId": 15
           }
-        ]
+        ],
+        "postId": 15
       },
       {
-        "Id": 6,
+        "Id": 15,
         "text": "like",
         "author": "pandele",
-        "replies": []
+        "replies": [],
+        "postId": 15
       }
     ],
     "subredditName": "r/test",
@@ -57,7 +62,7 @@
     ]
   },
   {
-    "Id": 2,
+    "Id": 16,
     "title": "Intrebare Java",
     "content": "Imi da o eroare la Scanner, ma poate ajuta cineva?",
     "author": "Alex",
@@ -65,14 +70,15 @@
     "downvotes": 0,
     "comments": [
       {
-        "Id": 2,
+        "Id": 16,
         "text": "test",
         "author": "FlorinUser",
         "replies": [],
-        "votes": []
+        "votes": [],
+        "postId": 16
       },
       {
-        "Id": 5,
+        "Id": 17,
         "text": "abcdefg",
         "author": "guest",
         "replies": [],
@@ -82,17 +88,19 @@
             "commentId": 5,
             "isUpvote": false
           }
-        ]
+        ],
+        "postId": 16
       },
       {
-        "Id": 7,
+        "Id": 18,
         "text": "comment",
         "author": "pandele",
         "replies": [],
-        "votes": []
+        "votes": [],
+        "postId": 16
       },
       {
-        "Id": 8,
+        "Id": 19,
         "text": "testingzzzz",
         "author": "pandele",
         "replies": [],
@@ -100,7 +108,8 @@
         "voteTracker": {
           "upvotes": 0,
           "downvotes": 0
-        }
+        },
+        "postId": 16
       }
     ],
     "subredditName": "r/test",
@@ -113,7 +122,7 @@
     ]
   },
   {
-    "Id": 3,
+    "Id": 17,
     "title": "Regulament",
     "content": "Va rugam sa pastrati un limbaj decent pe acest subreddit.",
     "author": "Admin",
@@ -123,7 +132,7 @@
     "subredditName": "r/test"
   },
   {
-    "Id": 1,
+    "Id": 18,
     "title": "postare",
     "content": "dadadadada",
     "author": "rares0208",
@@ -133,7 +142,7 @@
     "subredditName": "r/incercare"
   },
   {
-    "Id": 4,
+    "Id": 19,
     "title": "o postare",
     "content": "POSTARE NOUAA\n[Image: postare]",
     "author": "rares0208",
@@ -150,7 +159,7 @@
     ]
   },
   {
-    "Id": 5,
+    "Id": 20,
     "title": "0",
     "content": "0",
     "author": "rares0208",
@@ -158,18 +167,19 @@
     "downvotes": 0,
     "comments": [
       {
-        "Id": 2,
+        "Id": 20,
         "text": "comment normal",
         "author": "FlorinUser",
         "replies": [],
-        "votes": []
+        "votes": [],
+        "postId": 20
       }
     ],
     "subredditName": "r/0",
     "votes": []
   },
   {
-    "Id": 6,
+    "Id": 21,
     "title": "as",
     "content": "as",
     "author": "rares0208",
@@ -179,7 +189,7 @@
     "subredditName": "r/as"
   },
   {
-    "Id": 7,
+    "Id": 22,
     "title": "incercare",
     "content": "dadadad",
     "author": "guest",
@@ -189,7 +199,7 @@
     "subredditName": "r/un subreddit"
   },
   {
-    "Id": 8,
+    "Id": 23,
     "title": "JSON is cool",
     "content": "wow json is pretty cool",
     "author": "JSON",
@@ -199,7 +209,7 @@
     "subredditName": "r/json"
   },
   {
-    "Id": 9,
+    "Id": 24,
     "title": "PANDELE!",
     "content": "yep",
     "author": "pandele",
@@ -209,7 +219,7 @@
     "subredditName": "r/incercare"
   },
   {
-    "Id": 10,
+    "Id": 25,
     "title": "mariusica",
     "content": "MARIUSICA",
     "author": "pandele",
@@ -221,12 +231,12 @@
       {
         "username": "pandele",
         "postId": 10,
-        "isUpvote": true
+        "isUpvote": false
       }
     ]
   },
   {
-    "Id": 11,
+    "Id": 26,
     "title": "Post gresit :O",
     "content": "deci am pus postul asta pe un sub care nu exista",
     "author": "test",
@@ -241,7 +251,7 @@
     }
   },
   {
-    "Id": 12,
+    "Id": 27,
     "title": "Incercare",
     "content": "am incercat sa pun un post",
     "author": "test",
@@ -249,7 +259,7 @@
     "downvotes": 0,
     "comments": [
       {
-        "Id": 9,
+        "Id": 21,
         "text": "Comentariu de incercare ;)",
         "author": "test",
         "replies": [],
@@ -257,7 +267,8 @@
         "voteTracker": {
           "upvotes": 0,
           "downvotes": 0
-        }
+        },
+        "postId": 27
       }
     ],
     "subredditName": "r/incercare",

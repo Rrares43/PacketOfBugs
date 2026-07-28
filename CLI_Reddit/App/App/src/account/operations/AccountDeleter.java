@@ -57,6 +57,7 @@ public class AccountDeleter {
             int status = response.statusCode();
 
             if (RedditApiClient.isSuccess(status)) {
+                account.repository.AccountRepository.deleteLocalAccount(username);
                 output.write(response.body());
                 sessionService.logout();
             } else if (RedditApiClient.isClientError(status)) {

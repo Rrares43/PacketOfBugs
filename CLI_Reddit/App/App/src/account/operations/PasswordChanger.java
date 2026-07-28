@@ -73,6 +73,7 @@ public class PasswordChanger {
             int status = response.statusCode();
 
             if (RedditApiClient.isSuccess(status)) {
+                account.repository.AccountRepository.updateLocalPassword(username, newPassword);
                 output.write(response.body());
             } else if (RedditApiClient.isClientError(status)) {
                 output.write(response.body());

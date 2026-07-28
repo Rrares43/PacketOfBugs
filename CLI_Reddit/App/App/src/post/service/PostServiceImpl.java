@@ -1,31 +1,27 @@
 package post.service;
 
-import account.SessionService;
-import com.google.gson.JsonObject;
-import persistence.ApiMapper;
-import persistence.RedditApiClient;
 import post.model.Post;
-import util.SubredditNames;
+import post.repository.PostRepository;
 
 public class PostServiceImpl implements PostService {
-    private final SessionService sessionService;
+    private final PostRepository postRepository;
+    private int currentId = 1;
 
-    public PostServiceImpl(SessionService sessionService) {
-        this.sessionService = sessionService;
+    public PostServiceImpl(PostRepository postRepository) {
+        this.postRepository = postRepository;for (Post post : postRepository.findAllPosts()) {
+            if (post.getId() >= currentId) {
+                currentId = post.getId() + 1;
+            }
+        }
     }
 
     @Override
     public Post createPost(String author, String title, String content, String subreddit) {
-        Long authorId = sessionService.getCurrentAccountId();
-        if (authorId == null) {
-            authorId = RedditApiClient.resolveAccountId(author);
-        }
+        int newId = currentId++;
+        Post newPost = new Post(newId, title, content, author, subreddit);
 
-        JsonObject created = RedditApiClient.createPost(
-                title,
-                content,
-                authorId,
-                SubredditNames.normalize(subreddit));
-        return ApiMapper.toPost(created);
+        postRepository.addPost(newPost);
+
+        return newPost;
     }
 }

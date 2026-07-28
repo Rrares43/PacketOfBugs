@@ -1,6 +1,7 @@
 package bootstrap;
 
 import account.SessionService;
+import post.repository.PostRepo;
 import post.service.PostService;
 import post.service.PostServiceImpl;
 import io.OutputWriter;
@@ -45,8 +46,9 @@ final class PostingModule {
     }
 
     static CreatePostCommand createCreatePostCommand(PostView postView,
+                                                     PostRepo postRepo,
                                                      SessionService sessionService) {
-        PostService postService = new PostServiceImpl(sessionService);
+        PostService postService = new PostServiceImpl(postRepo);
         return new CreatePostCommand(postView, postService, sessionService);
     }
 }

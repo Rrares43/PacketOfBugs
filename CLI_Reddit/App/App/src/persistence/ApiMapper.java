@@ -29,14 +29,7 @@ public final class ApiMapper {
         String subreddit = json.has("subredditName") && !json.get("subredditName").isJsonNull()
                 ? json.get("subredditName").getAsString() : "";
 
-        Post post = new Post(id, title, content, author, subreddit);
-        if (json.has("upvotes") && !json.get("upvotes").isJsonNull()) {
-            post.setUpvotes(json.get("upvotes").getAsInt());
-        }
-        if (json.has("downvotes") && !json.get("downvotes").isJsonNull()) {
-            post.setDownvotes(json.get("downvotes").getAsInt());
-        }
-        return post;
+        return new Post(id, title, content, author, subreddit);
     }
 
     public static Post toPostWithComments(JsonObject postJson, JsonArray commentsJson) {
@@ -47,7 +40,9 @@ public final class ApiMapper {
                 comments.add(toComment(element.getAsJsonObject(), post.getId()));
             }
         }
-        post.setComments(comments);
+        for (Comment comment : comments) {
+            post.addComment(comment);
+        }
         return post;
     }
 
@@ -60,12 +55,6 @@ public final class ApiMapper {
 
         Comment comment = new Comment(id, text, author);
         comment.setPostId(postId);
-        if (json.has("upvotes") && !json.get("upvotes").isJsonNull()) {
-            comment.setUpvotes(json.get("upvotes").getAsInt());
-        }
-        if (json.has("downvotes") && !json.get("downvotes").isJsonNull()) {
-            comment.setDownvotes(json.get("downvotes").getAsInt());
-        }
         if (json.has("replies") && json.get("replies").isJsonArray()) {
             for (JsonElement reply : json.getAsJsonArray("replies")) {
                 comment.addreply(toComment(reply.getAsJsonObject(), postId));
@@ -84,11 +73,7 @@ public final class ApiMapper {
         } else if (json.has("creatorId") && !json.get("creatorId").isJsonNull()) {
             owner = "id:" + json.get("creatorId").getAsLong();
         }
-        Subreddit subreddit = new Subreddit(SubredditNames.normalize(name), description, owner);
-        if (json.has("id") && !json.get("id").isJsonNull()) {
-            subreddit.setId(json.get("id").getAsLong());
-        }
-        return subreddit;
+        return new Subreddit(SubredditNames.normalize(name), description, owner);
     }
 
     public static List<Subreddit> toSubredditList(JsonArray array) {

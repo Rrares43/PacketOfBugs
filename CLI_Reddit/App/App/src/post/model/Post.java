@@ -16,7 +16,7 @@ public class Post {
     private List<PostVote> votes;
     private VoteTracker voteTracker;
 
-    public Post(int Id, String title, String content, String author, String subredditName) {
+    public Post(int Id,String title,String content,String author, String subredditName){
         this.Id = Id;
         this.title = title;
         this.content = content;
@@ -29,19 +29,23 @@ public class Post {
         this.voteTracker = new VoteTracker();
     }
 
-    public int getId() {
+    public int getId(){
         return Id;
     }
 
-    public String getTitle() {
+    public void setId(int id) {
+        this.Id = id;
+    }
+
+    public String getTitle(){
         return title;
     }
 
-    public String getContent() {
+    public String getContent(){
         return content;
     }
 
-    public String getAuthor() {
+    public String getAuthor(){
         return author;
     }
 
@@ -53,9 +57,6 @@ public class Post {
     }
 
     public int getUpvotes() {
-        if (getVotes().isEmpty()) {
-            return upvotes;
-        }
         int count = 0;
         for (PostVote vote : getVotes()) {
             if (vote.isUpvote()) {
@@ -66,9 +67,6 @@ public class Post {
     }
 
     public int getDownvotes() {
-        if (getVotes().isEmpty()) {
-            return downvotes;
-        }
         int count = 0;
         for (PostVote vote : getVotes()) {
             if (!vote.isUpvote()) {
@@ -76,14 +74,6 @@ public class Post {
             }
         }
         return count;
-    }
-
-    public void setUpvotes(int upvotes) {
-        this.upvotes = upvotes;
-    }
-
-    public void setDownvotes(int downvotes) {
-        this.downvotes = downvotes;
     }
 
     public Optional<PostVote> getUserVote(String username) {
@@ -95,27 +85,25 @@ public class Post {
         return Optional.empty();
     }
 
-    public List<Comment> getComments() {
+
+
+    public List<Comment> getComments(){
         if (comments == null) {
             comments = new ArrayList<>();
         }
         return comments;
     }
 
-    public void setComments(List<Comment> comments) {
-        this.comments = comments != null ? comments : new ArrayList<>();
-    }
-
-    public String getSubredditName() {
+    public String getSubredditName(){
         return subredditName;
     }
 
-    public void addComment(Comment comment) {
+    public void addComment(Comment comment){
         getComments().add(comment);
     }
 
-    public void removeComment(int index) {
-        if (index >= 0 && index < getComments().size()) {
+    public void removeComment(int index){
+        if(index>=0 && index<getComments().size()){
             getComments().remove(index);
         }
     }

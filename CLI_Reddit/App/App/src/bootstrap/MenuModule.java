@@ -3,6 +3,7 @@ package bootstrap;
 import account.AccountMenu;
 import subreddit.SubredditMenu;
 import post.repository.PostMenu;
+import logger.Logger;
 import menu.AccountCommand;
 import menu.InterractionCommand;
 import menu.LoggerCommand;
@@ -19,6 +20,7 @@ final class MenuModule {
 
     static MenuDispatcher create(OutputWriter output,
                                  StringReader stringReader,
+                                 Logger logger,
                                  AccountMenu accountMenu,
                                  CreatePostCommand createPostCommand,
                                  PostMenu postMenu,
@@ -28,7 +30,7 @@ final class MenuModule {
         dispatcher.registerCommand("2", new PostCommand(createPostCommand));
         dispatcher.registerCommand("3", new InterractionCommand(postMenu));
         dispatcher.registerCommand("4", new SubredditCommand(subredditMenu));
-        dispatcher.registerCommand("5", new LoggerCommand(stringReader, output));
+        dispatcher.registerCommand("5", new LoggerCommand(logger, stringReader, output));
         return dispatcher;
     }
 }
