@@ -4,10 +4,11 @@ import account.SessionService;
 import io.StringReader;
 import subreddit.Subreddit;
 import subreddit.repository.SubredditRepository;
+import util.SubredditNames;
 
-import java.util.List;
+import java.util.Optional;
 
-public class DeleteSubredditCommand implements SubredditCommand{
+public class DeleteSubredditCommand implements SubredditCommand {
     private final StringReader stringReader;
     private final SessionService sessionService;
 
@@ -17,35 +18,29 @@ public class DeleteSubredditCommand implements SubredditCommand{
     }
 
     @Override
-    public void execute(){
-        if(sessionService.isLoggedIn()) {
+    public void execute() {
+        if (sessionService.isLoggedIn()) {
             deleteSubreddit();
         }
     }
 
-    private void deleteSubreddit(){
-        List<Subreddit> subreddits = SubredditRepository.loadSubreddits();
-        String targetSub = chooseSubreddit();
-        boolean found = false;
-        for(Subreddit sub : subreddits){
-            if(sub.getName().equals(targetSub)){
-                subreddits.remove(sub);
-                SubredditRepository.writeSubreddits(subreddits);
-                found = true;
-                break;
-            }
+    private void deleteSubreddit() {
+        String targetSub = SubredditNames.normalize(chooseSubreddit());
+        Optional<Subreddit> found = SubredditRepository.findByName(targetSub);
+        if (found.isEmpty() || found.get().getId() == null) {
+            System.out.println("Subreddit not found");
+            return;
         }
 
-        if(found){
-            SubredditRepository.writeSubreddits(subreddits);
+        try {
+            SubredditRepository.deleteSubreddit(found.get().getId());
             System.out.println("Subreddit deleted successfully!");
-        }
-        else{
-            System.out.println("Subreddit not found");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
 
-    public String chooseSubreddit(){
+    public String chooseSubreddit() {
         System.out.println("Subreddits this user has made: ");
         SubredditRepository.listSubsMadebyUser(sessionService.getCurrentUsername());
         return stringReader.readString("Choose subreddit to delete: ");

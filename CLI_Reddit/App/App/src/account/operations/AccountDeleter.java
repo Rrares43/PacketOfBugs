@@ -3,8 +3,6 @@ package account.operations;
 import account.SessionService;
 import io.OutputWriter;
 import io.StringReader;
-import logger.LogLevel;
-import logger.Logger;
 import persistence.RedditApiClient;
 
 import java.net.URI;
@@ -61,16 +59,13 @@ public class AccountDeleter {
             if (RedditApiClient.isSuccess(status)) {
                 output.write(response.body());
                 sessionService.logout();
-                Logger.getInstance().log(LogLevel.INFO, "Account deleted: " + username);
             } else if (RedditApiClient.isClientError(status)) {
                 output.write(response.body());
-                Logger.getInstance().log(LogLevel.WARNING, "Account deletion failed: " + response.body());
             } else {
                 output.write("Account deletion failed. Server returned status " + status + ": " + response.body());
             }
         } catch (Exception e) {
             output.write("Connection error: " + e.getMessage());
-            Logger.getInstance().log(LogLevel.ERROR, "Account deletion connection error: " + e.getMessage());
         }
     }
 }

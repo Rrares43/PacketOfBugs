@@ -12,15 +12,12 @@ public class Main {
         System.out.println(TextFormatter.color(FigletFont.convertOneLine("Buggit"), TextFormatter.GREEN));
         System.out.println(TextFormatter.separator(42));
 
-        // command for database migration, no longer needs to be called
-        // DataMigrator.runMigration();
-
         System.out.println("Starting Reddit CLI...");
         if (RedditApiClient.isReachable()) {
             System.out.println("Spring API connection successful (" + RedditApiClient.getBaseUrl() + ")");
         } else {
             System.err.println("Warning: Spring API not reachable at " + RedditApiClient.getBaseUrl());
-            System.err.println("Account login and related operations require the Spring Boot backend.");
+            System.err.println("All CLI operations require the Spring Boot backend.");
         }
 
         AppContext context = AppBootstrap.wire();

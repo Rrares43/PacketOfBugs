@@ -6,8 +6,6 @@ import account.verification.PasswordVerification;
 import com.google.gson.Gson;
 import io.OutputWriter;
 import io.StringReader;
-import logger.LogLevel;
-import logger.Logger;
 import persistence.RedditApiClient;
 
 import java.net.URI;
@@ -88,16 +86,13 @@ public class AccountCreator {
 
             if (RedditApiClient.isSuccess(status)) {
                 output.write("Account saved successfully!");
-                Logger.getInstance().log(LogLevel.INFO, "Account registered: " + username);
             } else if (RedditApiClient.isClientError(status)) {
                 output.write(response.body());
-                Logger.getInstance().log(LogLevel.WARNING, "Account registration failed: " + response.body());
             } else {
                 output.write("Account creation failed. Server returned status " + status + ": " + response.body());
             }
         } catch (Exception e) {
             output.write("Connection error: " + e.getMessage());
-            Logger.getInstance().log(LogLevel.ERROR, "Account registration connection error: " + e.getMessage());
         }
     }
 }

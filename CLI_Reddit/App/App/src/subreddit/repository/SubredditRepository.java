@@ -1,77 +1,83 @@
 package subreddit.repository;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.Type;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import persistence.ApiMapper;
+import persistence.RedditApiClient;
+import subreddit.Subreddit;
+import util.SubredditNames;
+
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import logger.Logger;
-import logger.LogLevel;
-import persistence.DatabaseSync;
-import subreddit.Subreddit;
-
+/**
+ * HTTP-backed subreddit repository. No local file storage.
+ */
 public class SubredditRepository {
-    private static final String FILE_NAME = "App/data/subreddits.json";
 
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private SubredditRepository() {
+    }
 
     public static List<Subreddit> loadSubreddits() {
-        File file = new File(FILE_NAME);
-        if(!file.exists()){
-            return new ArrayList<>();
-        }
-        try(FileReader reader = new FileReader(file)){
-            Type listType = new TypeToken<ArrayList<Subreddit>>(){}.getType();
-            List<Subreddit> subreddits = gson.fromJson(reader, listType);
-            return subreddits != null ? subreddits : new ArrayList<>();
-        }
-        catch(IOException e){
-            System.out.println("Error");
-            Logger.getInstance().log(LogLevel.ERROR,"Error");
+        try {
+            return ApiMapper.toSubredditList(RedditApiClient.getAllSubreddits());
+        } catch (Exception e) {
+            System.out.println("Failed to load subreddits: " + e.getMessage());
             return new ArrayList<>();
         }
     }
 
-    public static void listSubsMadebyUser(String user){
-        List<Subreddit> subreddits = loadSubreddits();
-        for(Subreddit sub : subreddits){
-            if(sub.getOwner().equals(user)){
+    public static Optional<Subreddit> findByName(String name) {
+        String normalized = SubredditNames.normalize(name);
+        try {
+            HttpResponse<String> response = RedditApiClient.getSubredditRaw(normalized);
+            if (RedditApiClient.isSuccess(response.statusCode())) {
+                JsonObject json = com.google.gson.JsonParser.parseString(response.body()).getAsJsonObject();
+                return Optional.of(ApiMapper.toSubreddit(json));
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    public static void listSubsMadebyUser(String user) {
+        try {
+            JsonArray array = RedditApiClient.getSubredditsByCreator(user);
+            List<Subreddit> subreddits = ApiMapper.toSubredditList(array);
+            if (subreddits.isEmpty()) {
+                System.out.println("(none)");
+                return;
+            }
+            for (Subreddit sub : subreddits) {
+                sub.setOwner(user);
                 System.out.println(sub.getName());
             }
+        } catch (Exception e) {
+            System.out.println("Failed to list subreddits: " + e.getMessage());
         }
     }
 
-    public static void writeSubreddits(List<Subreddit> subreddits){
-        try(FileWriter fileWriter = new FileWriter(FILE_NAME)){
-            gson.toJson(subreddits, fileWriter);
-        }
-        catch (IOException e){
-            System.out.println("Error");
-            Logger.getInstance().log(LogLevel.ERROR,"Error");
-            return;
-        }
-        DatabaseSync.syncSubreddits(subreddits);
-    }
-
-    public static void saveSubreddit(Subreddit subreddit){
-        try{
-            List<Subreddit> subreddits = loadSubreddits();
-            subreddits.add(subreddit);
-            writeSubreddits(subreddits);
-
+    public static void saveSubreddit(Subreddit subreddit) {
+        try {
+            long creatorId = RedditApiClient.resolveAccountId(subreddit.getOwner());
+            RedditApiClient.createSubreddit(
+                    SubredditNames.normalize(subreddit.getName()),
+                    subreddit.getDescription(),
+                    creatorId);
             System.out.println("Subreddit saved successfully!");
-            Logger.getInstance().log(LogLevel.INFO,"Subreddit saved successfully!");
-        }
-        catch(Exception e){
-            System.out.println("Error");
-            Logger.getInstance().log(LogLevel.ERROR,"Error");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
 
+    public static void updateSubreddit(long id, String name, String description) {
+        RedditApiClient.editSubreddit(id, SubredditNames.normalize(name), description);
+    }
+
+    public static void deleteSubreddit(long id) {
+        RedditApiClient.deleteSubreddit(id);
+    }
 }
