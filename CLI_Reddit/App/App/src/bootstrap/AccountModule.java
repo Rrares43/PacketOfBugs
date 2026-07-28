@@ -15,10 +15,10 @@ final class AccountModule {
         AccountMenu accountMenu = new AccountMenu(stringReader, output, sessionService);
         AccountCreator accountCreator = new AccountCreator(stringReader, output);
         AccountLogin accountLogin = new AccountLogin(stringReader, sessionService, output);
-        PasswordChanger passwordChanger = new PasswordChanger();
+        PasswordChanger passwordChanger = new PasswordChanger(stringReader, output, sessionService);
         AccountInfo accountInfo = new AccountInfo();
         AccountLogout accountLogout = new AccountLogout(sessionService);
-        AccountDeleter accountDeleter = new AccountDeleter(stringReader, sessionService);
+        AccountDeleter accountDeleter = new AccountDeleter(stringReader, output, sessionService);
 
         accountMenu.registerCommand("1", new CreateAccountCommand(accountCreator));
         accountMenu.registerCommand("2", new LoginCommand(accountLogin));
