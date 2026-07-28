@@ -1,112 +1,52 @@
 package post.repository;
 
 import account.SessionService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import persistence.ApiMapper;
+import persistence.RedditApiClient;
 import post.model.Comment;
 import post.model.Post;
-import persistence.DatabaseSync;
+import util.SubredditNames;
 
-import java.io.Reader;
-import java.io.Writer;
-import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+/**
+ * HTTP-backed post repository. All reads/writes go to the Spring Boot API.
+ */
 public class PostRepo implements PostRepository {
-    private final List<Post> posts;
-    private static final Path DB_FILE = Paths.get("App/data/reddit_database.json");
-    private final Gson gson;
     private final SessionService sessionService;
-    private int nextCommentId = 1;
 
     public PostRepo(SessionService sessionService) {
         this.sessionService = sessionService;
-        this.gson = new GsonBuilder().setPrettyPrinting().create();
-
-        this.posts = loadFromFile();
-
-        initializeNextCommentId();
-    }
-
-    private void initializeNextCommentId() {
-        int maxId = 0;
-        for (Post post : posts) {
-            maxId = Math.max(maxId, findMaxCommentId(post.getComments()));
-        }
-        nextCommentId = maxId + 1;
-    }
-
-    private int findMaxCommentId(List<Comment> comments) {
-        int max = 0;
-        if (comments == null) {
-            return max;
-        }
-        for (Comment comment : comments) {
-            max = Math.max(max, comment.getId());
-            max = Math.max(max, findMaxCommentId(comment.getReplies()));
-        }
-        return max;
-    }
-
-    private List<Post> loadFromFile() {
-        if (!Files.exists(DB_FILE)) {
-            return new ArrayList<>();
-        }
-
-        try (Reader reader = Files.newBufferedReader(DB_FILE)) {
-            Type listType = new TypeToken<ArrayList<Post>>(){}.getType();
-            List<Post> loadedData = gson.fromJson(reader, listType);
-            return loadedData != null ? loadedData : new ArrayList<>();
-        } catch (Exception e) {
-            System.err.println("Error reading JSON database: " + e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-
-    public void saveToFile() {
-        try (Writer writer = Files.newBufferedWriter(DB_FILE)) {
-            gson.toJson(this.posts, writer);
-        } catch (Exception e) {
-            System.err.println("Error saving to JSON: " + e.getMessage());
-            return;
-        }
-        DatabaseSync.syncPosts(this.posts);
     }
 
     @Override
     public Post findPostById(int postId) {
-        for (Post p : this.posts) {
-            if (p.getId() == postId) {
-                return p;
-            }
+        Optional<JsonObject> remote = RedditApiClient.getPost(postId);
+        if (remote.isEmpty()) {
+            return null;
         }
-        return null;
+        JsonArray comments = RedditApiClient.getComments(postId);
+        return ApiMapper.toPostWithComments(remote.get(), comments);
     }
 
     @Override
     public List<Post> findAllPosts() {
-        return this.posts;
+        return ApiMapper.toPostList(RedditApiClient.getAllPosts());
     }
 
     @Override
     public List<Post> findPostsBySubreddit(String subredditName) {
-        List<Post> result = new ArrayList<>();
-        for (Post post : this.posts) {
-            if (post.getSubredditName() != null && post.getSubredditName().equals(subredditName)) {
-                result.add(post);
-            }
-        }
-        return result;
+        String normalized = SubredditNames.normalize(subredditName);
+        return ApiMapper.toPostList(RedditApiClient.getPostsBySubreddit(normalized));
     }
 
     @Override
     public int getNextCommentId() {
-        return nextCommentId++;
+        return 0;
     }
 
     @Override
@@ -114,27 +54,46 @@ public class PostRepo implements PostRepository {
         return sessionService.getCurrentUsername();
     }
 
+    public Long getCurrentAccountId() {
+        Long id = sessionService.getCurrentAccountId();
+        if (id != null) {
+            return id;
+        }
+        if (!sessionService.isLoggedIn()) {
+            return null;
+        }
+        try {
+            return RedditApiClient.resolveAccountId(sessionService.getCurrentUsername());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @Override
     public void addPost(Post post) {
-        this.posts.add(post);
-        saveToFile();
+        Long authorId = getCurrentAccountId();
+        if (authorId == null) {
+            throw new IllegalStateException("You must be logged in to create a post.");
+        }
+        RedditApiClient.createPost(
+                post.getTitle(),
+                post.getContent(),
+                authorId,
+                SubredditNames.normalize(post.getSubredditName()));
     }
 
     @Override
     public boolean removePost(int postId) {
-        boolean removed = false;
-
-        for (int i = posts.size() - 1; i >= 0; i--) {
-            if (posts.get(i).getId() == postId) {
-                posts.remove(i);
-                removed = true;
-            }
+        Long accountId = getCurrentAccountId();
+        if (accountId == null) {
+            return false;
         }
-        if (removed) {
-            saveToFile();
+        try {
+            RedditApiClient.deletePost(postId, accountId);
+            return true;
+        } catch (Exception e) {
+            throw new IllegalStateException(e.getMessage(), e);
         }
-
-        return removed;
     }
 
     public Comment findCommentById(int postId, int commentId) {
@@ -146,27 +105,16 @@ public class PostRepo implements PostRepository {
     }
 
     public boolean removeComment(int postId, int commentId) {
-        Post post = findPostById(postId);
-        if (post == null) {
+        Long accountId = getCurrentAccountId();
+        if (accountId == null) {
             return false;
         }
-        return removeFromList(post.getComments(), commentId);
-    }
-
-    private boolean removeFromList(List<Comment> comments, int commentId) {
-        if (comments == null) {
-            return false;
+        try {
+            RedditApiClient.deleteComment(postId, commentId, accountId);
+            return true;
+        } catch (Exception e) {
+            throw new IllegalStateException(e.getMessage(), e);
         }
-        for (int i = 0; i < comments.size(); i++) {
-            if (comments.get(i).getId() == commentId) {
-                comments.remove(i);
-                return true;
-            }
-            if (removeFromList(comments.get(i).getReplies(), commentId)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Comment searchInComments(List<Comment> comments, int commentId) {

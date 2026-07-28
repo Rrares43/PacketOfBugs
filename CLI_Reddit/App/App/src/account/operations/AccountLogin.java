@@ -5,8 +5,6 @@ import account.dto.AccountApiDtos;
 import com.google.gson.Gson;
 import io.OutputWriter;
 import io.StringReader;
-import logger.LogLevel;
-import logger.Logger;
 import persistence.RedditApiClient;
 
 import java.net.URI;
@@ -58,16 +56,13 @@ public class AccountLogin {
                         gson.fromJson(response.body(), AccountApiDtos.AccountResponse.class);
                 sessionService.login(account.username, account.email, account.id);
                 output.write("Login Successful. Logged in as: " + account.username);
-                Logger.getInstance().log(LogLevel.INFO, account.username + " has logged in.");
             } else if (RedditApiClient.isClientError(status)) {
                 output.write(response.body());
-                Logger.getInstance().log(LogLevel.WARNING, "Login failed: " + response.body());
             } else {
                 output.write("Login failed. Server returned status " + status + ": " + response.body());
             }
         } catch (Exception e) {
             output.write("Connection error: " + e.getMessage());
-            Logger.getInstance().log(LogLevel.ERROR, "Login connection error: " + e.getMessage());
         }
     }
 }

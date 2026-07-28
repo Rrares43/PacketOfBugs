@@ -7,8 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.cdimascio.dotenv.Dotenv;
-import logger.LogLevel;
-import logger.Logger;
+import util.SubredditNames;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -153,17 +152,27 @@ public final class RedditApiClient {
     }
 
     public static Optional<JsonObject> getSubredditByName(String name) {
-        String pathName = name.startsWith("r/") ? name.substring(2) : name;
-        HttpResponse<String> response = send("GET", "/api/subreddits/" + encode(pathName), null);
+        HttpResponse<String> response = getSubredditRaw(name);
         if (response.statusCode() == 200) {
             return Optional.of(JsonParser.parseString(response.body()).getAsJsonObject());
         }
         return Optional.empty();
     }
 
+    public static HttpResponse<String> getSubredditRaw(String name) {
+        String pathName = SubredditNames.stripPrefix(name);
+        return send("GET", "/api/subreddits/" + encode(pathName), null);
+    }
+
+    public static JsonArray getSubredditsByCreator(String username) {
+        HttpResponse<String> response = send("GET", "/api/subreddits/by-creator/" + encode(username), null);
+        requireSuccess(response, 200);
+        return JsonParser.parseString(response.body()).getAsJsonArray();
+    }
+
     public static JsonObject createSubreddit(String name, String description, long creatorId) {
         JsonObject body = new JsonObject();
-        body.addProperty("subredditName", name);
+        body.addProperty("subredditName", SubredditNames.normalize(name));
         body.addProperty("description", description);
         body.addProperty("creatorId", creatorId);
         HttpResponse<String> response = send("POST", "/api/subreddits", body.toString());
@@ -199,12 +208,19 @@ public final class RedditApiClient {
         return Optional.empty();
     }
 
+    public static JsonArray getPostsBySubreddit(String subredditName) {
+        String pathName = SubredditNames.stripPrefix(subredditName);
+        HttpResponse<String> response = send("GET", "/api/posts/subreddit/" + encode(pathName), null);
+        requireSuccess(response, 200);
+        return JsonParser.parseString(response.body()).getAsJsonArray();
+    }
+
     public static JsonObject createPost(String title, String content, long authorId, String subredditName) {
         JsonObject body = new JsonObject();
         body.addProperty("title", title);
         body.addProperty("content", content);
         body.addProperty("authorId", authorId);
-        body.addProperty("subredditName", subredditName);
+        body.addProperty("subredditName", SubredditNames.normalize(subredditName));
         HttpResponse<String> response = send("POST", "/api/posts", body.toString());
         requireSuccess(response, 201, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject();
@@ -346,14 +362,32 @@ public final class RedditApiClient {
         }
     }
 
+    public static JsonArray getLogs() {
+        HttpResponse<String> response = send("GET", "/api/logs", null);
+        requireSuccess(response, 200);
+        JsonElement parsed = JsonParser.parseString(response.body());
+        if (parsed.isJsonArray()) {
+            return parsed.getAsJsonArray();
+        }
+        JsonArray wrapper = new JsonArray();
+        wrapper.add(parsed);
+        return wrapper;
+    }
+
     private static void requireSuccess(HttpResponse<String> response, int... okCodes) {
         for (int code : okCodes) {
             if (response.statusCode() == code) {
                 return;
             }
         }
+        String body = response.body() != null ? response.body() : "";
+        if (isClientError(response.statusCode())) {
+            throw new IllegalStateException(body.isBlank()
+                    ? "Request failed with status " + response.statusCode()
+                    : body);
+        }
         throw new IllegalStateException(
-                "Unexpected status " + response.statusCode() + ": " + response.body());
+                "Unexpected status " + response.statusCode() + ": " + body);
     }
 
     private static String encode(String value) {
@@ -368,11 +402,5 @@ public final class RedditApiClient {
     /** Exposed for callers that need raw Gson serialization of local models. */
     public static Gson gson() {
         return GSON;
-    }
-
-    public static void logFailure(String entity, Exception e) {
-        String message = "API dual-write failed for " + entity + ": " + e.getMessage();
-        System.err.println(message);
-        Logger.getInstance().log(LogLevel.ERROR, message);
     }
 }

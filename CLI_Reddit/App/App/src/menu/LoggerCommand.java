@@ -1,7 +1,6 @@
 package menu;
 
 import io.TextFormatter;
-import logger.Logger;
 import logger.command.BacktoMain;
 import logger.command.ShowLogOptions;
 import io.OutputWriter;
@@ -16,12 +15,10 @@ public class LoggerCommand implements MenuCommand {
     private final OutputWriter output;
     private final List<LoggerSubCommand> options = new ArrayList<>();
 
-    public LoggerCommand(Logger logger, StringReader stringReader, OutputWriter output) {
+    public LoggerCommand(StringReader stringReader, OutputWriter output) {
         this.stringReader = stringReader;
         this.output = output;
-
-        this.options.add(new ShowLogOptions(logger));
-
+        this.options.add(new ShowLogOptions());
         this.options.add(new BacktoMain(output));
     }
 

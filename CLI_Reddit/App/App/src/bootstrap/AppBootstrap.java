@@ -3,14 +3,12 @@ package bootstrap;
 import account.AccountMenu;
 import account.SessionService;
 import io.*;
-import subreddit.SubredditMenu;
-import post.repository.PostMenu;
-import post.repository.PostRepo;
-import logger.LogLevel;
-import logger.Logger;
 import menu.MenuDispatcher;
 import post.PostView;
 import post.command.CreatePostCommand;
+import post.repository.PostMenu;
+import post.repository.PostRepo;
+import subreddit.SubredditMenu;
 
 public final class AppBootstrap {
 
@@ -20,20 +18,17 @@ public final class AppBootstrap {
         IntReader intReader = console;
         OutputWriter output = new FormattedOutputWriter(console);
 
-        Logger logger = Logger.getInstance();
-        logger.log(LogLevel.INFO, "Application Started");
-
         SessionService sessionService = new SessionService();
         PostRepo postRepo = new PostRepo(sessionService);
 
         AccountMenu accountMenu = AccountModule.create(stringReader, output, sessionService);
         PostView postView = PostingModule.createPostView(stringReader, output);
         CreatePostCommand createPostCommand = PostingModule.createCreatePostCommand(
-                postView, postRepo, sessionService
+                postView, sessionService
         );
 
         PostMenu postMenu = InteractionModule.create(
-                stringReader, intReader, output, postView, postRepo, logger
+                stringReader, intReader, output, postView, postRepo
         );
 
         SubredditMenu subredditMenu = SubredditModule.create(sessionService, stringReader, output, postRepo, postView);
@@ -41,7 +36,6 @@ public final class AppBootstrap {
         MenuDispatcher dispatcher = MenuModule.create(
                 output,
                 stringReader,
-                logger,
                 accountMenu,
                 createPostCommand,
                 postMenu,

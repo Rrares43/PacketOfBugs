@@ -6,8 +6,6 @@ import account.verification.PasswordVerification;
 import com.google.gson.Gson;
 import io.OutputWriter;
 import io.StringReader;
-import logger.LogLevel;
-import logger.Logger;
 import persistence.RedditApiClient;
 
 import java.net.URI;
@@ -76,16 +74,13 @@ public class PasswordChanger {
 
             if (RedditApiClient.isSuccess(status)) {
                 output.write(response.body());
-                Logger.getInstance().log(LogLevel.INFO, "Password changed for " + username);
             } else if (RedditApiClient.isClientError(status)) {
                 output.write(response.body());
-                Logger.getInstance().log(LogLevel.WARNING, "Password change failed: " + response.body());
             } else {
                 output.write("Password change failed. Server returned status " + status + ": " + response.body());
             }
         } catch (Exception e) {
             output.write("Connection error: " + e.getMessage());
-            Logger.getInstance().log(LogLevel.ERROR, "Password change connection error: " + e.getMessage());
         }
     }
 }

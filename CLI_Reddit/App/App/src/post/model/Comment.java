@@ -12,6 +12,8 @@ public class Comment {
     private List<CommentVote> votes;
     private VoteTracker voteTracker;
     private int postId;
+    private int upvotes;
+    private int downvotes;
 
     public Comment(int Id, String text, String author) {
         this.Id = Id;
@@ -24,7 +26,18 @@ public class Comment {
 
     public void setText(String newText) {
         this.text = newText;
+    }
 
+    public void setPostId(int postId) {
+        this.postId = postId;
+    }
+
+    public void setUpvotes(int upvotes) {
+        this.upvotes = upvotes;
+    }
+
+    public void setDownvotes(int downvotes) {
+        this.downvotes = downvotes;
     }
 
     public int getId() {
@@ -40,16 +53,20 @@ public class Comment {
     }
 
     public List<Comment> getReplies() {
+        if (replies == null) {
+            replies = new ArrayList<>();
+        }
         return replies;
     }
 
     public void addreply(Comment reply) {
-        this.replies.add(reply);
+        getReplies().add(reply);
     }
 
     public int getPostId() {
         return this.postId;
     }
+
     public List<CommentVote> getVotes() {
         if (votes == null) {
             votes = new ArrayList<>();
@@ -58,6 +75,9 @@ public class Comment {
     }
 
     public int getUpvotes() {
+        if (getVotes().isEmpty()) {
+            return upvotes;
+        }
         int count = 0;
         for (CommentVote vote : getVotes()) {
             if (vote.isUpvote()) {
@@ -68,6 +88,9 @@ public class Comment {
     }
 
     public int getDownvotes() {
+        if (getVotes().isEmpty()) {
+            return downvotes;
+        }
         int count = 0;
         for (CommentVote vote : getVotes()) {
             if (!vote.isUpvote()) {
@@ -85,10 +108,10 @@ public class Comment {
         }
         return Optional.empty();
     }
+
     @Override
     public String toString() {
         return "[ID: " + Id + "] " + author + ": " + text +
                 " (▲ " + getUpvotes() + " | ▼ " + getDownvotes() + ")";
     }
 }
-

@@ -1,8 +1,6 @@
 package account.operations;
 
 import account.SessionService;
-import logger.LogLevel;
-import logger.Logger;
 
 public class AccountLogout {
     private final SessionService service;
@@ -11,10 +9,8 @@ public class AccountLogout {
         this.service = service;
     }
 
-    public void Logout(){
-        Logger logger = Logger.getInstance();
+    public void Logout() {
         System.out.println("Logged out of account");
         service.logout();
-        logger.log(LogLevel.INFO, "User logged out of their account");
     }
 }
