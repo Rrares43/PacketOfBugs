@@ -2,10 +2,14 @@ package com.example.springreddit.repository;
 
 import com.example.springreddit.model.Subreddit;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+@Repository
 public interface SubredditRepository extends JpaRepository<Subreddit, Long> {
-    Optional<Subreddit> findBySubredditName(String subredditName);
-    boolean existsBySubredditName(String subredditName);
+
+    Optional<Subreddit> findByName(String name);
+
+    boolean existsByName(String name);
 }

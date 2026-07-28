@@ -1,0 +1,52 @@
+[
+  {
+    "username": "JSON",
+    "email": "json@gmail.com",
+    "password": "sonwithJ123!"
+  },
+  {
+    "username": "test",
+    "email": "test@yahoo.com",
+    "password": "testeR!234"
+  },
+  {
+    "username": "Stack",
+    "email": "stack@gmail.com",
+    "password": "stacK123!"
+  },
+  {
+    "username": "pandele",
+    "email": "pandele@gmail.com",
+    "password": "Pandele23."
+  },
+  {
+    "username": "FlorinUser",
+    "email": "florin@yahoo.com",
+    "password": "florinPassword1!"
+  },
+  {
+    "username": "Marcel2",
+    "email": "marcel@gmail.com",
+    "password": "Marcel123!"
+  },
+  {
+    "username": "Alex",
+    "email": "alex@gmail.com",
+    "password": "Padurariulale3!"
+  },
+  {
+    "username": "guest",
+    "email": "guest@gmail.com",
+    "password": "dummyPassword1!"
+  },
+  {
+    "username": "Admin",
+    "email": "admin@gmail.com",
+    "password": "adminADMIN1!"
+  },
+  {
+    "username": "rares0208",
+    "email": "rares@gmail.com",
+    "password": "RAREScelmic20!"
+  }
+]

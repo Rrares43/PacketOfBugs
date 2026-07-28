@@ -1,0 +1,57 @@
+[
+  {
+    "name": "r/LetsJsonify",
+    "description": "A place to talk about json stuff",
+    "owner": "test"
+  },
+  {
+    "name": "r/stackOverflow",
+    "description": "Place to talk about coding",
+    "owner": "test"
+  },
+  {
+    "name": "r/test",
+    "description": "Test subreddit",
+    "owner": "Admin"
+  },
+  {
+    "name": "r/incercare",
+    "description": "Subreddit de incercare",
+    "owner": "rares0208"
+  },
+  {
+    "name": "r/un subreddit",
+    "description": "Doar un subreddit",
+    "owner": "rares0208"
+  },
+  {
+    "name": "r/0",
+    "description": "0",
+    "owner": "rares0208"
+  },
+  {
+    "name": "r/as",
+    "description": "Subreddit as",
+    "owner": "rares0208"
+  },
+  {
+    "name": "r/editing",
+    "description": "talking about editing",
+    "owner": "test"
+  },
+  {
+    "name": "r/json",
+    "description": "Despre JSON",
+    "owner": "JSON"
+  },
+  {
+    "name": "r/stackoverflow",
+    "description": "sub for coding",
+    "owner": "test"
+  },
+  {
+    "name": "r/subnou",
+    "description": "incercam",
+    "owner": "pandele"
+  }
+]

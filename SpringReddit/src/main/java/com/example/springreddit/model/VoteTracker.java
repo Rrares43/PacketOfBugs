@@ -1,25 +1,35 @@
 package com.example.springreddit.model;
 
+/**
+ * In-memory vote tally helper (not a database table).
+ * Mirrors the CLI {@code VoteTracker} utility.
+ */
 public class VoteTracker {
+
     private int upvotes;
     private int downvotes;
 
-    public int getUpvotes(){
+    public int getUpvotes() {
         return upvotes;
     }
-    public int getDownvotes(){
+
+    public int getDownvotes() {
         return downvotes;
     }
-    public void addUpvotes(){
+
+    public void addUpvotes() {
         this.upvotes++;
     }
-    public void addDownvotes(){
+
+    public void addDownvotes() {
         this.downvotes++;
     }
-    public void removeUpvotes(){
+
+    public void removeUpvotes() {
         this.upvotes--;
     }
-    public void removeDownvotes(){
+
+    public void removeDownvotes() {
         this.downvotes--;
     }
 }

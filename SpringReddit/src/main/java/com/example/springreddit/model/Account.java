@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class Account {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,7 +22,12 @@ public class Account {
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
-    @Column(unique = true, nullable = false, length = 50)
+    /**
+     * Present in the CLI domain model and existing Spring services.
+     * Not in CLI_Reddit/schema.sql — ensure the Neon column exists
+     * (or remove this field) before enabling ddl-auto validation.
+     */
+    @Column(unique = true, length = 100)
     private String email;
 
     @Column(nullable = false, length = 100)
@@ -32,4 +37,9 @@ public class Account {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    public Account(String username, String email, String password) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+    }
 }

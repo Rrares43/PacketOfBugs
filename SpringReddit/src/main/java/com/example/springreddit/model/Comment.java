@@ -1,6 +1,11 @@
 package com.example.springreddit.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,6 +14,9 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "comments")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Comment {
 
     @Id
@@ -33,11 +41,12 @@ public class Comment {
     @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> replies = new ArrayList<>();
 
-    @Column(name = "created_at", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommentVote> votes = new ArrayList<>();
 
-    protected Comment() {
-    }
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
     public Comment(String content, Account author, Post post) {
         this.content = Objects.requireNonNull(content, "content must not be null");
@@ -55,7 +64,7 @@ public class Comment {
             throw new IllegalArgumentException("Reply must belong to the same post as its parent");
         }
         this.replies.add(reply);
-        reply.parentComment = this;
+        reply.setParentComment(this);
     }
 
     public boolean belongsToPost(Long postId) {
@@ -66,31 +75,7 @@ public class Comment {
         return author != null && account != null && Objects.equals(author.getId(), account.getId());
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public Account getAuthor() {
-        return author;
-    }
-
-    public Post getPost() {
-        return post;
-    }
-
     public List<Comment> getReplies() {
         return Collections.unmodifiableList(replies);
-    }
-
-    public Comment getParentComment() {
-        return parentComment;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
     }
 }
