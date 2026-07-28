@@ -3,13 +3,29 @@ package account;
 public class SessionService {
     private static final String GUEST_USERNAME = "guest";
     private String currentUsername = GUEST_USERNAME;
+    private String currentEmail;
+    private Long currentAccountId;
 
     public void login(String username) {
+        login(username, null, null);
+    }
+
+    public void login(String username, String email, Long accountId) {
         this.currentUsername = username;
+        this.currentEmail = email;
+        this.currentAccountId = accountId;
     }
 
     public String getCurrentUsername() {
         return currentUsername;
+    }
+
+    public String getCurrentEmail() {
+        return currentEmail;
+    }
+
+    public Long getCurrentAccountId() {
+        return currentAccountId;
     }
 
     public boolean isLoggedIn() {
@@ -18,5 +34,7 @@ public class SessionService {
 
     public void logout() {
         this.currentUsername = GUEST_USERNAME;
+        this.currentEmail = null;
+        this.currentAccountId = null;
     }
 }

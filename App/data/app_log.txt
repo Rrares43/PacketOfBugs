@@ -1,0 +1,10 @@
+[2026-07-28 22:14:33] [INFO] Application Started
+[2026-07-28 22:14:49] [INFO] Application Started
+[2026-07-28 22:15:16] [INFO] Account registered: grasanu
+[2026-07-28 22:15:24] [INFO] grasanu has logged in.
+[2026-07-28 22:18:56] [INFO] Subreddit saved successfully!
+[2026-07-28 22:19:10] [INFO] Subreddit saved successfully!
+[2026-07-28 22:21:20] [ERROR] API dual-write failed for posts: Unexpected status 404: Post not found
+[2026-07-28 22:22:13] [ERROR] API dual-write failed for post_votes: Unexpected status 400: Post with ID 1 does not exist.
+[2026-07-28 22:22:13] [INFO] New vote added for post 1
+[2026-07-28 22:22:13] [ERROR] API dual-write failed for posts: Unexpected status 404: Post not found

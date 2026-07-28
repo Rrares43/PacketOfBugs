@@ -63,20 +63,34 @@ public final class RedditApiClient {
     }
 
     public static Optional<JsonObject> getAccount(String username) {
-        HttpResponse<String> response = send("GET", "/api/accounts/" + encode(username), null);
+        HttpResponse<String> response = getAccountRaw(username);
         if (response.statusCode() == 200) {
             return Optional.of(JsonParser.parseString(response.body()).getAsJsonObject());
         }
         return Optional.empty();
     }
 
-    public static JsonObject registerAccount(String username, String email, String password) {
+    public static HttpResponse<String> getAccountRaw(String username) {
+        return send("GET", "/api/accounts/" + encode(username), null);
+    }
+
+    public static HttpResponse<String> login(String username, String password) {
+        JsonObject body = new JsonObject();
+        body.addProperty("username", username);
+        body.addProperty("password", password);
+        return send("POST", "/api/accounts/login", body.toString());
+    }
+
+    public static HttpResponse<String> registerAccountRaw(String username, String email, String password) {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
         body.addProperty("email", email);
         body.addProperty("password", password);
-        HttpResponse<String> response = send("POST", "/api/accounts/register", body.toString());
-        requireSuccess(response, 201, 200, 400);
+        return send("POST", "/api/accounts/register", body.toString());
+    }
+
+    public static JsonObject registerAccount(String username, String email, String password) {
+        HttpResponse<String> response = registerAccountRaw(username, email, password);
         if (response.statusCode() == 400 && response.body() != null
                 && response.body().contains("already exists")) {
             return getAccount(username).orElse(null);
@@ -87,20 +101,28 @@ public final class RedditApiClient {
         throw new IllegalStateException("Register failed: " + response.statusCode() + " " + response.body());
     }
 
-    public static void changePassword(String username, String oldPassword, String newPassword) {
+    public static HttpResponse<String> changePasswordRaw(String username, String oldPassword, String newPassword) {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
         body.addProperty("oldPassword", oldPassword);
         body.addProperty("newPassword", newPassword);
-        HttpResponse<String> response = send("PUT", "/api/accounts/password", body.toString());
+        return send("PUT", "/api/accounts/password", body.toString());
+    }
+
+    public static void changePassword(String username, String oldPassword, String newPassword) {
+        HttpResponse<String> response = changePasswordRaw(username, oldPassword, newPassword);
         if (response.statusCode() >= 200 && response.statusCode() < 300) {
             return;
         }
         throw new IllegalStateException("Change password failed: " + response.statusCode() + " " + response.body());
     }
 
+    public static HttpResponse<String> deleteAccountRaw(String username) {
+        return send("DELETE", "/api/accounts/" + encode(username), null);
+    }
+
     public static void deleteAccount(String username) {
-        HttpResponse<String> response = send("DELETE", "/api/accounts/" + encode(username), null);
+        HttpResponse<String> response = deleteAccountRaw(username);
         if (response.statusCode() >= 200 && response.statusCode() < 300) {
             return;
         }
@@ -108,6 +130,14 @@ public final class RedditApiClient {
             return;
         }
         throw new IllegalStateException("Delete account failed: " + response.statusCode() + " " + response.body());
+    }
+
+    public static boolean isSuccess(int statusCode) {
+        return statusCode == 200 || statusCode == 201;
+    }
+
+    public static boolean isClientError(int statusCode) {
+        return statusCode >= 400 && statusCode < 500;
     }
 
     public static long resolveAccountId(String username) {
