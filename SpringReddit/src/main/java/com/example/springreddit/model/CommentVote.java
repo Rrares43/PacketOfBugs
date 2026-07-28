@@ -1,54 +1,67 @@
 package com.example.springreddit.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Table(name = "comment_votes", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"comment_id", "account_id"})
-})
+@Table(name = "comment_votes")
+@IdClass(CommentVoteId.class)
+@Getter
+@Setter
+@NoArgsConstructor
 public class CommentVote {
 
+    public static final short UPVOTE = 1;
+    public static final short DOWNVOTE = -1;
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "comment_id", nullable = false)
-    private Comment comment;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
-    @Column(name = "vote_direction", nullable = false)
-    private int voteDirection;
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "comment_id", nullable = false)
+    private Comment comment;
 
-    protected CommentVote() {
-    }
+    /** Schema: SMALLINT CHECK (vote_type IN (1, -1)) */
+    @Column(name = "vote_type", nullable = false)
+    private short voteType;
 
-    public CommentVote(Comment comment, Account account, int voteDirection) {
+    public CommentVote(Comment comment, Account account, short voteType) {
         this.comment = comment;
         this.account = account;
-        this.voteDirection = voteDirection;
+        setVoteType(voteType);
     }
 
-    public Long getId() {
-        return id;
+    /** Accepts CLI-style int direction (1 / -1). */
+    public CommentVote(Comment comment, Account account, int voteDirection) {
+        this(comment, account, (short) voteDirection);
     }
 
-    public Comment getComment() {
-        return comment;
+    public void setVoteType(short voteType) {
+        if (voteType != UPVOTE && voteType != DOWNVOTE) {
+            throw new IllegalArgumentException("vote_type must be 1 (upvote) or -1 (downvote)");
+        }
+        this.voteType = voteType;
     }
 
-    public Account getAccount() {
-        return account;
-    }
-
+    /** Alias used by existing CommentVoteService. */
     public int getVoteDirection() {
-        return voteDirection;
+        return voteType;
     }
 
     public void setVoteDirection(int voteDirection) {
-        this.voteDirection = voteDirection;
+        setVoteType((short) voteDirection);
+    }
+
+    public boolean isUpvote() {
+        return voteType == UPVOTE;
+    }
+
+    public void setUpvote(boolean upvote) {
+        setVoteType(upvote ? UPVOTE : DOWNVOTE);
     }
 }

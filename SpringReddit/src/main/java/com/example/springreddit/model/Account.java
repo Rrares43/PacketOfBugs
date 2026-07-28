@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class Account {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,7 +22,11 @@ public class Account {
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
-    @Column(unique = true, nullable = false, length = 50)
+    /**
+     * CLI domain field only — not stored in Neon (no email column).
+     * Kept on the Java object so account/UI logic can still use it.
+     */
+    @Transient
     private String email;
 
     @Column(nullable = false, length = 100)
@@ -32,4 +36,9 @@ public class Account {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    public Account(String username, String email, String password) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+    }
 }

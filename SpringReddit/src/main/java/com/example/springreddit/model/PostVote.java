@@ -1,62 +1,58 @@
 package com.example.springreddit.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Table(name = "post_votes", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"post_id", "account_id"})
-})
+@Table(name = "post_votes")
+@IdClass(PostVoteId.class)
+@Getter
+@Setter
+@NoArgsConstructor
 public class PostVote {
 
+    public static final short UPVOTE = 1;
+    public static final short DOWNVOTE = -1;
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
-    private boolean upvote; // true pentru upvote, false pentru downvote
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id", nullable = false)
-    private Post post;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
-    protected PostVote() {
-    }
+    @Id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = false)
+    private Post post;
 
-    public PostVote(boolean upvote, Post post, Account account) {
-        this.upvote = upvote;
-        this.post = post;
+    /** Schema: SMALLINT CHECK (vote_type IN (1, -1)) */
+    @Column(name = "vote_type", nullable = false)
+    private short voteType;
+
+    public PostVote(Account account, Post post, short voteType) {
         this.account = account;
+        this.post = post;
+        setVoteType(voteType);
     }
 
-    public Long getId() {
-        return id;
+    /** Convenience constructor matching CLI boolean semantics. */
+    public PostVote(boolean upvote, Post post, Account account) {
+        this(account, post, upvote ? UPVOTE : DOWNVOTE);
+    }
+
+    public void setVoteType(short voteType) {
+        if (voteType != UPVOTE && voteType != DOWNVOTE) {
+            throw new IllegalArgumentException("vote_type must be 1 (upvote) or -1 (downvote)");
+        }
+        this.voteType = voteType;
     }
 
     public boolean isUpvote() {
-        return upvote;
+        return voteType == UPVOTE;
     }
 
     public void setUpvote(boolean upvote) {
-        this.upvote = upvote;
-    }
-
-    public Post getPost() {
-        return post;
-    }
-
-    public void setPost(Post post) {
-        this.post = post;
-    }
-
-    public Account getAccount() {
-        return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
+        this.voteType = upvote ? UPVOTE : DOWNVOTE;
     }
 }

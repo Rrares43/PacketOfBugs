@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class Subreddit {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,18 +22,28 @@ public class Subreddit {
     @Column(unique = true, nullable = false, length = 50)
     private String name;
 
-    @Column(nullable = false, length = 255)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "creator_id", nullable = false)
-    private Long creatorId;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creator_id", insertable = false, updatable = false)
+    @JoinColumn(name = "creator_id")
     private Account creator;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    public Subreddit(String name, String description, Account creator) {
+        setName(name);
+        this.description = description;
+        this.creator = creator;
+    }
+
+    public void setName(String name) {
+        if (name != null && !name.startsWith("r/")) {
+            this.name = "r/" + name;
+        } else {
+            this.name = name;
+        }
+    }
 }

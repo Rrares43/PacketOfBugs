@@ -1,25 +1,34 @@
 package com.example.springreddit.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "posts")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Post {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String title;
 
-    @Lob
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
+    @JoinColumn(name = "author_id")
     private Account author;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -29,8 +38,12 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
-    protected Post() {
-    }
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostVote> votes = new ArrayList<>();
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 
     public Post(String title, String content, Account author, Subreddit subreddit) {
         this.title = title;
@@ -38,15 +51,10 @@ public class Post {
         this.author = author;
         this.subreddit = subreddit;
     }
-    public Long getId() { return id; }
-    public String getTitle() { return title; }
-    public String getContent() { return content; }
-    public Account getAuthor() { return author; }
-    public Subreddit getSubreddit() { return subreddit; }
-    public List<Comment> getComments() { return comments; }
 
     public void addComment(Comment comment) {
-        this.comments.add(comment);
+        comments.add(comment);
+        comment.setPost(this);
     }
 
     public void editPostContent(String newTitle, String newContent) {

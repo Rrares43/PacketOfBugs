@@ -20,7 +20,7 @@ public class SubredditService {
     private AccountRepository accountRepository;
 
     public Subreddit createSubreddit(SubredditDto.CreateSubredditRequest request){
-        if(subredditRepository.existsBySubredditName(request.getSubredditName())){
+        if(subredditRepository.existsByName(request.getSubredditName())){
             throw new IllegalArgumentException("Subreddit already exists");
         }
 
@@ -40,9 +40,13 @@ public class SubredditService {
         return subredditRepository.findAll();
     }
 
+    public List<Subreddit> getSubredditsByCreatorUsername(String username) {
+        return subredditRepository.findByCreator_Username(username);
+    }
+
     public Subreddit getSubredditByName(String subredditName){
-        String searchName = subredditName.startsWith("/r") ? subredditName : "r/" + subredditName;
-        return subredditRepository.findBySubredditName(searchName)
+        String searchName = subredditName.startsWith("r/") ? subredditName : "r/" + subredditName;
+        return subredditRepository.findByName(searchName)
                 .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
     }
 
