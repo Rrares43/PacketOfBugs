@@ -54,6 +54,10 @@ public class SubredditService {
         Subreddit subreddit = subredditRepository.findById(subredditId)
                 .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
 
+        if(subreddit.getCreator() == null || !subreddit.getCreator().getId().equals(request.getAccountId())){
+            throw new SecurityException("Only the subreddit creator can edit it");
+        }
+
         subreddit.setName(request.getSubredditName());
         subreddit.setDescription(request.getDescription());
 
@@ -61,9 +65,16 @@ public class SubredditService {
     }
 
     public void deleteSubreddit(Long subredditId){
+        Subreddit subreddit = subredditRepository.findById(subredditId)
+                .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
+
         if (!subredditRepository.existsById(subredditId)){
             throw new IllegalArgumentException("Subreddit not found");
         }
+        if(subreddit.getCreator() == null || !subreddit.getCreator().getId().equals(subredditId)){
+            throw new SecurityException("Only the subreddit creator can delete it");
+        }
+
         subredditRepository.deleteById(subredditId);
     }
 }

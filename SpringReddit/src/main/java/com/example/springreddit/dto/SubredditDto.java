@@ -25,6 +25,12 @@ public class SubredditDto {
     public static class EditSubredditRequest{
         private String subredditName;
         private String description;
+        private long accountId;
+    }
+
+    @Data
+    public static class DeleteSubredditRequest{
+        private long accountId;
     }
 
 }
