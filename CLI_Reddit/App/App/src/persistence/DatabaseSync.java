@@ -50,8 +50,9 @@ public final class DatabaseSync {
                             subreddit.getDescription(),
                             creatorId);
                 } else {
+                    long creatorId = RedditApiClient.resolveAccountId(subreddit.getOwner());
                     long id = remote.get().get("id").getAsLong();
-                    RedditApiClient.editSubreddit(id, subreddit.getName(), subreddit.getDescription());
+                    RedditApiClient.editSubreddit(id, subreddit.getName(), subreddit.getDescription(), creatorId);
                 }
             } catch (Exception e) {
                 RedditApiClient.logFailure("subreddit:" + subreddit.getName(), e);
