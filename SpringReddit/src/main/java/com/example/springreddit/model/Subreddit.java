@@ -27,6 +27,7 @@ public class Subreddit {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id")
+    @org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
     private Account creator;
 
     @CreationTimestamp

@@ -182,10 +182,11 @@ public final class RedditApiClient {
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
 
-    public static JsonObject editSubreddit(long id, String name, String description) {
+    public static JsonObject editSubreddit(long id, String name, String description, Long creatorId) {
         JsonObject body = new JsonObject();
         body.addProperty("subredditName", name);
         body.addProperty("description", description);
+        body.addProperty("creatorId", creatorId);
         HttpResponse<String> response = send("PUT", "/api/subreddits/" + id, body.toString());
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject();
