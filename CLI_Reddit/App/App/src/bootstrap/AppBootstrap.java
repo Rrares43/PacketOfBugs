@@ -37,7 +37,7 @@ public final class AppBootstrap {
         );
 
         PostMenu postMenu = InteractionModule.create(
-                stringReader, intReader, output, postView, postRepo, logger
+                stringReader, intReader, output, postView, sessionService, postRepo, logger
         );
 
         SubredditMenu subredditMenu = SubredditModule.create(sessionService, stringReader, output, postRepo, postView);

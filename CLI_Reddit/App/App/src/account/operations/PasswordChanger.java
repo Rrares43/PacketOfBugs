@@ -2,6 +2,7 @@ package account.operations;
 
 import account.SessionService;
 import account.dto.AccountApiDtos;
+import account.verification.EmailVerification;
 import account.verification.PasswordVerification;
 import com.google.gson.Gson;
 import io.OutputWriter;
@@ -40,8 +41,10 @@ public class PasswordChanger {
         }
 
         String username = sessionService.getCurrentUsername();
-        String oldPassword = stringReader.readString("Enter current password: ");
-
+        String email = stringReader.readString("Enter email: ");
+        if(!EmailVerification.verify(email)){
+            return;
+        }
         String newPassword;
         while (true) {
             output.write("Password must be at least 8 characters long and contain at least one number, one uppercase letter, one lowercase letter, and one special character.");
@@ -57,6 +60,7 @@ public class PasswordChanger {
         }
 
         try {
+            /*
             AccountApiDtos.ChangePasswordRequest payload =
                     new AccountApiDtos.ChangePasswordRequest(username, oldPassword, newPassword);
             String jsonPayload = gson.toJson(payload);
@@ -70,10 +74,11 @@ public class PasswordChanger {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+             */
+            HttpResponse<String> response = RedditApiClient.changePasswordRaw(username, email, newPassword);
             int status = response.statusCode();
 
             if (RedditApiClient.isSuccess(status)) {
-                account.repository.AccountRepository.updateLocalPassword(username, newPassword);
                 output.write(response.body());
             } else if (RedditApiClient.isClientError(status)) {
                 output.write(response.body());

@@ -1,11 +1,13 @@
 package subreddit.command;
 
 import account.SessionService;
+import persistence.RedditApiClient;
 import subreddit.Subreddit;
 import subreddit.repository.SubredditRepository;
 import io.StringReader;
 
 import java.util.List;
+import java.util.Optional;
 
 import static subreddit.repository.SubredditRepository.loadSubreddits;
 
@@ -26,30 +28,24 @@ public class EditSubredditCommand implements SubredditCommand{
     }
 
     public void editSubreddit(){
-        List<Subreddit> subreddits = loadSubreddits();
-        String targetSub = util.SubredditNames.normalize(chooseSubreddit());
-        boolean found = false;
-        for(Subreddit sub : subreddits){
-            if(sub.getName().equals(targetSub)){
-                String newTitle = stringReader.readString("Enter new title: ");
-                if(newTitle.startsWith("r/")){
-                    sub.setName(newTitle);
+        String subredditName = chooseSubreddit();
+        Optional<Subreddit> targetSub = SubredditRepository.findByName(subredditName);
+        try {
+            if (targetSub.isPresent()) {
+                long subId = RedditApiClient.getSubredditByName(targetSub.get().getName()).get().getAsJsonObject().get("id").getAsLong();
+                long creatorId = sessionService.getCurrentAccountId();
+                if (creatorId != RedditApiClient.getSubredditByName(targetSub.get().getName()).get().getAsJsonObject().get("creatorId").getAsLong()) {
+                    System.out.println("You do not have permission to edit this subreddit.");
+                    return;
                 }
-                else{
-                    sub.setName("r/" + newTitle);
-                }
-                String newDesc = stringReader.readString("Enter new description: ");
-                sub.setDescription(newDesc);
-                found = true;
-                break;
+
+                String newName = stringReader.readString("Enter new name:");
+                String newDescription = stringReader.readString("Enter new description:");
+                RedditApiClient.editSubreddit(subId, newName, newDescription, creatorId);
             }
         }
-        if(found){
-            SubredditRepository.writeSubreddits(subreddits);
-            System.out.println("Subreddit edited successfully!");
-        }
-        else{
-            System.out.println("Subreddit not found");
+        catch (Exception e){
+            System.out.println("Subreddit not found.");
         }
     }
 

@@ -1,8 +1,5 @@
 package account.dto;
 
-/**
- * Gson DTOs mirroring Spring Boot {@code AccountDto} request/response shapes.
- */
 public final class AccountApiDtos {
 
     private AccountApiDtos() {
@@ -32,12 +29,12 @@ public final class AccountApiDtos {
 
     public static class ChangePasswordRequest {
         public String username;
-        public String oldPassword;
+        public String email;
         public String newPassword;
 
-        public ChangePasswordRequest(String username, String oldPassword, String newPassword) {
+        public ChangePasswordRequest(String username, String email, String newPassword) {
             this.username = username;
-            this.oldPassword = oldPassword;
+            this.email = email;
             this.newPassword = newPassword;
         }
     }

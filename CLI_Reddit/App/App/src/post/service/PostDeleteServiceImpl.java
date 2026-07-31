@@ -1,30 +1,28 @@
 package post.service;
 
+import account.SessionService;
+import persistence.RedditApiClient;
 import post.model.Post;
 import post.repository.PostRepository;
 
 public class PostDeleteServiceImpl implements PostDeleteService {
-    private final PostRepository postRepository;
-
-    public PostDeleteServiceImpl(PostRepository postRepository) {
-        this.postRepository = postRepository;
+    private final SessionService sessionService;
+    public PostDeleteServiceImpl(SessionService sessionService) {
+        this.sessionService = sessionService;
     }
 
     @Override
     public void deletePost(int postId) {
-        Post post = postRepository.findPostById(postId);
-        if (post == null) {
-            throw new IllegalArgumentException("Post not found");
+        if(!sessionService.isLoggedIn()){
+            throw new SecurityException("You must be logged in to delete a post.");
         }
 
-        if (!post.getAuthor().equals(postRepository.getCurrentUser())) {
-            throw new SecurityException("Only the post owner can delete it");
+        try{
+            long authorId = RedditApiClient.resolveAccountId(sessionService.getCurrentUsername());
+            RedditApiClient.deletePost(postId, authorId);
         }
-
-        if (!postRepository.removePost(postId)) {
-            throw new IllegalStateException("Post could not be deleted");
+        catch (Exception e){
+            throw new IllegalArgumentException("Error deleting post: " + e.getMessage());
         }
-
-        postRepository.saveToFile();
     }
 }

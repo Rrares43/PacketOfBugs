@@ -36,17 +36,16 @@ public class SubredditMenu {
             output.write(TextFormatter.header("\n--- SUBREDDIT MENU ---"));
             output.write("0. Exit");
             output.write("1. Create Subreddit");
-            output.write("2. View Subreddit");
-            output.write("3. Edit Subreddit");
-            output.write("4. Delete Subreddit");
+            output.write("2. Edit Subreddit");
+            output.write("3. Delete Subreddit");
             output.write(TextFormatter.separator(50));
             output.write("");
 
-            choice = stringReader.readString("Select an option (0/1/2/3/4): ");
+            choice = stringReader.readString("Select an option (0/1/2/3): ");
             if(choice.equals("0")){
                 running = false;
             }
-            else if(!(choice.equals("1") ||choice.equals("2") || choice.equals("3") || choice.equals("4"))){
+            else if(!(choice.equals("1") ||choice.equals("2") || choice.equals("3"))){
                 output.write("Invalid option! Please try again.");
             }
             else{

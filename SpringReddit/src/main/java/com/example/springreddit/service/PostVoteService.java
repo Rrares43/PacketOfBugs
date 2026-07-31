@@ -10,9 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-/**
- * Mirrors CLI {@code PostVoteServiceImpl} vote semantics (choice 1 = add/change, 2 = remove).
- */
 @Service
 public class PostVoteService {
 

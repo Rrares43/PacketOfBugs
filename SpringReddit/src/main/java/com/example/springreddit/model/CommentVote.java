@@ -26,7 +26,6 @@ public class CommentVote {
     @JoinColumn(name = "comment_id", nullable = false)
     private Comment comment;
 
-    /** Schema: SMALLINT CHECK (vote_type IN (1, -1)) */
     @Column(name = "vote_type", nullable = false)
     private short voteType;
 
@@ -36,7 +35,6 @@ public class CommentVote {
         setVoteType(voteType);
     }
 
-    /** Accepts CLI-style int direction (1 / -1). */
     public CommentVote(Comment comment, Account account, int voteDirection) {
         this(comment, account, (short) voteDirection);
     }
@@ -48,7 +46,6 @@ public class CommentVote {
         this.voteType = voteType;
     }
 
-    /** Alias used by existing CommentVoteService. */
     public int getVoteDirection() {
         return voteType;
     }

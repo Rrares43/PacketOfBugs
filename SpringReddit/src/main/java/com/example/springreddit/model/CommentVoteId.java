@@ -3,9 +3,6 @@ package com.example.springreddit.model;
 import java.io.Serializable;
 import java.util.Objects;
 
-/**
- * Composite primary key for {@link CommentVote}: (account_id, comment_id).
- */
 public class CommentVoteId implements Serializable {
 
     private Long account;

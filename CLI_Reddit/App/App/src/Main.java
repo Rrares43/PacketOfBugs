@@ -17,7 +17,6 @@ public class Main {
             System.out.println("Spring API connection successful (" + RedditApiClient.getBaseUrl() + ")");
         } else {
             System.err.println("Warning: Spring API not reachable at " + RedditApiClient.getBaseUrl());
-            System.err.println("Local JSON persistence will still work; remote dual-write may fail.");
             System.err.println("Account login and related operations require the Spring Boot backend.");
         }
 

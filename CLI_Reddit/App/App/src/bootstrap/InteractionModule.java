@@ -1,5 +1,6 @@
 package bootstrap;
 
+import account.SessionService;
 import post.repository.PostMenu;
 import post.repository.PostRepo;
 import post.service.CommentService;
@@ -34,13 +35,14 @@ final class InteractionModule {
                            IntReader intReader,
                            OutputWriter output,
                            PostView postView,
+                           SessionService sessionService,
                            PostRepo postRepo,
                            Logger logger) {
-        PostVoteService postVoteService = new PostVoteServiceImpl(postRepo, logger);
-        PostEditServiceImpl postEditService = new PostEditServiceImpl(postRepo);
-        PostDeleteService postDeleteService = new PostDeleteServiceImpl(postRepo);
-        CommentService commentService = new CommentServiceImpl(postRepo, logger);
-        CommentVoteService commentVoteService = new CommentVoteServiceImpl(postRepo, logger);
+        PostVoteService postVoteService = new PostVoteServiceImpl(sessionService);
+        PostEditServiceImpl postEditService = new PostEditServiceImpl(sessionService);
+        PostDeleteService postDeleteService = new PostDeleteServiceImpl(sessionService);
+        CommentService commentService = new CommentServiceImpl(sessionService);
+        CommentVoteService commentVoteService = new CommentVoteServiceImpl(sessionService);
 
         PostInteractionController interactionController = new PostInteractionController(
                 stringReader, intReader, output, postView, commentService, commentVoteService, postRepo
