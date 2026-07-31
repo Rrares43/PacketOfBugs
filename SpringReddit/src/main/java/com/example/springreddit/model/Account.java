@@ -24,11 +24,7 @@ public class Account {
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
-    /**
-     * CLI domain field only — not stored in Neon (no email column).
-     * Kept on the Java object so account/UI logic can still use it.
-     */
-    @Transient
+    @Column(unique = true, nullable = false, length = 100)
     private String email;
 
     @Column(nullable = false, length = 100)

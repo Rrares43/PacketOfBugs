@@ -48,7 +48,7 @@ final class PostingModule {
     static CreatePostCommand createCreatePostCommand(PostView postView,
                                                      PostRepo postRepo,
                                                      SessionService sessionService) {
-        PostService postService = new PostServiceImpl(postRepo);
+        PostService postService = new PostServiceImpl(sessionService);
         return new CreatePostCommand(postView, postService, sessionService);
     }
 }

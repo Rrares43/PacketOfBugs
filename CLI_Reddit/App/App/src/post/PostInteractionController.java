@@ -163,7 +163,14 @@ public class PostInteractionController {
 
     public void manageCommentInteraction(int postID) {
         int commentID = intReader.readInt("Insert Comment ID to interact with:");
-        Comment foundComment = commentService.findCommentById(commentID);
+
+        Post currentPost = postRepo.findPostById(postID);
+        if (currentPost == null) {
+            output.write("Error: Post not found.");
+            return;
+        }
+        Comment foundComment = searchComment(currentPost.getComments(), commentID);
+
         if (foundComment == null) {
             output.write("Error: Comment does not exist.");
             return;
@@ -194,5 +201,24 @@ public class PostInteractionController {
     private int findNrOfPostsinSubreddit(String subredditName){
         List<Post> posts = postRepo.findPostsBySubreddit(subredditName);
         return posts.size();
+    }
+
+    private Comment searchComment(List<Comment> comments, int commentId){
+        if(comments.isEmpty()){
+            return null;
+        }
+
+        for(Comment comment : comments){
+            if(comment.getId() == commentId){
+                return comment;
+            }
+
+            Comment foundInReplies = searchComment(comment.getReplies(), commentId);
+            if(foundInReplies != null){
+                return foundInReplies;
+            }
+        }
+
+        return null;
     }
 }

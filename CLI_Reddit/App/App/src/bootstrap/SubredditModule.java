@@ -18,9 +18,8 @@ final class SubredditModule {
     static SubredditMenu create(SessionService sessionService, StringReader stringReader, OutputWriter output, PostRepo postRepo, PostView postView) {
         SubredditMenu subredditMenu = new SubredditMenu(sessionService, stringReader, output);
         subredditMenu.registerCommand("1", new CreateSubredditCommand(sessionService));
-        subredditMenu.registerCommand("2", new ViewSubredditCommand(stringReader, output, postRepo, postView));
-        subredditMenu.registerCommand("3", new EditSubredditCommand(sessionService, stringReader));
-        subredditMenu.registerCommand("4", new DeleteSubredditCommand(stringReader, sessionService));
+        subredditMenu.registerCommand("2", new EditSubredditCommand(sessionService, stringReader));
+        subredditMenu.registerCommand("3", new DeleteSubredditCommand(stringReader, sessionService));
         return subredditMenu;
     }
 }

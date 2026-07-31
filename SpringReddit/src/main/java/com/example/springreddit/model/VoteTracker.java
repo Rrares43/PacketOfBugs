@@ -1,9 +1,5 @@
 package com.example.springreddit.model;
 
-/**
- * In-memory vote tally helper (not a database table).
- * Mirrors the CLI {@code VoteTracker} utility.
- */
 public class VoteTracker {
 
     private int upvotes;

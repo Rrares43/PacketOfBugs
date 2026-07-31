@@ -37,7 +37,7 @@ public class AccountLogin {
         String password = stringReader.readString("Enter password: ");
 
         try {
-            AccountApiDtos.LoginRequest payload = new AccountApiDtos.LoginRequest(username, password);
+            /*AccountApiDtos.LoginRequest payload = new AccountApiDtos.LoginRequest(username, password);
             String jsonPayload = gson.toJson(payload);
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -49,6 +49,9 @@ public class AccountLogin {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+             */
+            HttpResponse<String> response = RedditApiClient.login(username, password);
             int status = response.statusCode();
 
             if (RedditApiClient.isSuccess(status)) {

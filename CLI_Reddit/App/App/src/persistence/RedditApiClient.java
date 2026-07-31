@@ -18,10 +18,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Optional;
 
-/**
- * Synchronous HTTP client for the Spring Boot backend.
- * Uses the project's existing Gson dependency for JSON payloads.
- */
 public final class RedditApiClient {
 
     private static final Dotenv DOTENV = loadDotenv();
@@ -102,10 +98,10 @@ public final class RedditApiClient {
         throw new IllegalStateException("Register failed: " + response.statusCode() + " " + response.body());
     }
 
-    public static HttpResponse<String> changePasswordRaw(String username, String oldPassword, String newPassword) {
+    public static HttpResponse<String> changePasswordRaw(String username, String email, String newPassword) {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
-        body.addProperty("oldPassword", oldPassword);
+        body.addProperty("email", email);
         body.addProperty("newPassword", newPassword);
         return send("PUT", "/api/accounts/password", body.toString());
     }
@@ -316,9 +312,6 @@ public final class RedditApiClient {
         return json.has("message") ? json.get("message").getAsString() : response.body();
     }
 
-    /**
-     * Locates which post owns a comment by scanning remote posts (keeps vote method signatures unchanged).
-     */
     public static Optional<Long> findPostIdForComment(long commentId) {
         JsonArray posts = getAllPosts();
         for (JsonElement element : posts) {
@@ -401,8 +394,6 @@ public final class RedditApiClient {
             return value.replace(" ", "%20");
         }
     }
-
-    /** Exposed for callers that need raw Gson serialization of local models. */
     public static Gson gson() {
         return GSON;
     }

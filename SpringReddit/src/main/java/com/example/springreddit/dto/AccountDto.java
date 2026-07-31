@@ -39,8 +39,8 @@ public class AccountDto {
         @NotBlank(message = "Username cannot be blank")
         private String username;
 
-        @NotBlank(message = "Old password cannot be blank")
-        private String oldPassword;
+        @NotBlank(message = "Email cannot be blank")
+        private String email;
 
         @NotBlank(message = "New password cannot be blank")
         @ValidPassword

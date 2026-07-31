@@ -24,7 +24,6 @@ public class AccountService {
         newAccount.setPassword(request.getPassword());
 
         Account saved = accountRepository.save(newAccount);
-        // email is @Transient — restore from request for the response payload
         saved.setEmail(request.getEmail());
         return saved;
     }
@@ -54,8 +53,8 @@ public class AccountService {
         Account account = accountRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
-        if (!request.getOldPassword().equals(account.getPassword())) {
-            throw new IllegalArgumentException("Old password does not match");
+        if (!request.getEmail().equals(account.getEmail())) {
+            throw new IllegalArgumentException("Incorrect email address");
         }
 
         account.setPassword(request.getNewPassword());

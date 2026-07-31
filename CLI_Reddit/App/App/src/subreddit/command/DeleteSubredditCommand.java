@@ -2,10 +2,12 @@ package subreddit.command;
 
 import account.SessionService;
 import io.StringReader;
+import persistence.RedditApiClient;
 import subreddit.Subreddit;
 import subreddit.repository.SubredditRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public class DeleteSubredditCommand implements SubredditCommand{
     private final StringReader stringReader;
@@ -24,25 +26,25 @@ public class DeleteSubredditCommand implements SubredditCommand{
     }
 
     private void deleteSubreddit(){
-        List<Subreddit> subreddits = SubredditRepository.loadSubreddits();
-        String targetSub = util.SubredditNames.normalize(chooseSubreddit());
-        boolean found = false;
-        for(Subreddit sub : subreddits){
-            if(sub.getName().equals(targetSub)){
-                subreddits.remove(sub);
-                SubredditRepository.writeSubreddits(subreddits);
-                found = true;
-                break;
+        String targetSubreddit = chooseSubreddit();
+        Optional<Subreddit> targetSub = SubredditRepository.findByName(targetSubreddit);
+
+        if(targetSub.isPresent()){
+            try {
+                long subId = RedditApiClient.getSubredditByName(targetSub.get().getName()).get().getAsJsonObject().get("id").getAsLong();
+                long creatorId = sessionService.getCurrentAccountId();
+
+                if (creatorId == RedditApiClient.getSubredditByName(targetSub.get().getName()).get().getAsJsonObject().get("creatorId").getAsLong()) {
+                    RedditApiClient.deleteSubreddit(subId);
+                } else {
+                    System.out.println("You do not have permission to delete this subreddit.");
+                }
+            }
+            catch (Exception e){
+                System.out.println("Subreddit not found.");
             }
         }
 
-        if(found){
-            SubredditRepository.writeSubreddits(subreddits);
-            System.out.println("Subreddit deleted successfully!");
-        }
-        else{
-            System.out.println("Subreddit not found");
-        }
     }
 
     public String chooseSubreddit(){

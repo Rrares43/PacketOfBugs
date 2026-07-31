@@ -18,7 +18,6 @@ public class ReplyCommentCommand implements CommentActionCommand {
     @Override
     public void execute(int postId, int commentId) {
 
-        commentService.validateReply(postId, commentId);
         String text = stringReader.readString("Enter your reply text:");
         commentService.replyToComment(postId, commentId, text);
         output.write("Reply added successfully.");

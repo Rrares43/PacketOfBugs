@@ -1,7 +1,6 @@
 package logger;
 
 import io.TextFormatter;
-import persistence.DataPaths;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,7 +24,7 @@ public class Logger {
     private final Path logFile;
 
     private Logger() {
-        this.logFile = DataPaths.resolveDataFile("app_log.txt");
+        this.logFile = Path.of("data", "app_log.txt");
     }
 
     public static Logger getInstance() {
@@ -72,7 +71,6 @@ public class Logger {
             return;
         }
         try {
-            DataPaths.ensureParent(logFile);
             Files.writeString(
                     logFile,
                     formattedMessage + System.lineSeparator(),

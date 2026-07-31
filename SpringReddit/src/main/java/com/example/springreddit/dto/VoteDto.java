@@ -9,11 +9,6 @@ public class VoteDto {
         private Long accountId;
         /** true = upvote, false = downvote */
         private boolean upvote;
-        /**
-         * Matches CLI vote menu:
-         * 1 = add / change vote direction
-         * 2 = remove vote
-         */
         private int choice;
     }
 

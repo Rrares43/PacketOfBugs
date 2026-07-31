@@ -1,28 +1,29 @@
 package post.service;
 
+import account.SessionService;
+import persistence.RedditApiClient;
 import post.model.Post;
 import post.repository.PostRepository;
 
-public class PostEditServiceImpl implements PostEditService{
-    private final PostRepository postRepository;
+import java.nio.file.SecureDirectoryStream;
 
-    public PostEditServiceImpl(PostRepository postRepository) {
-        this.postRepository = postRepository;
+public class PostEditServiceImpl implements PostEditService{
+    private final SessionService sessionService;
+
+    public PostEditServiceImpl(SessionService sessionService) {
+        this.sessionService = sessionService;
     }
 
     public void editPost(int postId, String newTitle, String newContent) {
-        Post postToEdit = postRepository.findPostById(postId);
-        if (postToEdit == null) {
-            throw new IllegalArgumentException("Post not found");
+        if(!sessionService.isLoggedIn()){
+            throw new SecurityException("You must be logged in to edit a post.");
         }
-
-        if (!postToEdit.getAuthor().equals(postRepository.getCurrentUser())) {
-            throw new SecurityException("Only the post owner can edit it");
+        try{
+            long authorId = RedditApiClient.resolveAccountId(sessionService.getCurrentUsername());
+            RedditApiClient.editPost(postId, newTitle, newContent, authorId);
         }
-
-        postToEdit.setTitle(newTitle);
-        postToEdit.setContent(newContent);
-        postRepository.saveToFile();
-        System.out.println("Post edited successfully");
+        catch (Exception e){
+            throw new IllegalArgumentException("Error editing post: " + e.getMessage());
+        }
     }
 }

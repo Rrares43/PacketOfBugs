@@ -1,8 +1,5 @@
 package util;
 
-/**
- * Normalizes subreddit names to the {@code r/name} form expected by the Spring API.
- */
 public final class SubredditNames {
     private SubredditNames() {
     }

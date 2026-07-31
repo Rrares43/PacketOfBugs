@@ -26,7 +26,6 @@ public class PostVote {
     @JoinColumn(name = "post_id", nullable = false)
     private Post post;
 
-    /** Schema: SMALLINT CHECK (vote_type IN (1, -1)) */
     @Column(name = "vote_type", nullable = false)
     private short voteType;
 
@@ -36,7 +35,6 @@ public class PostVote {
         setVoteType(voteType);
     }
 
-    /** Convenience constructor matching CLI boolean semantics. */
     public PostVote(boolean upvote, Post post, Account account) {
         this(account, post, upvote ? UPVOTE : DOWNVOTE);
     }

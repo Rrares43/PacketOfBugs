@@ -69,7 +69,7 @@ public class AccountCreator {
         }
 
         try {
-            AccountApiDtos.RegistrationRequest payload =
+            /*AccountApiDtos.RegistrationRequest payload =
                     new AccountApiDtos.RegistrationRequest(username, email, password);
             String jsonPayload = gson.toJson(payload);
 
@@ -82,10 +82,11 @@ public class AccountCreator {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+             */
+            HttpResponse<String> response = RedditApiClient.registerAccountRaw(username, email, password);
             int status = response.statusCode();
 
             if (RedditApiClient.isSuccess(status)) {
-                account.repository.AccountRepository.upsertLocalAccount(username, email, password);
                 output.write("Account saved successfully!");
             } else if (RedditApiClient.isClientError(status)) {
                 output.write(response.body());
