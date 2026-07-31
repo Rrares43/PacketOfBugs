@@ -3,6 +3,8 @@ package com.example.springreddit.controller;
 import com.example.springreddit.dto.SubredditDto;
 import com.example.springreddit.model.Subreddit;
 import com.example.springreddit.service.SubredditService;
+import com.example.springreddit.repository.SubredditSummary;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,7 +22,7 @@ public class SubredditController {
     private SubredditService subredditService;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> createNewSubreddit(@RequestBody SubredditDto.CreateSubredditRequest request) {
+    public ResponseEntity<?> createNewSubreddit(@Valid @RequestBody SubredditDto.CreateSubredditRequest request) {
         try {
             Subreddit savedSub = subredditService.createSubreddit(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(mapToResponse(savedSub));
@@ -31,9 +33,9 @@ public class SubredditController {
 
     @GetMapping
     public ResponseEntity<List<SubredditDto.SubredditResponse>> getAllSubreddits() {
-        List<SubredditDto.SubredditResponse> subreddits = subredditService.getAllSubreddits()
+        List<SubredditDto.SubredditResponse> subreddits = subredditService.getAllSubredditSummaries()
                 .stream()
-                .map(this::mapToResponse)
+                .map(this::mapSummaryToResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(subreddits);
     }
@@ -93,6 +95,17 @@ public class SubredditController {
         if (subreddit.getCreator() != null) {
             response.setCreatorId(subreddit.getCreator().getId());
         }
+        return response;
+    }
+
+    private SubredditDto.SubredditResponse mapSummaryToResponse(SubredditSummary summary) {
+        SubredditDto.SubredditResponse response = new SubredditDto.SubredditResponse();
+        response.setId(summary.getId());
+        response.setName(summary.getName());
+        response.setDescription(summary.getDescription());
+        response.setCreatorId(summary.getCreatorId() == null ? 0 : summary.getCreatorId());
+        response.setCreatedAt(summary.getCreatedAt());
+        response.setPostCount(summary.getPostCount());
         return response;
     }
 }

@@ -5,6 +5,7 @@ import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Subreddit;
 import com.example.springreddit.repository.AccountRepository;
 import com.example.springreddit.repository.SubredditRepository;
+import com.example.springreddit.repository.SubredditSummary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +21,8 @@ public class SubredditService {
     private AccountRepository accountRepository;
 
     public Subreddit createSubreddit(SubredditDto.CreateSubredditRequest request){
-        if(subredditRepository.existsByName(request.getSubredditName())){
+        String normalizedName = normalizeName(request.getSubredditName());
+        if(subredditRepository.existsByName(normalizedName)){
             throw new IllegalArgumentException("Subreddit already exists");
         }
 
@@ -29,7 +31,7 @@ public class SubredditService {
 
 
         Subreddit subreddit = new Subreddit();
-        subreddit.setName(request.getSubredditName());
+        subreddit.setName(normalizedName);
         subreddit.setDescription(request.getDescription());
         subreddit.setCreator(creator.get());
 
@@ -40,12 +42,16 @@ public class SubredditService {
         return subredditRepository.findAll();
     }
 
+    public List<SubredditSummary> getAllSubredditSummaries() {
+        return subredditRepository.findAllSummaries();
+    }
+
     public List<Subreddit> getSubredditsByCreatorUsername(String username) {
         return subredditRepository.findByCreator_Username(username);
     }
 
     public Subreddit getSubredditByName(String subredditName){
-        String searchName = subredditName.startsWith("r/") ? subredditName : "r/" + subredditName;
+        String searchName = normalizeName(subredditName);
         return subredditRepository.findByName(searchName)
                 .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
     }
@@ -76,5 +82,13 @@ public class SubredditService {
         }
 
         subredditRepository.deleteById(subredditId);
+    }
+
+    private String normalizeName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Subreddit name cannot be blank");
+        }
+        String trimmed = name.trim();
+        return trimmed.startsWith("r/") ? trimmed : "r/" + trimmed;
     }
 }

@@ -26,6 +26,9 @@ public class CommentVoteService {
     public String vote(Long postId, Long commentId, Account account, boolean isUpvote, int choice) {
         Comment comment = commentRepository.findByIdAndPost_Id(commentId, postId)
                 .orElseThrow(() -> new IllegalArgumentException("Comment does not exist."));
+        if (comment.isDeleted()) {
+            throw new IllegalArgumentException("Deleted comments cannot be voted on");
+        }
 
         Optional<CommentVote> existingVoteOpt = commentVoteRepository.findByCommentAndAccount(comment, account);
         String voteType = isUpvote ? "Upvote" : "Downvote";
@@ -65,5 +68,11 @@ public class CommentVoteService {
 
     public long countDownvotes(Long commentId) {
         return commentVoteRepository.countByComment_IdAndVoteType(commentId, CommentVote.DOWNVOTE);
+    }
+
+    public int currentVote(Long commentId, Long accountId) {
+        return commentVoteRepository.findByComment_IdAndAccount_Id(commentId, accountId)
+                .map(vote -> (int) vote.getVoteType())
+                .orElse(0);
     }
 }

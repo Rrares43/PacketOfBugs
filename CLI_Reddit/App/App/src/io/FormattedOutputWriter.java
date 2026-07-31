@@ -16,11 +16,11 @@ public class FormattedOutputWriter implements OutputWriter {
     private String formatMessage(String message) {
         String lowerMessage = message.toLowerCase();
         if (lowerMessage.contains("error") || lowerMessage.contains("invalid") || message.contains("not found") || lowerMessage.contains("failed") || lowerMessage.contains("doesn't")) {
-            return TextFormatter.error("\n❌ " + message);
-        } else if (lowerMessage.contains("success") || lowerMessage.contains("created") || message.contains("deleted")) {
-            return TextFormatter.success("\n✓ " + message);
+            return TextFormatter.error("❌ " + message);
+        } else if (lowerMessage.contains("success") || lowerMessage.contains("created")) {
+            return TextFormatter.success("✓ " + message);
         } else if (lowerMessage.contains("warning") || lowerMessage.contains("are you sure") || lowerMessage.contains("already") || lowerMessage.contains("cancelled")) {
-            return TextFormatter.warning("\n⚠ " + message);
+            return TextFormatter.warning("⚠ " + message);
         } else {
             return message;
         }

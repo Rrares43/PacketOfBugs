@@ -65,4 +65,10 @@ public class PostVoteService {
     public long countDownvotes(Long postId) {
         return postVoteRepository.countByPost_IdAndVoteType(postId, PostVote.DOWNVOTE);
     }
+
+    public int currentVote(Long postId, Long accountId) {
+        return postVoteRepository.findByPost_IdAndAccount_Id(postId, accountId)
+                .map(vote -> (int) vote.getVoteType())
+                .orElse(0);
+    }
 }

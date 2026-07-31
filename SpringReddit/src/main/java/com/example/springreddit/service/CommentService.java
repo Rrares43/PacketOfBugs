@@ -23,6 +23,7 @@ public class CommentService {
 
     @Transactional
     public Comment comment(Long postId, String text, Account author) {
+        validateText(text);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
 
@@ -40,17 +41,21 @@ public class CommentService {
         if (!postRepository.existsById(postId)) {
             throw new IllegalArgumentException("Post not found");
         }
-        return commentRepository.findByPost_IdAndParentCommentIsNull(postId);
+        return commentRepository.findByPost_IdAndParentCommentIsNullOrderByCreatedAtAscIdAsc(postId);
     }
 
     @Transactional
     public Comment replyToComment(Long postId, Long parentCommentId, String text, Account author) {
+        validateText(text);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
 
         Comment parentComment = findCommentById(parentCommentId);
         if (!parentComment.belongsToPost(postId)) {
             throw new IllegalArgumentException("Base comment not found.");
+        }
+        if (parentComment.isDeleted()) {
+            throw new IllegalArgumentException("Deleted comments cannot be replied to");
         }
 
         Comment reply = new Comment(text, author, post);
@@ -60,9 +65,13 @@ public class CommentService {
 
     @Transactional
     public Comment editComment(Long postId, Long commentId, String newText, Account editor) {
+        validateText(newText);
         Comment comment = findCommentById(commentId);
         if (!comment.belongsToPost(postId)) {
             throw new IllegalArgumentException("Comment not found.");
+        }
+        if (comment.isDeleted()) {
+            throw new IllegalArgumentException("Deleted comments cannot be edited");
         }
         if (!comment.isAuthoredBy(editor)) {
             throw new SecurityException("Comment cannot be edited");
@@ -78,10 +87,23 @@ public class CommentService {
         if (!comment.belongsToPost(postId)) {
             throw new IllegalArgumentException("Comment not found.");
         }
+        if (comment.isDeleted()) {
+            throw new IllegalArgumentException("Comment is already deleted");
+        }
         if (!comment.isAuthoredBy(deleter)) {
             throw new SecurityException("Comment cannot be deleted");
         }
 
-        commentRepository.delete(comment);
+        comment.softDelete();
+        commentRepository.save(comment);
+    }
+
+    private void validateText(String text) {
+        if (text == null || text.isBlank()) {
+            throw new IllegalArgumentException("Comment content cannot be blank");
+        }
+        if (text.length() > 3000) {
+            throw new IllegalArgumentException("Comment content must not exceed 3000 characters");
+        }
     }
 }

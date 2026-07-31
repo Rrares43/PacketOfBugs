@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,7 +46,7 @@ public class CommentController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> addComment(@PathVariable Long postId,
-                                        @RequestBody CommentDto.CreateCommentRequest request) {
+                                        @Valid @RequestBody CommentDto.CreateCommentRequest request) {
         try {
             Account author = accountService.getById(request.getAuthorId());
             Comment comment = commentService.comment(postId, request.getContent(), author);
@@ -58,7 +59,7 @@ public class CommentController {
     @PostMapping(value = "/{parentCommentId}/replies", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> reply(@PathVariable Long postId,
                                    @PathVariable Long parentCommentId,
-                                   @RequestBody CommentDto.ReplyCommentRequest request) {
+                                   @Valid @RequestBody CommentDto.ReplyCommentRequest request) {
         try {
             Account author = accountService.getById(request.getAuthorId());
             Comment reply = commentService.replyToComment(postId, parentCommentId, request.getContent(), author);
@@ -71,7 +72,7 @@ public class CommentController {
     @PutMapping(value = "/{commentId}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> editComment(@PathVariable Long postId,
                                          @PathVariable Long commentId,
-                                         @RequestBody CommentDto.EditCommentRequest request) {
+                                         @Valid @RequestBody CommentDto.EditCommentRequest request) {
         try {
             Account editor = accountService.getById(request.getAccountId());
             Comment comment = commentService.editComment(postId, commentId, request.getContent(), editor);
@@ -101,7 +102,7 @@ public class CommentController {
     @PostMapping(value = "/{commentId}/votes", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> vote(@PathVariable Long postId,
                                   @PathVariable Long commentId,
-                                  @RequestBody VoteDto.VoteRequest request) {
+                                  @Valid @RequestBody VoteDto.VoteRequest request) {
         try {
             Account account = accountService.getById(request.getAccountId());
             String message = commentVoteService.vote(postId, commentId, account, request.isUpvote(), request.getChoice());
@@ -110,6 +111,7 @@ public class CommentController {
             response.setMessage(message);
             response.setUpvotes(commentVoteService.countUpvotes(commentId));
             response.setDownvotes(commentVoteService.countDownvotes(commentId));
+            response.setCurrentUserVote(commentVoteService.currentVote(commentId, request.getAccountId()));
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -119,8 +121,12 @@ public class CommentController {
     private CommentDto.CommentResponse toResponse(Comment comment) {
         CommentDto.CommentResponse response = new CommentDto.CommentResponse();
         response.setId(comment.getId());
-        response.setContent(comment.getContent());
-        if (comment.getAuthor() != null) {
+        response.setDeleted(comment.isDeleted());
+        response.setDeletedAt(comment.getDeletedAt());
+        response.setContent(comment.isDeleted() ? "[deleted]" : comment.getContent());
+        if (comment.isDeleted()) {
+            response.setAuthorUsername("[deleted]");
+        } else if (comment.getAuthor() != null) {
             response.setAuthorId(comment.getAuthor().getId());
             response.setAuthorUsername(comment.getAuthor().getUsername());
         }

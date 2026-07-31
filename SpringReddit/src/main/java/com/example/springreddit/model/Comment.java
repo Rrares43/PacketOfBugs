@@ -13,7 +13,10 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "comments")
+@Table(name = "comments", indexes = {
+        @Index(name = "idx_comments_post_parent", columnList = "post_id,parent_comment_id"),
+        @Index(name = "idx_comments_parent", columnList = "parent_comment_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,6 +28,9 @@ public class Comment {
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
@@ -39,6 +45,7 @@ public class Comment {
     private Comment parentComment;
 
     @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt ASC, id ASC")
     private List<Comment> replies = new ArrayList<>();
 
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -55,7 +62,18 @@ public class Comment {
     }
 
     public void editContent(String newContent) {
+        if (isDeleted()) {
+            throw new IllegalStateException("Deleted comments cannot be edited");
+        }
         this.content = Objects.requireNonNull(newContent, "content must not be null");
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 
     public void addReply(Comment reply) {

@@ -4,6 +4,7 @@ public class Subreddit {
     private String name;
     private String description;
     private String owner;
+    private int postCount;
 
     public Subreddit(String name, String description, String owner){
         if(name == null || !name.startsWith("r/")) {
@@ -23,6 +24,8 @@ public class Subreddit {
         return description;
     }
     public String getOwner(){ return owner; }
+    public int getPostCount() { return postCount; }
+    public void setPostCount(int postCount) { this.postCount = postCount; }
 
     public void setName(String name)
     {

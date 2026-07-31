@@ -15,6 +15,7 @@ public class Post {
     private String subredditName;
     private List<PostVote> votes;
     private VoteTracker voteTracker;
+    private boolean serverVoteCounts;
 
     public Post(int Id,String title,String content,String author, String subredditName){
         this.Id = Id;
@@ -57,25 +58,23 @@ public class Post {
     }
 
     public int getUpvotes() {
+        if (serverVoteCounts) return upvotes;
         int count = 0;
-        for (PostVote vote : getVotes()) {
-            if (vote.isUpvote()) {
-                count++;
-            }
-        }
+        for (PostVote vote : getVotes()) if (vote.isUpvote()) count++;
         return count;
     }
-
     public int getDownvotes() {
+        if (serverVoteCounts) return downvotes;
         int count = 0;
-        for (PostVote vote : getVotes()) {
-            if (!vote.isUpvote()) {
-                count++;
-            }
-        }
+        for (PostVote vote : getVotes()) if (!vote.isUpvote()) count++;
         return count;
     }
 
+    public void setVoteCounts(int upvotes, int downvotes) {
+        this.upvotes = upvotes;
+        this.downvotes = downvotes;
+        this.serverVoteCounts = true;
+    }
     public Optional<PostVote> getUserVote(String username) {
         for (PostVote vote : getVotes()) {
             if (vote.getUsername().equals(username)) {
