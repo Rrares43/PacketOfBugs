@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "posts")
+@Table(name = "posts", indexes = @Index(name = "idx_posts_subreddit", columnList = "subreddit_id"))
 @Getter
 @Setter
 @NoArgsConstructor

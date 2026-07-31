@@ -93,7 +93,7 @@ public class PostInteractionController {
             output.write("\nWhich subreddit would you like to browse?");
             output.write("Available subreddits:");
             for (Subreddit subreddit : subreddits) {
-                output.write("- " + subreddit.getName() + " (Owner: " + subreddit.getOwner() + ")" + " Number of posts: " + findNrOfPostsinSubreddit(subreddit.getName()));
+                output.write("- " + subreddit.getName() + " (Owner: " + subreddit.getOwner() + ")" + " Number of posts: " + subreddit.getPostCount());
             }
 
             String input = stringReader.readString("Enter subreddit name (or 0 to cancel): ");
@@ -183,6 +183,11 @@ public class PostInteractionController {
 
         output.write("Selected comment by: " + foundComment.getAuthor());
 
+        if (foundComment.isDeleted()) {
+            output.write("This comment has been deleted and cannot be interacted with.");
+            return;
+        }
+
         output.write("1. Upvote comment\n2. Downvote comment\n3. Reply to comment\n4. Edit comment\n5. Delete comment");
         String commentChoice = stringReader.readString("Select option (1-5): ");
 
@@ -196,11 +201,6 @@ public class PostInteractionController {
         } else {
             output.write("Invalid choice! Action cancelled.");
         }
-    }
-
-    private int findNrOfPostsinSubreddit(String subredditName){
-        List<Post> posts = postRepo.findPostsBySubreddit(subredditName);
-        return posts.size();
     }
 
     private Comment searchComment(List<Comment> comments, int commentId){

@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class PostController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> createPost(@RequestBody PostDto.CreatePostRequest request) {
+    public ResponseEntity<?> createPost(@Valid @RequestBody PostDto.CreatePostRequest request) {
         try {
             Post post = postService.createPost(
                     request.getTitle(),
@@ -69,7 +70,7 @@ public class PostController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> editPost(@PathVariable Long id, @RequestBody PostDto.EditPostRequest request) {
+    public ResponseEntity<?> editPost(@PathVariable Long id, @Valid @RequestBody PostDto.EditPostRequest request) {
         try {
             Post post = postService.editPost(id, request.getTitle(), request.getContent(), request.getAccountId());
             return ResponseEntity.ok(toResponse(post));
@@ -93,7 +94,7 @@ public class PostController {
     }
 
     @PostMapping(value = "/{id}/votes", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> vote(@PathVariable Long id, @RequestBody VoteDto.VoteRequest request) {
+    public ResponseEntity<?> vote(@PathVariable Long id, @Valid @RequestBody VoteDto.VoteRequest request) {
         try {
             Account account = accountService.getById(request.getAccountId());
             String message = postVoteService.vote(id, account, request.isUpvote(), request.getChoice());
@@ -102,6 +103,7 @@ public class PostController {
             response.setMessage(message);
             response.setUpvotes(postVoteService.countUpvotes(id));
             response.setDownvotes(postVoteService.countDownvotes(id));
+            response.setCurrentUserVote(postVoteService.currentVote(id, request.getAccountId()));
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

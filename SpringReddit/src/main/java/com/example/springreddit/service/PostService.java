@@ -33,6 +33,7 @@ public class PostService {
 
     @Transactional
     public Post createPost(String title, String content, Long authorId, String subredditName) {
+        validatePost(title, content);
         Account author = accountRepository.findById(authorId)
                 .orElseThrow(() -> new IllegalArgumentException("Author not found"));
 
@@ -59,6 +60,7 @@ public class PostService {
 
     @Transactional
     public Post editPost(Long postId, String newTitle, String newContent, Long accountId) {
+        validatePost(newTitle, newContent);
         Post post = getPostById(postId);
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
@@ -97,5 +99,11 @@ public class PostService {
             return null;
         }
         return subredditName.startsWith("r/") ? subredditName : "r/" + subredditName;
+    }
+
+    private void validatePost(String title, String content) {
+        if (title == null || title.isBlank()) throw new IllegalArgumentException("Title cannot be blank");
+        if (title.length() > 150) throw new IllegalArgumentException("Title must not exceed 150 characters");
+        if (content == null || content.isBlank()) throw new IllegalArgumentException("Content cannot be blank");
     }
 }

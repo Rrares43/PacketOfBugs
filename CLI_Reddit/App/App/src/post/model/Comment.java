@@ -12,6 +12,11 @@ public class Comment {
     private List<CommentVote> votes;
     private VoteTracker voteTracker;
     private int postId;
+    private Integer parentId;
+    private int upvotes;
+    private int downvotes;
+    private boolean serverVoteCounts;
+    private boolean deleted;
 
     public Comment(int Id, String text, String author) {
         this.Id = Id;
@@ -43,7 +48,17 @@ public class Comment {
     }
 
     public String getAuthor() {
-        return author;
+        return deleted ? "[deleted]" : author;
+    }
+
+    public boolean isDeleted() { return deleted; }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+        if (deleted) {
+            this.author = "[deleted]";
+            this.text = "[deleted]";
+        }
     }
 
     public List<Comment> getReplies() {
@@ -68,24 +83,27 @@ public class Comment {
     }
 
     public int getUpvotes() {
+        if (serverVoteCounts) return upvotes;
         int count = 0;
-        for (CommentVote vote : getVotes()) {
-            if (vote.isUpvote()) {
-                count++;
-            }
-        }
+        for (CommentVote vote : getVotes()) if (vote.isUpvote()) count++;
         return count;
     }
 
     public int getDownvotes() {
+        if (serverVoteCounts) return downvotes;
         int count = 0;
-        for (CommentVote vote : getVotes()) {
-            if (!vote.isUpvote()) {
-                count++;
-            }
-        }
+        for (CommentVote vote : getVotes()) if (!vote.isUpvote()) count++;
         return count;
     }
+
+    public void setVoteCounts(int upvotes, int downvotes) {
+        this.upvotes = upvotes;
+        this.downvotes = downvotes;
+        this.serverVoteCounts = true;
+    }
+
+    public Integer getParentId() { return parentId; }
+    public void setParentId(Integer parentId) { this.parentId = parentId; }
 
     public Optional<CommentVote> getUserVote(String username) {
         for (CommentVote vote : getVotes()) {
@@ -97,6 +115,9 @@ public class Comment {
     }
     @Override
     public String toString() {
+        if (deleted) {
+            return "[ID: " + Id + "] [deleted]: [deleted]";
+        }
         return "[ID: " + Id + "] " + author + ": " + text +
                 " (▲ " + getUpvotes() + " | ▼ " + getDownvotes() + ")";
     }

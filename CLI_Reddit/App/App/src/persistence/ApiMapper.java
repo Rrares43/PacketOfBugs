@@ -29,7 +29,9 @@ public final class ApiMapper {
         String subreddit = json.has("subredditName") && !json.get("subredditName").isJsonNull()
                 ? json.get("subredditName").getAsString() : "";
 
-        return new Post(id, title, content, author, subreddit);
+        Post post = new Post(id, title, content, author, subreddit);
+        post.setVoteCounts(readInt(json, "upvotes"), readInt(json, "downvotes"));
+        return post;
     }
 
     public static Post toPostWithComments(JsonObject postJson, JsonArray commentsJson) {
@@ -54,7 +56,15 @@ public final class ApiMapper {
                 ? json.get("authorUsername").getAsString() : "";
 
         Comment comment = new Comment(id, text, author);
+        boolean deleted = (json.has("deleted") && json.get("deleted").getAsBoolean())
+                || (json.has("deletedAt") && !json.get("deletedAt").isJsonNull())
+                || "[deleted]".equals(text);
+        comment.setDeleted(deleted);
         comment.setPostId(postId);
+        comment.setVoteCounts(readInt(json, "upvotes"), readInt(json, "downvotes"));
+        if (json.has("parentCommentId") && !json.get("parentCommentId").isJsonNull()) {
+            comment.setParentId(json.get("parentCommentId").getAsInt());
+        }
         if (json.has("replies") && json.get("replies").isJsonArray()) {
             for (JsonElement reply : json.getAsJsonArray("replies")) {
                 comment.addreply(toComment(reply.getAsJsonObject(), postId));
@@ -73,7 +83,9 @@ public final class ApiMapper {
         } else if (json.has("creatorId") && !json.get("creatorId").isJsonNull()) {
             owner = "id:" + json.get("creatorId").getAsLong();
         }
-        return new Subreddit(SubredditNames.normalize(name), description, owner);
+        Subreddit subreddit = new Subreddit(SubredditNames.normalize(name), description, owner);
+        subreddit.setPostCount(json.has("postCount") ? json.get("postCount").getAsInt() : 0);
+        return subreddit;
     }
 
     public static List<Subreddit> toSubredditList(JsonArray array) {
@@ -96,5 +108,10 @@ public final class ApiMapper {
             result.add(toPost(element.getAsJsonObject()));
         }
         return result;
+    }
+
+    private static int readInt(JsonObject json, String property) {
+        return json.has(property) && !json.get(property).isJsonNull()
+                ? json.get(property).getAsInt() : 0;
     }
 }
