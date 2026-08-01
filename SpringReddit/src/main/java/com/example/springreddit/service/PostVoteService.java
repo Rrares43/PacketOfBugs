@@ -5,11 +5,13 @@ import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
 import com.example.springreddit.repository.PostRepository;
 import com.example.springreddit.repository.PostVoteRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class PostVoteService {
 
@@ -25,7 +27,10 @@ public class PostVoteService {
     public String vote(Long postId, Account currentAccount, boolean isUpvote, int choice) {
         validateVoteRequest(postId, currentAccount, choice);
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("Post with ID " + postId + " does not exist."));
+                .orElseThrow(() -> {
+                    log.warn("Vote failed: post not found with ID: {}", postId);
+                    return new IllegalArgumentException("Post with ID " + postId + " does not exist.");
+                });
 
         Optional<PostVote> existingVoteOpt = postVoteRepository.findByPostAndAccount(post, currentAccount);
         String voteTypeStr = isUpvote ? "upvote" : "downvote";
@@ -34,25 +39,31 @@ public class PostVoteService {
             if (existingVoteOpt.isPresent()) {
                 PostVote existingVote = existingVoteOpt.get();
                 if (existingVote.isUpvote() == isUpvote) {
+                    log.debug("Vote failed: duplicate vote for post ID: {} by account ID: {}", postId, currentAccount.getId());
                     return "You have already voted! You cannot " + voteTypeStr + " twice.";
                 }
                 existingVote.setUpvote(isUpvote);
                 postVoteRepository.save(existingVote);
+                log.info("Vote changed to {} for post ID: {} by account ID: {}", voteTypeStr, postId, currentAccount.getId());
                 return "Vote changed to " + voteTypeStr + " successfully.";
             }
             postVoteRepository.save(new PostVote(isUpvote, post, currentAccount));
+            log.info("{} added for post ID: {} by account ID: {}", isUpvote ? "Upvote" : "Downvote", postId, currentAccount.getId());
             return voteTypeStr.substring(0, 1).toUpperCase() + voteTypeStr.substring(1) + " added successfully.";
         }
 
         if (choice == 2) {
             if (existingVoteOpt.isEmpty()) {
+                log.debug("Vote removal failed: no existing vote found for post ID: {} by account ID: {}", postId, currentAccount.getId());
                 return "Error: You have not voted on this post, so you cannot remove a vote";
             }
             PostVote existingVote = existingVoteOpt.get();
             if (existingVote.isUpvote() != isUpvote) {
+                log.debug("Vote removal failed: vote type mismatch for post ID: {} by account ID: {}", postId, currentAccount.getId());
                 return "Error: You are trying to remove an " + voteTypeStr + ", but you cast the opposite vote";
             }
             postVoteRepository.delete(existingVote);
+            log.info("{} removed for post ID: {} by account ID: {}", isUpvote ? "Upvote" : "Downvote", postId, currentAccount.getId());
             return voteTypeStr.substring(0, 1).toUpperCase() + voteTypeStr.substring(1) + " removed successfully";
         }
 

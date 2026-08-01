@@ -7,8 +7,6 @@ import io.FormattedOutputWriter;
 import io.IntReader;
 import io.OutputWriter;
 import io.StringReader;
-import logger.LogLevel;
-import logger.Logger;
 import menu.MenuDispatcher;
 import post.PostView;
 import post.command.CreatePostCommand;
@@ -24,9 +22,6 @@ public final class AppBootstrap {
         IntReader intReader = console;
         OutputWriter output = new FormattedOutputWriter(console);
 
-        Logger logger = Logger.getInstance();
-        logger.log(LogLevel.INFO, "Application Started");
-
         SessionService sessionService = new SessionService();
         PostRepo postRepo = new PostRepo(sessionService);
 
@@ -37,7 +32,7 @@ public final class AppBootstrap {
         );
 
         PostMenu postMenu = InteractionModule.create(
-                stringReader, intReader, output, postView, sessionService, postRepo, logger
+                stringReader, intReader, output, postView, sessionService, postRepo
         );
 
         SubredditMenu subredditMenu = SubredditModule.create(sessionService, stringReader, output, postRepo, postView);
@@ -45,7 +40,6 @@ public final class AppBootstrap {
         MenuDispatcher dispatcher = MenuModule.create(
                 output,
                 stringReader,
-                logger,
                 accountMenu,
                 createPostCommand,
                 postMenu,

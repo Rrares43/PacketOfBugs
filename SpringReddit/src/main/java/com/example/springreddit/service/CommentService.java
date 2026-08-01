@@ -5,11 +5,13 @@ import com.example.springreddit.model.Comment;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.repository.CommentRepository;
 import com.example.springreddit.repository.PostRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class CommentService {
 
@@ -26,11 +28,16 @@ public class CommentService {
         validateText(text);
         validateAuthor(author);
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+                .orElseThrow(() -> {
+                    log.warn("Comment creation failed: post not found with ID: {}", postId);
+                    return new IllegalArgumentException("Post not found");
+                });
 
         Comment newComment = new Comment(text, author, post);
         post.addComment(newComment);
-        return commentRepository.save(newComment);
+        Comment savedComment = commentRepository.save(newComment);
+        log.info("Comment created successfully with ID: {} on post ID: {} by author ID: {}", savedComment.getId(), postId, author.getId());
+        return savedComment;
     }
 
     public Comment findCommentById(Long commentId) {
@@ -54,19 +61,26 @@ public class CommentService {
         validatePostId(postId);
         validateParentCommentId(parentCommentId);
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+                .orElseThrow(() -> {
+                    log.warn("Reply creation failed: post not found with ID: {}", postId);
+                    return new IllegalArgumentException("Post not found");
+                });
 
         Comment parentComment = findCommentById(parentCommentId);
         if (!parentComment.belongsToPost(postId)) {
+            log.warn("Reply creation failed: base comment not found for parent ID: {} on post ID: {}", parentCommentId, postId);
             throw new IllegalArgumentException("Base comment not found.");
         }
         if (parentComment.isDeleted()) {
+            log.warn("Reply creation failed: cannot reply to deleted comment with ID: {}", parentCommentId);
             throw new IllegalArgumentException("Deleted comments cannot be replied to");
         }
 
         Comment reply = new Comment(text, author, post);
         parentComment.addReply(reply);
-        return commentRepository.save(reply);
+        Comment savedReply = commentRepository.save(reply);
+        log.info("Reply created successfully with ID: {} to parent comment ID: {} on post ID: {} by author ID: {}", savedReply.getId(), parentCommentId, postId, author.getId());
+        return savedReply;
     }
 
     @Transactional
@@ -77,17 +91,22 @@ public class CommentService {
         validateAuthor(editor);
         Comment comment = findCommentById(commentId);
         if (!comment.belongsToPost(postId)) {
+            log.warn("Comment edit failed: comment not found for ID: {} on post ID: {}", commentId, postId);
             throw new IllegalArgumentException("Comment not found.");
         }
         if (comment.isDeleted()) {
+            log.warn("Comment edit failed: cannot edit deleted comment with ID: {}", commentId);
             throw new IllegalArgumentException("Deleted comments cannot be edited");
         }
         if (!comment.isAuthoredBy(editor)) {
+            log.warn("Comment edit failed: unauthorized access to comment ID: {} by account ID: {}", commentId, editor.getId());
             throw new SecurityException("Comment cannot be edited");
         }
 
         comment.editContent(newText);
-        return commentRepository.save(comment);
+        commentRepository.save(comment);
+        log.info("Comment edited successfully with ID: {} on post ID: {} by editor ID: {}", commentId, postId, editor.getId());
+        return comment;
     }
 
     @Transactional
@@ -97,17 +116,21 @@ public class CommentService {
         validateAuthor(deleter);
         Comment comment = findCommentById(commentId);
         if (!comment.belongsToPost(postId)) {
+            log.warn("Comment delete failed: comment not found for ID: {} on post ID: {}", commentId, postId);
             throw new IllegalArgumentException("Comment not found.");
         }
         if (comment.isDeleted()) {
+            log.warn("Comment delete failed: comment with ID: {} is already deleted", commentId);
             throw new IllegalArgumentException("Comment is already deleted");
         }
         if (!comment.isAuthoredBy(deleter)) {
+            log.warn("Comment delete failed: unauthorized access to comment ID: {} by account ID: {}", commentId, deleter.getId());
             throw new SecurityException("Comment cannot be deleted");
         }
 
         comment.softDelete();
         commentRepository.save(comment);
+        log.info("Comment deleted successfully with ID: {} on post ID: {} by deleter ID: {}", commentId, postId, deleter.getId());
     }
 
     private void validateText(String text) {

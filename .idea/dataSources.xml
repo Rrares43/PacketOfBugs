@@ -5,6 +5,7 @@
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <imported>true</imported>
+      <configured-by-url>true</configured-by-url>
       <remarks>$PROJECT_DIR$/SpringReddit/src/main/resources/application.yaml</remarks>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://ep-holy-wildflower-asaltfim-pooler.c-4.eu-central-1.aws.neon.tech/neondb?sslmode=require</jdbc-url>

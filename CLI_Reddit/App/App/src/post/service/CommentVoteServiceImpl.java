@@ -5,8 +5,6 @@ import persistence.RedditApiClient;
 import post.model.Comment;
 import post.model.CommentVote;
 import post.repository.PostRepo;
-import logger.Logger;
-import logger.LogLevel;
 
 import java.util.Optional;
 
