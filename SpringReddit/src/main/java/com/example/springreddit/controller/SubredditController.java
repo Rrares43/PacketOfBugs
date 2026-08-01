@@ -5,7 +5,6 @@ import com.example.springreddit.model.Subreddit;
 import com.example.springreddit.service.SubredditService;
 import com.example.springreddit.repository.SubredditSummary;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j
 @RestController
 @RequestMapping(value = "/api/subreddits", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SubredditController {
@@ -26,11 +24,11 @@ public class SubredditController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createNewSubreddit(@Valid @RequestBody SubredditDto.CreateSubredditRequest request) {
         try {
-            log.debug("Create subreddit request received for subreddit name: {} by creator ID: {}", request.getSubredditName(), request.getCreatorId());
+            com.example.springreddit.logging.CustomLogger.getInstance().info("Create subreddit request received for subreddit name: {} by creator ID: {}", request.getSubredditName(), request.getCreatorId());
             Subreddit savedSub = subredditService.createSubreddit(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(mapToResponse(savedSub));
         } catch (IllegalArgumentException e) {
-            log.warn("Create subreddit failed: {}", e.getMessage());
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Create subreddit failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
@@ -56,11 +54,11 @@ public class SubredditController {
     @GetMapping("/{name}")
     public ResponseEntity<?> getSubredditByName(@PathVariable String name) {
         try {
-            log.debug("Get subreddit request received for subreddit name: {}", name);
+            com.example.springreddit.logging.CustomLogger.getInstance().info("Get subreddit request received for subreddit name: {}", name);
             Subreddit subreddit = subredditService.getSubredditByName(name);
             return ResponseEntity.ok(mapToResponse(subreddit));
         } catch (IllegalArgumentException e) {
-            log.warn("Get subreddit failed: {}", e.getMessage());
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Get subreddit failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
@@ -69,15 +67,15 @@ public class SubredditController {
     public ResponseEntity<?> editSubreddit(@PathVariable Long id,
                                            @RequestBody SubredditDto.EditSubredditRequest request) {
         try {
-            log.debug("Edit subreddit request received for subreddit ID: {} by account ID: {}", id, request.getAccountId());
+            com.example.springreddit.logging.CustomLogger.getInstance().info("Edit subreddit request received for subreddit ID: {} by account ID: {}", id, request.getAccountId());
             Subreddit editedSubreddit = subredditService.editSubreddit(id, request);
             return ResponseEntity.ok(mapToResponse(editedSubreddit));
         } catch (IllegalArgumentException e) {
-            log.warn("Edit subreddit failed: {}", e.getMessage());
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Edit subreddit failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
         catch (SecurityException e) {
-            log.warn("Edit subreddit failed - security violation: {}", e.getMessage());
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Edit subreddit failed - security violation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
@@ -85,15 +83,15 @@ public class SubredditController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSubreddit(@PathVariable Long id, @RequestBody SubredditDto.DeleteSubredditRequest request) {
         try {
-            log.debug("Delete subreddit request received for subreddit ID: {} by account ID: {}", id, request.getAccountId());
+            com.example.springreddit.logging.CustomLogger.getInstance().info("Delete subreddit request received for subreddit ID: {} by account ID: {}", id, request.getAccountId());
             subredditService.deleteSubreddit(id, request.getAccountId());
             return ResponseEntity.ok("Subreddit deleted successfully");
         } catch (IllegalArgumentException e) {
-            log.warn("Delete subreddit failed: {}", e.getMessage());
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete subreddit failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
         catch (SecurityException e) {
-            log.warn("Delete subreddit failed - security violation: {}", e.getMessage());
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete subreddit failed - security violation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }

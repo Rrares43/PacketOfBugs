@@ -1,6 +1,6 @@
 package com.example.springreddit.controller;
 
-import com.example.springreddit.logging.LogBuffer;
+import com.example.springreddit.logging.CustomLogger;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,14 +12,8 @@ import java.util.List;
 @RequestMapping(value = "/api/logs", produces = MediaType.APPLICATION_JSON_VALUE)
 public class LogController {
 
-    private final LogBuffer logBuffer;
-
-    public LogController(LogBuffer logBuffer) {
-        this.logBuffer = logBuffer;
-    }
-
     @GetMapping
     public List<String> getLogs() {
-        return logBuffer.getLogs();
+        return CustomLogger.getInstance().getLogs();
     }
 }

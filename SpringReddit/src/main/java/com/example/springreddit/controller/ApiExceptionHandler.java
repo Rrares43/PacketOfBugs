@@ -1,6 +1,5 @@
 package com.example.springreddit.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
@@ -20,13 +18,13 @@ public class ApiExceptionHandler {
         Map<String, String> fields = new LinkedHashMap<>();
         exception.getBindingResult().getFieldErrors()
                 .forEach(error -> fields.putIfAbsent(error.getField(), error.getDefaultMessage()));
-        log.warn("Validation error: {}", fields);
+        com.example.springreddit.logging.CustomLogger.getInstance().warn("Validation error: {}", fields);
         return ResponseEntity.badRequest().body(error("Validation failed", fields));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> integrityViolation(DataIntegrityViolationException exception) {
-        log.error("Data integrity violation occurred", exception);
+        com.example.springreddit.logging.CustomLogger.getInstance().error("Data integrity violation occurred", exception);
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(error("The request conflicts with existing data", Map.of()));
     }
