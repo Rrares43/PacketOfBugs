@@ -533,3 +533,50 @@
 2026-08-01T17:26:48.131+03:00 DEBUG 22800 --- [spring-reddit] [http-nio-8080-exec-7] c.e.s.controller.SubredditController     : Get subreddit request received for subreddit name: test
 2026-08-01T17:26:51.181+03:00 DEBUG 22800 --- [spring-reddit] [http-nio-8080-exec-8] c.e.s.controller.PostController          : Create post request received for subreddit: r/test by author ID: 4
 2026-08-01T17:26:51.414+03:00  INFO 22800 --- [spring-reddit] [http-nio-8080-exec-8] c.e.springreddit.service.PostService     : Post created successfully with ID: 40 in subreddit: r/test by author ID: 4
+2026-08-01T17:30:41.454+03:00  INFO 22800 --- [spring-reddit] [SpringApplicationShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-08-01T17:30:41.468+03:00  INFO 22800 --- [spring-reddit] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-08-01T17:30:41.470+03:00  INFO 22800 --- [spring-reddit] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-08-01T17:30:41.474+03:00  INFO 22800 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-08-01T17:30:41.840+03:00  INFO 22800 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-08-01T17:47:37.450+03:00  INFO 25500 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : Starting DemoApplication using Java 26.0.2 with PID 25500 (C:\Users\Bizanu\Desktop\Spring_Reddit\SpringReddit\target\classes started by Bizanu in C:\Users\Bizanu\Desktop\Spring_Reddit)
+2026-08-01T17:47:37.453+03:00 DEBUG 25500 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : Running with Spring Boot v4.1.0, Spring v7.0.8
+2026-08-01T17:47:37.454+03:00  INFO 25500 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : No active profile set, falling back to 1 default profile: "default"
+2026-08-01T17:47:37.537+03:00  INFO 25500 --- [spring-reddit] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-08-01T17:47:37.538+03:00  INFO 25500 --- [spring-reddit] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-08-01T17:47:38.317+03:00  INFO 25500 --- [spring-reddit] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-01T17:47:38.393+03:00  INFO 25500 --- [spring-reddit] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 60 ms. Found 6 JPA repository interfaces.
+2026-08-01T17:47:38.926+03:00  INFO 25500 --- [spring-reddit] [restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-08-01T17:47:38.943+03:00  INFO 25500 --- [spring-reddit] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-08-01T17:47:38.944+03:00  INFO 25500 --- [spring-reddit] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-08-01T17:47:38.993+03:00  INFO 25500 --- [spring-reddit] [restartedMain] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1435 ms
+2026-08-01T17:47:39.166+03:00  INFO 25500 --- [spring-reddit] [restartedMain] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-08-01T17:47:39.243+03:00  INFO 25500 --- [spring-reddit] [restartedMain] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.1.Final
+2026-08-01T17:47:39.754+03:00  INFO 25500 --- [spring-reddit] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-08-01T17:47:39.789+03:00  INFO 25500 --- [spring-reddit] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-01T17:47:41.246+03:00  INFO 25500 --- [spring-reddit] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@498d96d
+2026-08-01T17:47:41.247+03:00  INFO 25500 --- [spring-reddit] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-08-01T17:47:41.693+03:00  INFO 25500 --- [spring-reddit] [restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://ep-holy-wildflower-asaltfim-pooler.c-4.eu-central-1.aws.neon.tech/neondb?sslmode=require]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 18.4
+	Default catalog/schema: neondb/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-08-01T17:47:42.942+03:00  INFO 25500 --- [spring-reddit] [restartedMain] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-01T17:47:43.579+03:00  INFO 25500 --- [spring-reddit] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-01T17:47:43.665+03:00  INFO 25500 --- [spring-reddit] [restartedMain] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-01T17:47:44.969+03:00  INFO 25500 --- [spring-reddit] [restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-08-01T17:47:44.979+03:00  INFO 25500 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : Started DemoApplication in 8.213 seconds (process running for 9.234)
+2026-08-01T17:47:51.524+03:00  INFO 25500 --- [spring-reddit] [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-01T17:47:51.525+03:00  INFO 25500 --- [spring-reddit] [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-08-01T17:47:51.526+03:00  INFO 25500 --- [spring-reddit] [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-08-01T17:48:57.234+03:00  INFO 25500 --- [spring-reddit] [SpringApplicationShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-08-01T17:48:57.250+03:00  INFO 25500 --- [spring-reddit] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-08-01T17:48:57.255+03:00  INFO 25500 --- [spring-reddit] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-08-01T17:48:57.258+03:00  INFO 25500 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-08-01T17:48:57.699+03:00  INFO 25500 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
