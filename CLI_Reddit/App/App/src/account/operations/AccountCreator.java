@@ -2,6 +2,7 @@ package account.operations;
 
 import account.dto.AccountApiDtos;
 import account.verification.EmailVerification;
+import account.verification.NameVerification;
 import account.verification.PasswordVerification;
 import com.google.gson.Gson;
 import io.OutputWriter;
@@ -38,9 +39,16 @@ public class AccountCreator {
             return;
         }
 
-        String username = stringReader.readString("Enter username: (or 0 to cancel)");
-        if (username.equals("0")) {
-            return;
+        String username;
+        while (true) {
+            username = stringReader.readString("Enter username: (or 0 to cancel)");
+            if (username.equals("0")) {
+                return;
+            }
+            if (NameVerification.verify(username)) {
+                break;
+            }
+            output.write("Invalid username format!");
         }
 
         String email;
@@ -69,20 +77,6 @@ public class AccountCreator {
         }
 
         try {
-            /*AccountApiDtos.RegistrationRequest payload =
-                    new AccountApiDtos.RegistrationRequest(username, email, password);
-            String jsonPayload = gson.toJson(payload);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(REGISTER_URL))
-                    .timeout(Duration.ofSeconds(30))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-             */
             HttpResponse<String> response = RedditApiClient.registerAccountRaw(username, email, password);
             int status = response.statusCode();
 

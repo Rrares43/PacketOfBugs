@@ -2,6 +2,7 @@ package com.example.springreddit.controller;
 
 import com.example.springreddit.dto.AccountDto;
 import com.example.springreddit.model.Account;
+import com.example.springreddit.repository.AccountRepository;
 import com.example.springreddit.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,9 @@ public class AccountController {
 
     @Autowired
     private AccountService accountService;
+
+    @Autowired
+    private AccountRepository accountRepository;
 
     @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> registerAccount(@Valid @RequestBody AccountDto.RegistrationRequest request) {
@@ -64,6 +68,12 @@ public class AccountController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<?> checkUsernameAvailability(@PathVariable String username) {
+        boolean isTaken = accountRepository.existsByUsername(username);
+        return ResponseEntity.ok(isTaken);
     }
 
     private AccountDto.AccountResponse toResponse(Account account) {

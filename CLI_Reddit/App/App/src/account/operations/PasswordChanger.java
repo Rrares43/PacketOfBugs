@@ -60,21 +60,6 @@ public class PasswordChanger {
         }
 
         try {
-            /*
-            AccountApiDtos.ChangePasswordRequest payload =
-                    new AccountApiDtos.ChangePasswordRequest(username, oldPassword, newPassword);
-            String jsonPayload = gson.toJson(payload);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(PASSWORD_URL))
-                    .timeout(Duration.ofSeconds(30))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .PUT(HttpRequest.BodyPublishers.ofString(jsonPayload))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-             */
             HttpResponse<String> response = RedditApiClient.changePasswordRaw(username, email, newPassword);
             int status = response.statusCode();
 
