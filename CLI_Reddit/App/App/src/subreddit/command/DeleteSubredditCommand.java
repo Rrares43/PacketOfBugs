@@ -1,12 +1,12 @@
 package subreddit.command;
 
 import account.SessionService;
+import com.google.gson.JsonObject;
 import io.StringReader;
 import persistence.RedditApiClient;
 import subreddit.Subreddit;
 import subreddit.repository.SubredditRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 public class DeleteSubredditCommand implements SubredditCommand{
@@ -31,11 +31,18 @@ public class DeleteSubredditCommand implements SubredditCommand{
 
         if(targetSub.isPresent()){
             try {
-                long subId = RedditApiClient.getSubredditByName(targetSub.get().getName()).get().getAsJsonObject().get("id").getAsLong();
-                long creatorId = sessionService.getCurrentAccountId();
+                Optional<JsonObject> subredditJson = RedditApiClient.getSubredditByName(targetSub.get().getName());
+                if (subredditJson.isEmpty()) {
+                    System.out.println("Subreddit not found.");
+                    return;
+                }
+                long subId = subredditJson.get().get("id").getAsLong();
+                long creatorId = subredditJson.get().get("creatorId").getAsLong();
+                long currentAccountId = sessionService.getCurrentAccountId();
 
-                if (creatorId == RedditApiClient.getSubredditByName(targetSub.get().getName()).get().getAsJsonObject().get("creatorId").getAsLong()) {
-                    RedditApiClient.deleteSubreddit(subId);
+                if (creatorId == currentAccountId) {
+                    RedditApiClient.deleteSubreddit(subId, currentAccountId);
+                    System.out.println("Subreddit successfully deleted.");
                 } else {
                     System.out.println("You do not have permission to delete this subreddit.");
                 }

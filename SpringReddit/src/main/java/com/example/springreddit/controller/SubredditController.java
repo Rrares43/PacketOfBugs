@@ -74,9 +74,9 @@ public class SubredditController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteSubreddit(@PathVariable Long id) {
+    public ResponseEntity<?> deleteSubreddit(@PathVariable Long id, @RequestBody SubredditDto.DeleteSubredditRequest request) {
         try {
-            subredditService.deleteSubreddit(id);
+            subredditService.deleteSubreddit(id, request.getAccountId());
             return ResponseEntity.ok("Subreddit deleted successfully");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
