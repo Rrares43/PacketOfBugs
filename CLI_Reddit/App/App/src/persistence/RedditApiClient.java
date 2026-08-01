@@ -79,10 +79,13 @@ public final class RedditApiClient {
 
     public static boolean isUsernameAvailable(String username) {
         try {
-            HttpResponse<String> response = send("GET", "/api/accounts/available/" + encode(username), null);
+            HttpResponse<String> response = send("GET", "/api/accounts/available/" + encode(username), "");
+            if (response.statusCode() != 200) {
+                return false;
+            }
             return Boolean.parseBoolean(response.body());
-        }
-        catch (Exception e) {
+
+        } catch (Exception e) {
             return false;
         }
     }

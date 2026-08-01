@@ -70,10 +70,11 @@ public class AccountController {
         }
     }
 
-    @GetMapping("/available")
+    @GetMapping("/available/{username}")
     public ResponseEntity<?> checkUsernameAvailability(@PathVariable String username) {
         boolean isTaken = accountRepository.existsByUsername(username);
-        return ResponseEntity.ok(isTaken);
+        boolean isAvailable = !isTaken;
+        return ResponseEntity.ok(isAvailable);
     }
 
     private AccountDto.AccountResponse toResponse(Account account) {
