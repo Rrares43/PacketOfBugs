@@ -24,6 +24,7 @@ public class CommentService {
     @Transactional
     public Comment comment(Long postId, String text, Account author) {
         validateText(text);
+        validateAuthor(author);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
 
@@ -33,11 +34,13 @@ public class CommentService {
     }
 
     public Comment findCommentById(Long commentId) {
+        validateCommentId(commentId);
         return commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
     }
 
     public List<Comment> getTopLevelComments(Long postId) {
+        validatePostId(postId);
         if (!postRepository.existsById(postId)) {
             throw new IllegalArgumentException("Post not found");
         }
@@ -47,6 +50,9 @@ public class CommentService {
     @Transactional
     public Comment replyToComment(Long postId, Long parentCommentId, String text, Account author) {
         validateText(text);
+        validateAuthor(author);
+        validatePostId(postId);
+        validateParentCommentId(parentCommentId);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
 
@@ -66,6 +72,9 @@ public class CommentService {
     @Transactional
     public Comment editComment(Long postId, Long commentId, String newText, Account editor) {
         validateText(newText);
+        validatePostId(postId);
+        validateCommentId(commentId);
+        validateAuthor(editor);
         Comment comment = findCommentById(commentId);
         if (!comment.belongsToPost(postId)) {
             throw new IllegalArgumentException("Comment not found.");
@@ -83,6 +92,9 @@ public class CommentService {
 
     @Transactional
     public void deleteComment(Long postId, Long commentId, Account deleter) {
+        validatePostId(postId);
+        validateCommentId(commentId);
+        validateAuthor(deleter);
         Comment comment = findCommentById(commentId);
         if (!comment.belongsToPost(postId)) {
             throw new IllegalArgumentException("Comment not found.");
@@ -104,6 +116,30 @@ public class CommentService {
         }
         if (text.length() > 3000) {
             throw new IllegalArgumentException("Comment content must not exceed 3000 characters");
+        }
+    }
+
+    private void validateAuthor(Account author) {
+        if (author == null) {
+            throw new IllegalArgumentException("Author cannot be null");
+        }
+    }
+
+    private void validatePostId(Long postId) {
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+    }
+
+    private void validateParentCommentId(Long parentCommentId) {
+        if (parentCommentId == null) {
+            throw new IllegalArgumentException("Parent comment ID cannot be null");
+        }
+    }
+
+    private void validateCommentId(Long commentId) {
+        if (commentId == null) {
+            throw new IllegalArgumentException("Comment ID cannot be null");
         }
     }
 }

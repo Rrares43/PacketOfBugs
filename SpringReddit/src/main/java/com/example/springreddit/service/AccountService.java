@@ -14,6 +14,7 @@ public class AccountService {
     private AccountRepository accountRepository;
 
     public Account registerAccount(AccountDto.RegistrationRequest request) {
+        validateRegistrationRequest(request);
         if (accountRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -29,6 +30,15 @@ public class AccountService {
     }
 
     public Account authenticateUser(AccountDto.LoginRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+        if (request.getUsername() == null || request.getUsername().isBlank()) {
+            throw new IllegalArgumentException("Username cannot be blank");
+        }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password cannot be blank");
+        }
         Account account = accountRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
@@ -39,17 +49,35 @@ public class AccountService {
     }
 
     public Account getByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("Username cannot be blank");
+        }
         return accountRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
     }
 
     public Account getById(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Account ID cannot be null");
+        }
         return accountRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
     }
 
     @Transactional
     public void changePassword(AccountDto.ChangePasswordRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+        if (request.getUsername() == null || request.getUsername().isBlank()) {
+            throw new IllegalArgumentException("Username cannot be blank");
+        }
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email cannot be blank");
+        }
+        if (request.getNewPassword() == null || request.getNewPassword().isBlank()) {
+            throw new IllegalArgumentException("New password cannot be blank");
+        }
         Account account = accountRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
@@ -63,9 +91,33 @@ public class AccountService {
 
     @Transactional
     public void deleteAccount(String username) {
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException("Username cannot be blank");
+        }
         if (!accountRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("Account not found");
         }
         accountRepository.deleteByUsername(username);
+    }
+
+    private void validateRegistrationRequest(AccountDto.RegistrationRequest request) {
+        if (request.getUsername() == null || request.getUsername().isBlank()) {
+            throw new IllegalArgumentException("Username cannot be blank");
+        }
+        if (request.getUsername().length() > 50) {
+            throw new IllegalArgumentException("Username must not exceed 50 characters");
+        }
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email cannot be blank");
+        }
+        if (request.getEmail().length() > 100) {
+            throw new IllegalArgumentException("Email must not exceed 100 characters");
+        }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password cannot be blank");
+        }
+        if (request.getPassword().length() > 100) {
+            throw new IllegalArgumentException("Password must not exceed 100 characters");
+        }
     }
 }

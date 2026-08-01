@@ -23,6 +23,7 @@ public class PostVoteService {
 
     @Transactional
     public String vote(Long postId, Account currentAccount, boolean isUpvote, int choice) {
+        validateVoteRequest(postId, currentAccount, choice);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post with ID " + postId + " does not exist."));
 
@@ -70,5 +71,17 @@ public class PostVoteService {
         return postVoteRepository.findByPost_IdAndAccount_Id(postId, accountId)
                 .map(vote -> (int) vote.getVoteType())
                 .orElse(0);
+    }
+
+    private void validateVoteRequest(Long postId, Account account, int choice) {
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+        if (account == null) {
+            throw new IllegalArgumentException("Account cannot be null");
+        }
+        if (choice != 1 && choice != 2) {
+            throw new IllegalArgumentException("Choice must be 1 or 2");
+        }
     }
 }

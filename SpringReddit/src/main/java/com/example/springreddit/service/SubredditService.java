@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class SubredditService {
@@ -21,19 +20,24 @@ public class SubredditService {
     private AccountRepository accountRepository;
 
     public Subreddit createSubreddit(SubredditDto.CreateSubredditRequest request){
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+        if (request.getCreatorId() == null) {
+            throw new IllegalArgumentException("Creator ID cannot be null");
+        }
         String normalizedName = normalizeName(request.getSubredditName());
         if(subredditRepository.existsByName(normalizedName)){
             throw new IllegalArgumentException("Subreddit already exists");
         }
 
-        Optional<Account> creator = Optional.of(accountRepository.findById(request.getCreatorId())
-                .orElseThrow(() -> new IllegalArgumentException("Creator not found")));
-
+        Account creator = accountRepository.findById(request.getCreatorId())
+                .orElseThrow(() -> new IllegalArgumentException("Creator not found"));
 
         Subreddit subreddit = new Subreddit();
         subreddit.setName(normalizedName);
         subreddit.setDescription(request.getDescription());
-        subreddit.setCreator(creator.get());
+        subreddit.setCreator(creator);
 
         return subredditRepository.save(subreddit);
     }
@@ -51,12 +55,24 @@ public class SubredditService {
     }
 
     public Subreddit getSubredditByName(String subredditName){
+        if (subredditName == null || subredditName.isBlank()) {
+            throw new IllegalArgumentException("Subreddit name cannot be blank");
+        }
         String searchName = normalizeName(subredditName);
         return subredditRepository.findByName(searchName)
                 .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
     }
 
     public Subreddit editSubreddit(Long subredditId, SubredditDto.EditSubredditRequest request){
+        if (subredditId == null) {
+            throw new IllegalArgumentException("Subreddit ID cannot be null");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+        if (request.getAccountId() == null) {
+            throw new IllegalArgumentException("Account ID cannot be null");
+        }
         Subreddit subreddit = subredditRepository.findById(subredditId)
                 .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
 
@@ -70,7 +86,13 @@ public class SubredditService {
         return subredditRepository.save(subreddit);
     }
 
-    public void deleteSubreddit(Long subredditId, long accountId){
+    public void deleteSubreddit(Long subredditId, Long accountId){
+        if (subredditId == null) {
+            throw new IllegalArgumentException("Subreddit ID cannot be null");
+        }
+        if (accountId == null) {
+            throw new IllegalArgumentException("Account ID cannot be null");
+        }
         Subreddit subreddit = subredditRepository.findById(subredditId)
                 .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
 

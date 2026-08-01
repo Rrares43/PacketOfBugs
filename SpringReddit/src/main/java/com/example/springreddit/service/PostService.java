@@ -33,6 +33,12 @@ public class PostService {
 
     @Transactional
     public Post createPost(String title, String content, Long authorId, String subredditName) {
+        if (authorId == null) {
+            throw new IllegalArgumentException("Author ID cannot be null");
+        }
+        if (subredditName == null || subredditName.isBlank()) {
+            throw new IllegalArgumentException("Subreddit name cannot be blank");
+        }
         validatePost(title, content);
         Account author = accountRepository.findById(authorId)
                 .orElseThrow(() -> new IllegalArgumentException("Author not found"));
@@ -46,6 +52,9 @@ public class PostService {
     }
 
     public Post getPostById(Long postId) {
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
         return postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
     }
@@ -55,11 +64,20 @@ public class PostService {
     }
 
     public List<Post> getPostsBySubreddit(String subredditName) {
+        if (subredditName == null || subredditName.isBlank()) {
+            throw new IllegalArgumentException("Subreddit name cannot be blank");
+        }
         return postRepository.findBySubreddit_Name(normalizeSubredditName(subredditName));
     }
 
     @Transactional
     public Post editPost(Long postId, String newTitle, String newContent, Long accountId) {
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+        if (accountId == null) {
+            throw new IllegalArgumentException("Account ID cannot be null");
+        }
         validatePost(newTitle, newContent);
         Post post = getPostById(postId);
         Account account = accountRepository.findById(accountId)
@@ -75,6 +93,12 @@ public class PostService {
 
     @Transactional
     public void deletePost(Long postId, Long accountId) {
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+        if (accountId == null) {
+            throw new IllegalArgumentException("Account ID cannot be null");
+        }
         Post post = getPostById(postId);
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
@@ -87,10 +111,16 @@ public class PostService {
     }
 
     public long countUpvotes(Post post) {
+        if (post == null) {
+            throw new IllegalArgumentException("Post cannot be null");
+        }
         return postVoteRepository.countByPostAndVoteType(post, PostVote.UPVOTE);
     }
 
     public long countDownvotes(Post post) {
+        if (post == null) {
+            throw new IllegalArgumentException("Post cannot be null");
+        }
         return postVoteRepository.countByPostAndVoteType(post, PostVote.DOWNVOTE);
     }
 

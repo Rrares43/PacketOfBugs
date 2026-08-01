@@ -24,6 +24,7 @@ public class CommentVoteService {
 
     @Transactional
     public String vote(Long postId, Long commentId, Account account, boolean isUpvote, int choice) {
+        validateVoteRequest(postId, commentId, account, choice);
         Comment comment = commentRepository.findByIdAndPost_Id(commentId, postId)
                 .orElseThrow(() -> new IllegalArgumentException("Comment does not exist."));
         if (comment.isDeleted()) {
@@ -74,5 +75,20 @@ public class CommentVoteService {
         return commentVoteRepository.findByComment_IdAndAccount_Id(commentId, accountId)
                 .map(vote -> (int) vote.getVoteType())
                 .orElse(0);
+    }
+
+    private void validateVoteRequest(Long postId, Long commentId, Account account, int choice) {
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+        if (commentId == null) {
+            throw new IllegalArgumentException("Comment ID cannot be null");
+        }
+        if (account == null) {
+            throw new IllegalArgumentException("Account cannot be null");
+        }
+        if (choice != 1 && choice != 2) {
+            throw new IllegalArgumentException("Choice must be 1 or 2");
+        }
     }
 }
