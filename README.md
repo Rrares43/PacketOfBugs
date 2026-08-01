@@ -3,7 +3,7 @@
 A command-line interface (CLI) Reddit prototype built on a modern Client-Server architecture. This project evolved from a monolithic application with local storage (JSON) to a distributed system, utilizing a robust Spring Boot backend and a PostgreSQL database.
 
 ## 🏗️ Architecture
-*   **Backend (Server):** Spring Boot REST API. Handles business logic, security, validations, and data persistence.
+*   **Backend (Server):** Spring Boot REST API. Handles business logic, validations and data persistence.
 *   **Frontend (Client):** Java CLI. An interactive console interface that communicates exclusively via HTTP requests with the server. The client is stateless (no local data storage).
 *   **Database:** PostgreSQL (hosted on Neon.tech).
 
@@ -51,6 +51,6 @@ A command-line interface (CLI) Reddit prototype built on a modern Client-Server 
 
 ## 🧹 About the Refactoring Journey
 This project underwent a major architectural rewrite to adhere to standard software engineering best practices:
-*   The legacy *dual-write* logic and local `.json` file storage were completely removed. The PostgreSQL database is now the strict Single Source of Truth.
+*   The legacy *dual-write* logic and local `.json` file storage were completely removed. The PostgreSQL database is now the strict source of data.
 *   Manual ID generation, recursive in-memory list searches, and entity relationship mapping were delegated to native database features (Foreign Keys, Auto-Increment, SQL queries).
-*   The CLI interface was entirely decoupled from the business logic, transforming it into a "thin client" responsible solely for capturing user input and displaying HTTP responses.
+*   The CLI was entirely decoupled from the business logic, transforming it into a interface responsible solely for capturing user input and displaying HTTP responses.
