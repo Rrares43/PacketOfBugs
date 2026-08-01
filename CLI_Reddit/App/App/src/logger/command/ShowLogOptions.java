@@ -1,14 +1,13 @@
 package logger.command;
 
-import logger.Logger;
+import io.TextFormatter;
 import menu.LoggerSubCommand;
+import persistence.RedditApiClient;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 
 public class ShowLogOptions implements LoggerSubCommand {
-    private final Logger logger;
-
-    public ShowLogOptions(Logger logger) {
-        this.logger = logger;
-    }
 
     @Override
     public String getNotificationText() {
@@ -17,7 +16,30 @@ public class ShowLogOptions implements LoggerSubCommand {
 
     @Override
     public boolean execute() {
-        logger.printLogsToConsole();
+        final JsonArray allLogs;
+        try {
+            allLogs = RedditApiClient.getLogs();
+        } catch (Exception e) {
+            System.out.println(TextFormatter.error("Unable to retrieve backend logs: " + e.getMessage()));
+            return true;
+        }
+
+        if (allLogs.isEmpty()) {
+            System.out.println(TextFormatter.warning("No logs available."));
+            return true;
+        }
+
+        System.out.println(TextFormatter.header(" DISPLAYING CAPTURED LOGS"));
+        for (JsonElement log : allLogs) {
+            String logLine = log.getAsString();
+            if (logLine.contains("[ERROR]")) {
+                System.out.println(TextFormatter.error(logLine));
+            } else if (logLine.contains("[WARN]")) {
+                System.out.println(TextFormatter.warning(logLine));
+            } else {
+                System.out.println(logLine);
+            }
+        }
         return true;
     }
 }

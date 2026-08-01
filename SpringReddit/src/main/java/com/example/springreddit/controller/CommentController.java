@@ -7,6 +7,7 @@ import com.example.springreddit.model.Comment;
 import com.example.springreddit.service.AccountService;
 import com.example.springreddit.service.CommentService;
 import com.example.springreddit.service.CommentVoteService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping(value = "/api/posts/{postId}/comments", produces = MediaType.APPLICATION_JSON_VALUE)
 public class CommentController {
@@ -35,11 +37,13 @@ public class CommentController {
     @GetMapping
     public ResponseEntity<?> getComments(@PathVariable Long postId) {
         try {
+            log.debug("Get comments request received for post ID: {}", postId);
             List<CommentDto.CommentResponse> comments = commentService.getTopLevelComments(postId).stream()
                     .map(this::toResponse)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(comments);
         } catch (IllegalArgumentException e) {
+            log.warn("Get comments failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
@@ -48,10 +52,12 @@ public class CommentController {
     public ResponseEntity<?> addComment(@PathVariable Long postId,
                                         @Valid @RequestBody CommentDto.CreateCommentRequest request) {
         try {
+            log.debug("Add comment request received for post ID: {} by author ID: {}", postId, request.getAuthorId());
             Account author = accountService.getById(request.getAuthorId());
             Comment comment = commentService.comment(postId, request.getContent(), author);
             return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(comment));
         } catch (IllegalArgumentException e) {
+            log.warn("Add comment failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -61,10 +67,12 @@ public class CommentController {
                                    @PathVariable Long parentCommentId,
                                    @Valid @RequestBody CommentDto.ReplyCommentRequest request) {
         try {
+            log.debug("Reply request received for post ID: {} parent comment ID: {} by author ID: {}", postId, parentCommentId, request.getAuthorId());
             Account author = accountService.getById(request.getAuthorId());
             Comment reply = commentService.replyToComment(postId, parentCommentId, request.getContent(), author);
             return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(reply));
         } catch (IllegalArgumentException e) {
+            log.warn("Reply failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -74,12 +82,15 @@ public class CommentController {
                                          @PathVariable Long commentId,
                                          @Valid @RequestBody CommentDto.EditCommentRequest request) {
         try {
+            log.debug("Edit comment request received for post ID: {} comment ID: {} by account ID: {}", postId, commentId, request.getAccountId());
             Account editor = accountService.getById(request.getAccountId());
             Comment comment = commentService.editComment(postId, commentId, request.getContent(), editor);
             return ResponseEntity.ok(toResponse(comment));
         } catch (IllegalArgumentException e) {
+            log.warn("Edit comment failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (SecurityException e) {
+            log.warn("Edit comment failed - security violation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
@@ -89,12 +100,15 @@ public class CommentController {
                                            @PathVariable Long commentId,
                                            @RequestBody CommentDto.DeleteCommentRequest request) {
         try {
+            log.debug("Delete comment request received for post ID: {} comment ID: {} by account ID: {}", postId, commentId, request.getAccountId());
             Account deleter = accountService.getById(request.getAccountId());
             commentService.deleteComment(postId, commentId, deleter);
             return ResponseEntity.ok("Comment deleted successfully");
         } catch (IllegalArgumentException e) {
+            log.warn("Delete comment failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (SecurityException e) {
+            log.warn("Delete comment failed - security violation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
@@ -104,6 +118,7 @@ public class CommentController {
                                   @PathVariable Long commentId,
                                   @Valid @RequestBody VoteDto.VoteRequest request) {
         try {
+            log.debug("Vote request received for post ID: {} comment ID: {} by account ID: {} - upvote: {}", postId, commentId, request.getAccountId(), request.isUpvote());
             Account account = accountService.getById(request.getAccountId());
             String message = commentVoteService.vote(postId, commentId, account, request.isUpvote(), request.getChoice());
 
@@ -114,6 +129,7 @@ public class CommentController {
             response.setCurrentUserVote(commentVoteService.currentVote(commentId, request.getAccountId()));
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            log.warn("Vote failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

@@ -7,6 +7,7 @@ import com.example.springreddit.model.Post;
 import com.example.springreddit.service.AccountService;
 import com.example.springreddit.service.PostService;
 import com.example.springreddit.service.PostVoteService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping(value = "/api/posts", produces = MediaType.APPLICATION_JSON_VALUE)
 public class PostController {
@@ -35,6 +37,7 @@ public class PostController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createPost(@Valid @RequestBody PostDto.CreatePostRequest request) {
         try {
+            log.debug("Create post request received for subreddit: {} by author ID: {}", request.getSubredditName(), request.getAuthorId());
             Post post = postService.createPost(
                     request.getTitle(),
                     request.getContent(),
@@ -42,6 +45,7 @@ public class PostController {
                     request.getSubredditName());
             return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(post));
         } catch (IllegalArgumentException e) {
+            log.warn("Create post failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -56,8 +60,10 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getPost(@PathVariable Long id) {
         try {
+            log.debug("Get post request received for post ID: {}", id);
             return ResponseEntity.ok(toResponse(postService.getPostById(id)));
         } catch (IllegalArgumentException e) {
+            log.warn("Get post failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
@@ -72,11 +78,14 @@ public class PostController {
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> editPost(@PathVariable Long id, @Valid @RequestBody PostDto.EditPostRequest request) {
         try {
+            log.debug("Edit post request received for post ID: {} by account ID: {}", id, request.getAccountId());
             Post post = postService.editPost(id, request.getTitle(), request.getContent(), request.getAccountId());
             return ResponseEntity.ok(toResponse(post));
         } catch (IllegalArgumentException e) {
+            log.warn("Edit post failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (SecurityException e) {
+            log.warn("Edit post failed - security violation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
@@ -84,11 +93,14 @@ public class PostController {
     @DeleteMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> deletePost(@PathVariable Long id, @RequestBody PostDto.DeletePostRequest request) {
         try {
+            log.debug("Delete post request received for post ID: {} by account ID: {}", id, request.getAccountId());
             postService.deletePost(id, request.getAccountId());
             return ResponseEntity.ok("Post deleted successfully");
         } catch (IllegalArgumentException e) {
+            log.warn("Delete post failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (SecurityException e) {
+            log.warn("Delete post failed - security violation: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
@@ -96,6 +108,7 @@ public class PostController {
     @PostMapping(value = "/{id}/votes", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> vote(@PathVariable Long id, @Valid @RequestBody VoteDto.VoteRequest request) {
         try {
+            log.debug("Vote request received for post ID: {} by account ID: {} - upvote: {}", id, request.getAccountId(), request.isUpvote());
             Account account = accountService.getById(request.getAccountId());
             String message = postVoteService.vote(id, account, request.isUpvote(), request.getChoice());
 
@@ -106,6 +119,7 @@ public class PostController {
             response.setCurrentUserVote(postVoteService.currentVote(id, request.getAccountId()));
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            log.warn("Vote failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

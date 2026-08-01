@@ -15,7 +15,7 @@ public class SubredditDto {
         private String subredditName;
         private String description;
         @Positive(message = "Creator id is required")
-        private long creatorId;
+        private Long creatorId;
     }
 
     @Data
@@ -33,12 +33,12 @@ public class SubredditDto {
     public static class EditSubredditRequest{
         private String subredditName;
         private String description;
-        private long accountId;
+        private Long accountId;
     }
 
     @Data
     public static class DeleteSubredditRequest{
-        private long accountId;
+        private Long accountId;
     }
 
 }

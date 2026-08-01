@@ -12,7 +12,6 @@ import post.service.PostDeleteServiceImpl;
 import post.service.PostEditServiceImpl;
 import post.service.PostVoteService;
 import post.service.PostVoteServiceImpl;
-import logger.Logger;
 import io.IntReader;
 import io.OutputWriter;
 import post.PostInteractionController;
@@ -36,8 +35,7 @@ final class InteractionModule {
                            OutputWriter output,
                            PostView postView,
                            SessionService sessionService,
-                           PostRepo postRepo,
-                           Logger logger) {
+                           PostRepo postRepo) {
         PostVoteService postVoteService = new PostVoteServiceImpl(sessionService);
         PostEditServiceImpl postEditService = new PostEditServiceImpl(sessionService);
         PostDeleteService postDeleteService = new PostDeleteServiceImpl(sessionService);

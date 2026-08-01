@@ -5,8 +5,6 @@ import persistence.RedditApiClient;
 import post.model.Comment;
 import post.model.Post;
 import post.repository.PostRepo;
-import logger.Logger;
-import logger.LogLevel;
 
 public class CommentServiceImpl implements CommentService {
 
