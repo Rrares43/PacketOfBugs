@@ -4,6 +4,7 @@ import com.example.springreddit.validator.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import org.hibernate.validator.constraints.UniqueElements;
 
 public class AccountDto {
 

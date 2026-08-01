@@ -71,6 +71,22 @@ public final class RedditApiClient {
         return send("GET", "/api/accounts/" + encode(username), null);
     }
 
+    public static JsonArray getAllAccounts() {
+        HttpResponse<String> response = send("GET", "/api/accounts", null);
+        requireSuccess(response, 200);
+        return JsonParser.parseString(response.body()).getAsJsonArray();
+    }
+
+    public static boolean isUsernameAvailable(String username) {
+        try {
+            HttpResponse<String> response = send("GET", "/api/accounts/available/" + encode(username), null);
+            return Boolean.parseBoolean(response.body());
+        }
+        catch (Exception e) {
+            return false;
+        }
+    }
+
     public static HttpResponse<String> login(String username, String password) {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
