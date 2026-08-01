@@ -94,6 +94,7 @@ public class SubredditController {
         response.setCreatedAt(subreddit.getCreatedAt());
         if (subreddit.getCreator() != null) {
             response.setCreatorId(subreddit.getCreator().getId());
+            response.setCreatorUsername(subreddit.getCreator().getUsername());
         }
         return response;
     }
@@ -104,6 +105,7 @@ public class SubredditController {
         response.setName(summary.getName());
         response.setDescription(summary.getDescription());
         response.setCreatorId(summary.getCreatorId() == null ? 0 : summary.getCreatorId());
+        response.setCreatorUsername(summary.getCreatorUsername());
         response.setCreatedAt(summary.getCreatedAt());
         response.setPostCount(summary.getPostCount());
         return response;

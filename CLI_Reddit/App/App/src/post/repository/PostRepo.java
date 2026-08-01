@@ -1,21 +1,14 @@
 package post.repository;
 
 import account.SessionService;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
 import persistence.ApiMapper;
 import persistence.RedditApiClient;
 import post.model.Comment;
 import post.model.Post;
 
-import java.io.Reader;
-import java.io.Writer;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -79,6 +72,4 @@ public class PostRepo implements PostRepository {
     @Override
     public int getNextCommentId() { return 0; }
 
-    @Override
-    public void saveToFile() {}
 }

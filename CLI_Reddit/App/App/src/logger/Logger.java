@@ -11,10 +11,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Application logger: in-memory events plus append/read of the existing
- * {@code CLI_Reddit/App/data/app_log.txt} next to the JSON data files.
- */
 public class Logger {
     private static Logger instance;
     private static final DateTimeFormatter TIMESTAMP =

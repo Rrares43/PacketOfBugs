@@ -10,7 +10,6 @@ public interface PostRepository {
         List<Post> findPostsBySubreddit(String subredditName);
         int getNextCommentId();
         String getCurrentUser();
-        void saveToFile();
         void addPost(Post post);
         boolean removePost(int postId);
     }

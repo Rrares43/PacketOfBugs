@@ -11,9 +11,6 @@ import util.SubredditNames;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Maps Spring Boot JSON responses to CLI domain models.
- */
 public final class ApiMapper {
     private ApiMapper() {
     }
