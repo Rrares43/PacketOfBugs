@@ -70,14 +70,11 @@ public class SubredditService {
         return subredditRepository.save(subreddit);
     }
 
-    public void deleteSubreddit(Long subredditId){
+    public void deleteSubreddit(Long subredditId, long accountId){
         Subreddit subreddit = subredditRepository.findById(subredditId)
                 .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
 
-        if (!subredditRepository.existsById(subredditId)){
-            throw new IllegalArgumentException("Subreddit not found");
-        }
-        if(subreddit.getCreator() == null || !subreddit.getCreator().getId().equals(subredditId)){
+        if(subreddit.getCreator() == null || !subreddit.getCreator().getId().equals(accountId)){
             throw new SecurityException("Only the subreddit creator can delete it");
         }
 

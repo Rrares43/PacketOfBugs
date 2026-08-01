@@ -178,18 +178,20 @@ public final class RedditApiClient {
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
 
-    public static JsonObject editSubreddit(long id, String name, String description, Long creatorId) {
+    public static JsonObject editSubreddit(long id, String name, String description, Long accountId) {
         JsonObject body = new JsonObject();
         body.addProperty("subredditName", name);
         body.addProperty("description", description);
-        body.addProperty("creatorId", creatorId);
+        body.addProperty("accountId", accountId);
         HttpResponse<String> response = send("PUT", "/api/subreddits/" + id, body.toString());
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
 
-    public static void deleteSubreddit(long id) {
-        HttpResponse<String> response = send("DELETE", "/api/subreddits/" + id, null);
+    public static void deleteSubreddit(long id, long accountId) {
+        JsonObject body = new JsonObject();
+        body.addProperty("accountId", accountId);
+        HttpResponse<String> response = send("DELETE", "/api/subreddits/" + id, body.toString());
         requireSuccess(response, 200);
     }
 

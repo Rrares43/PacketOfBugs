@@ -1,12 +1,12 @@
 package subreddit.command;
 
 import account.SessionService;
+import com.google.gson.JsonObject;
 import persistence.RedditApiClient;
 import subreddit.Subreddit;
 import subreddit.repository.SubredditRepository;
 import io.StringReader;
 
-import java.util.List;
 import java.util.Optional;
 
 import static subreddit.repository.SubredditRepository.loadSubreddits;
@@ -32,16 +32,24 @@ public class EditSubredditCommand implements SubredditCommand{
         Optional<Subreddit> targetSub = SubredditRepository.findByName(subredditName);
         try {
             if (targetSub.isPresent()) {
-                long subId = RedditApiClient.getSubredditByName(targetSub.get().getName()).get().getAsJsonObject().get("id").getAsLong();
-                long creatorId = sessionService.getCurrentAccountId();
-                if (creatorId != RedditApiClient.getSubredditByName(targetSub.get().getName()).get().getAsJsonObject().get("creatorId").getAsLong()) {
+                Optional<JsonObject> subredditJson = RedditApiClient.getSubredditByName(targetSub.get().getName());
+                if (subredditJson.isEmpty()) {
+                    System.out.println("Subreddit not found.");
+                    return;
+                }
+                long subId = subredditJson.get().get("id").getAsLong();
+                long creatorId = subredditJson.get().get("creatorId").getAsLong();
+                long currentAccountId = sessionService.getCurrentAccountId();
+                
+                if (creatorId != currentAccountId) {
                     System.out.println("You do not have permission to edit this subreddit.");
                     return;
                 }
 
                 String newName = stringReader.readString("Enter new name:");
                 String newDescription = stringReader.readString("Enter new description:");
-                RedditApiClient.editSubreddit(subId, newName, newDescription, creatorId);
+                RedditApiClient.editSubreddit(subId, newName, newDescription, currentAccountId);
+                System.out.println("Subreddit successfully edited.");
             }
         }
         catch (Exception e){

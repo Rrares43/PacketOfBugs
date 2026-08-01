@@ -146,11 +146,9 @@ public class PostInteractionController {
             if (command != null) {
                 try {
                     command.execute(postID);
-                    // Deletion already confirmed above; leave menu without a phantom "missing post" error.
                     if ("5".equals(choice)) {
                         break;
                     }
-                    // DatabaseSync may remap IDs on the same Post instance after dual-write.
                     postID = currentPost.getId();
                 } catch (Exception e) {
                     output.write("Error: " + e.getMessage());

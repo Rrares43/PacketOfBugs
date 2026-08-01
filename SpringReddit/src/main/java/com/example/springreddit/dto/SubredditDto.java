@@ -24,6 +24,7 @@ public class SubredditDto {
         private String name;
         private String description;
         private long creatorId;
+        private String creatorUsername;
         private LocalDateTime createdAt;
         private long postCount;
     }
