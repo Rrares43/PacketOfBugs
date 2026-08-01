@@ -26,10 +26,9 @@ A command-line interface (CLI) Reddit prototype built on a modern Client-Server 
 *   Delete and vote on comments by delegating complex recursive search operations to the backend.
 
 ## 🛠️ Technologies Used
-*   **Java 17+**
+*   **Java 26**
 *   **Spring Boot** (Spring Web, Spring Data JPA, Hibernate)
 *   **PostgreSQL** (Relational Database)
-*   **Gson** (JSON Serialization / Deserialization on the client-side)
 *   **Java HttpClient** (For communication between the CLI and the API)
 
 ## 🚀 Installation & Setup
