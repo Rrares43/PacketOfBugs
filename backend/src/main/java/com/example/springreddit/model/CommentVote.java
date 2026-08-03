@@ -46,14 +46,6 @@ public class CommentVote {
         this.voteType = voteType;
     }
 
-    public int getVoteDirection() {
-        return voteType;
-    }
-
-    public void setVoteDirection(int voteDirection) {
-        setVoteType((short) voteDirection);
-    }
-
     public boolean isUpvote() {
         return voteType == UPVOTE;
     }

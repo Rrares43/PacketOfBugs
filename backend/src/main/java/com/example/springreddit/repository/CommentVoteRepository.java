@@ -17,11 +17,14 @@ public interface CommentVoteRepository extends JpaRepository<CommentVote, Commen
 
     Optional<CommentVote> findByComment_IdAndAccount_Id(Long commentId, Long accountId);
 
+    long countByComment_IdAndVoteType(Long commentId, short voteType);
+
+    /* Currently unused but useful methods
     List<CommentVote> findByComment_Id(Long commentId);
 
     long countByCommentAndVoteType(Comment comment, short voteType);
 
-    long countByComment_IdAndVoteType(Long commentId, short voteType);
-
     void deleteByCommentAndAccount(Comment comment, Account account);
+
+     */
 }

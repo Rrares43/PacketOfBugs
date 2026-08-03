@@ -50,10 +50,6 @@ public class SubredditService {
         return savedSubreddit;
     }
 
-    public List<Subreddit> getAllSubreddits(){
-        return subredditRepository.findAll();
-    }
-
     public List<SubredditSummary> getAllSubredditSummaries() {
         return subredditRepository.findAllSummaries();
     }

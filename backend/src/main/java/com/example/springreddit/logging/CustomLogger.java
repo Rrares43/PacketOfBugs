@@ -35,14 +35,6 @@ public final class CustomLogger {
         add("WARN", format(message, arguments));
     }
 
-    public void error(String message) {
-        add("ERROR", message);
-    }
-
-    public void error(String message, Object... arguments) {
-        add("ERROR", format(message, arguments));
-    }
-
     public synchronized List<String> getLogs() {
         return List.copyOf(logs);
     }
