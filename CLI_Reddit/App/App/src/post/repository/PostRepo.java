@@ -8,8 +8,6 @@ import persistence.RedditApiClient;
 import post.model.Comment;
 import post.model.Post;
 
-import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
