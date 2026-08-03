@@ -11,13 +11,16 @@ import java.util.List;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    List<Post> findBySubreddit(Subreddit subreddit);
-
     List<Post> findBySubreddit_Name(String name);
+
+    /* Currently unused but useful methods
+    List<Post> findBySubreddit(Subreddit subreddit);
 
     List<Post> findByAuthor(Account author);
 
     List<Post> findByAuthor_Username(String username);
 
     void deleteBySubreddit_Name(String name);
+
+     */
 }

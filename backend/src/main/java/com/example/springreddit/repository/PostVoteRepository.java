@@ -17,11 +17,14 @@ public interface PostVoteRepository extends JpaRepository<PostVote, PostVoteId> 
 
     Optional<PostVote> findByPost_IdAndAccount_Id(Long postId, Long accountId);
 
-    List<PostVote> findByPost_Id(Long postId);
-
     long countByPostAndVoteType(Post post, short voteType);
 
     long countByPost_IdAndVoteType(Long postId, short voteType);
 
+    /* Currently unused but useful methodss
     void deleteByPostAndAccount(Post post, Account account);
+
+    List<PostVote> findByPost_Id(Long postId);
+
+     */
 }

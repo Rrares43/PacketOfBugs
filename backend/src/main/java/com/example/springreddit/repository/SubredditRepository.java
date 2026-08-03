@@ -16,11 +16,7 @@ public interface SubredditRepository extends JpaRepository<Subreddit, Long> {
 
     boolean existsByName(String name);
 
-    List<Subreddit> findByCreator(Account creator);
-
     List<Subreddit> findByCreator_Username(String username);
-
-    void deleteByName(String name);
 
     @Query("""
             select s.id as id, s.name as name, s.description as description,
@@ -33,4 +29,11 @@ public interface SubredditRepository extends JpaRepository<Subreddit, Long> {
             order by s.name
             """)
     List<SubredditSummary> findAllSummaries();
+
+    /* Currently unused but useful method
+    List<Subreddit> findByCreator(Account creator);
+
+    void deleteByName(String name);
+
+     */
 }
