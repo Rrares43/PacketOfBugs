@@ -13,8 +13,6 @@ public class Post {
     private int downvotes;
     private List<Comment> comments;
     private String subredditName;
-    private List<PostVote> votes;
-    private VoteTracker voteTracker;
     private boolean serverVoteCounts;
 
     public Post(int Id,String title,String content,String author, String subredditName){
@@ -26,8 +24,6 @@ public class Post {
         this.upvotes = 0;
         this.downvotes = 0;
         this.comments = new ArrayList<>();
-        this.votes = new ArrayList<>();
-        this.voteTracker = new VoteTracker();
     }
 
     public int getId(){
@@ -50,38 +46,17 @@ public class Post {
         return author;
     }
 
-    public List<PostVote> getVotes() {
-        if (this.votes == null) {
-            this.votes = new ArrayList<>();
-        }
-        return this.votes;
-    }
-
     public int getUpvotes() {
-        if (serverVoteCounts) return upvotes;
-        int count = 0;
-        for (PostVote vote : getVotes()) if (vote.isUpvote()) count++;
-        return count;
+        return upvotes;
     }
     public int getDownvotes() {
-        if (serverVoteCounts) return downvotes;
-        int count = 0;
-        for (PostVote vote : getVotes()) if (!vote.isUpvote()) count++;
-        return count;
+        return downvotes;
     }
 
     public void setVoteCounts(int upvotes, int downvotes) {
         this.upvotes = upvotes;
         this.downvotes = downvotes;
         this.serverVoteCounts = true;
-    }
-    public Optional<PostVote> getUserVote(String username) {
-        for (PostVote vote : getVotes()) {
-            if (vote.getUsername().equals(username)) {
-                return Optional.of(vote);
-            }
-        }
-        return Optional.empty();
     }
 
 
@@ -99,12 +74,6 @@ public class Post {
 
     public void addComment(Comment comment){
         getComments().add(comment);
-    }
-
-    public void removeComment(int index){
-        if(index>=0 && index<getComments().size()){
-            getComments().remove(index);
-        }
     }
 
     public void setContent(String content) {

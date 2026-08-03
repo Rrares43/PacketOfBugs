@@ -2,15 +2,12 @@ package post.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class Comment {
     private int Id;
     private String text;
     private String author;
     private List<Comment> replies;
-    private List<CommentVote> votes;
-    private VoteTracker voteTracker;
     private int postId;
     private Integer parentId;
     private int upvotes;
@@ -23,8 +20,6 @@ public class Comment {
         this.text = text;
         this.author = author;
         this.replies = new ArrayList<>();
-        this.votes = new ArrayList<>();
-        this.voteTracker = new VoteTracker();
     }
 
     public void setText(String newText) {
@@ -75,25 +70,13 @@ public class Comment {
     public int getPostId() {
         return this.postId;
     }
-    public List<CommentVote> getVotes() {
-        if (votes == null) {
-            votes = new ArrayList<>();
-        }
-        return votes;
-    }
 
     public int getUpvotes() {
-        if (serverVoteCounts) return upvotes;
-        int count = 0;
-        for (CommentVote vote : getVotes()) if (vote.isUpvote()) count++;
-        return count;
+        return upvotes;
     }
 
     public int getDownvotes() {
-        if (serverVoteCounts) return downvotes;
-        int count = 0;
-        for (CommentVote vote : getVotes()) if (!vote.isUpvote()) count++;
-        return count;
+        return downvotes;
     }
 
     public void setVoteCounts(int upvotes, int downvotes) {
@@ -105,14 +88,6 @@ public class Comment {
     public Integer getParentId() { return parentId; }
     public void setParentId(Integer parentId) { this.parentId = parentId; }
 
-    public Optional<CommentVote> getUserVote(String username) {
-        for (CommentVote vote : getVotes()) {
-            if (vote.getUsername().equals(username)) {
-                return Optional.of(vote);
-            }
-        }
-        return Optional.empty();
-    }
     @Override
     public String toString() {
         if (deleted) {

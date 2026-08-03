@@ -2,11 +2,6 @@ package post.service;
 
 import account.SessionService;
 import persistence.RedditApiClient;
-import post.model.Post;
-import post.model.PostVote;
-import post.repository.PostRepo;
-
-import java.util.Optional;
 
 public class PostVoteServiceImpl implements PostVoteService {
     private final SessionService sessionService;
