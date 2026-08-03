@@ -24,10 +24,6 @@ public class PostClient {
         return null;
     }
 
-    public List<Post> findAllPosts() {
-        return ApiMapper.toPostList(RedditApiClient.getAllPosts());
-    }
-
     public String getCurrentUser() {
         return sessionService.getCurrentUsername();
     }
