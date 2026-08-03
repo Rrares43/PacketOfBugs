@@ -2,16 +2,17 @@ package com.example.springreddit.model;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 public class CommentVoteId implements Serializable {
 
     private Long account;
-    private Long comment;
+    private UUID comment;
 
     public CommentVoteId() {
     }
 
-    public CommentVoteId(Long account, Long comment) {
+    public CommentVoteId(Long account, UUID comment) {
         this.account = account;
         this.comment = comment;
     }
@@ -24,11 +25,11 @@ public class CommentVoteId implements Serializable {
         this.account = account;
     }
 
-    public Long getComment() {
+    public UUID getComment() {
         return comment;
     }
 
-    public void setComment(Long comment) {
+    public void setComment(UUID comment) {
         this.comment = comment;
     }
 

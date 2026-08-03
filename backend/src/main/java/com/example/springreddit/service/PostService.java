@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PostService {
@@ -61,7 +62,7 @@ public class PostService {
         return savedPost;
     }
 
-    public Post getPostById(Long postId) {
+    public Post getPostById(UUID postId) {
         if (postId == null) {
             throw new IllegalArgumentException("Post ID cannot be null");
         }
@@ -81,7 +82,7 @@ public class PostService {
     }
 
     @Transactional
-    public Post editPost(Long postId, String newTitle, String newContent, Long accountId) {
+    public Post editPost(UUID postId, String newTitle, String newContent, Long accountId) {
         if (postId == null) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Edit post failed: post ID is null");
             throw new IllegalArgumentException("Post ID cannot be null");
@@ -110,7 +111,7 @@ public class PostService {
     }
 
     @Transactional
-    public void deletePost(Long postId, Long accountId) {
+    public void deletePost(UUID postId, Long accountId) {
         if (postId == null) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete post failed: post ID is null");
             throw new IllegalArgumentException("Post ID cannot be null");

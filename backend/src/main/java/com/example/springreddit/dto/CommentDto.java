@@ -1,61 +1,51 @@
 package com.example.springreddit.dto;
 
-import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
-public class CommentDto {
+public final class CommentDto {
 
-    @Data
-    public static class CreateCommentRequest {
-        @NotBlank(message = "Comment content cannot be blank")
-        @Size(max = 3000, message = "Comment content must not exceed 3000 characters")
-        private String content;
-        @NotNull(message = "Author id is required")
-        private Long authorId;
+    private CommentDto() {
     }
 
-    @Data
-    public static class ReplyCommentRequest {
-        @NotBlank(message = "Reply content cannot be blank")
-        @Size(max = 3000, message = "Reply content must not exceed 3000 characters")
-        private String content;
-        @NotNull(message = "Author id is required")
-        private Long authorId;
+    public record CommentRequest(
+            @NotBlank(message = "Comment content is required")
+            @Size(max = 1000, message = "Comment content must not exceed 1000 characters")
+            String content,
+
+            @NotBlank(message = "Comment author is required")
+            String author,
+
+            UUID parentId
+    ) {
     }
 
-    @Data
-    public static class EditCommentRequest {
-        @NotBlank(message = "Comment content cannot be blank")
-        @Size(max = 3000, message = "Comment content must not exceed 3000 characters")
-        private String content;
-        @NotNull(message = "Account id is required")
-        private Long accountId;
+    public record CommentResponse(
+            UUID id,
+            UUID postId,
+            UUID parentId,
+            String content,
+            String author,
+            long upvotes,
+            long downvotes,
+            long score,
+            String userVote,
+            Instant createdAt,
+            Instant updatedAt,
+            List<CommentResponse> replies
+    ) {
+        public CommentResponse {
+            replies = replies == null ? List.of() : List.copyOf(replies);
+        }
     }
 
-    @Data
-    public static class DeleteCommentRequest {
-        private Long accountId;
-    }
-
-    @Data
-    public static class CommentResponse {
-        private Long id;
-        private String content;
-        private Long authorId;
-        private String authorUsername;
-        private Long postId;
-        private Long parentCommentId;
-        private boolean deleted;
-        private LocalDateTime deletedAt;
-        private long upvotes;
-        private long downvotes;
-        private LocalDateTime createdAt;
-        private List<CommentResponse> replies = new ArrayList<>();
+    public record ApiResponse<T>(boolean success, T data) {
+        public static <T> ApiResponse<T> success(T data) {
+            return new ApiResponse<>(true, data);
+        }
     }
 }

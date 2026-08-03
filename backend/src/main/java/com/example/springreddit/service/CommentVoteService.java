@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class CommentVoteService {
@@ -23,7 +24,7 @@ public class CommentVoteService {
     }
 
     @Transactional
-    public String vote(Long postId, Long commentId, Account account, boolean isUpvote, int choice) {
+    public String vote(UUID postId, UUID commentId, Account account, boolean isUpvote, int choice) {
         validateVoteRequest(postId, commentId, account, choice);
         Comment comment = commentRepository.findByIdAndPost_Id(commentId, postId)
                 .orElseThrow(() -> {
@@ -73,21 +74,21 @@ public class CommentVoteService {
         return "Invalid choice.";
     }
 
-    public long countUpvotes(Long commentId) {
+    public long countUpvotes(UUID commentId) {
         return commentVoteRepository.countByComment_IdAndVoteType(commentId, CommentVote.UPVOTE);
     }
 
-    public long countDownvotes(Long commentId) {
+    public long countDownvotes(UUID commentId) {
         return commentVoteRepository.countByComment_IdAndVoteType(commentId, CommentVote.DOWNVOTE);
     }
 
-    public int currentVote(Long commentId, Long accountId) {
+    public int currentVote(UUID commentId, Long accountId) {
         return commentVoteRepository.findByComment_IdAndAccount_Id(commentId, accountId)
                 .map(vote -> (int) vote.getVoteType())
                 .orElse(0);
     }
 
-    private void validateVoteRequest(Long postId, Long commentId, Account account, int choice) {
+    private void validateVoteRequest(UUID postId, UUID commentId, Account account, int choice) {
         if (postId == null) {
             throw new IllegalArgumentException("Post ID cannot be null");
         }

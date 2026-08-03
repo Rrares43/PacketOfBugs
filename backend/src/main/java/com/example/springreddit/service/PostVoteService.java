@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class PostVoteService {
@@ -22,7 +23,7 @@ public class PostVoteService {
     }
 
     @Transactional
-    public String vote(Long postId, Account currentAccount, boolean isUpvote, int choice) {
+    public String vote(UUID postId, Account currentAccount, boolean isUpvote, int choice) {
         validateVoteRequest(postId, currentAccount, choice);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> {
@@ -68,21 +69,21 @@ public class PostVoteService {
         return "Invalid choice";
     }
 
-    public long countUpvotes(Long postId) {
+    public long countUpvotes(UUID postId) {
         return postVoteRepository.countByPost_IdAndVoteType(postId, PostVote.UPVOTE);
     }
 
-    public long countDownvotes(Long postId) {
+    public long countDownvotes(UUID postId) {
         return postVoteRepository.countByPost_IdAndVoteType(postId, PostVote.DOWNVOTE);
     }
 
-    public int currentVote(Long postId, Long accountId) {
+    public int currentVote(UUID postId, Long accountId) {
         return postVoteRepository.findByPost_IdAndAccount_Id(postId, accountId)
                 .map(vote -> (int) vote.getVoteType())
                 .orElse(0);
     }
 
-    private void validateVoteRequest(Long postId, Account account, int choice) {
+    private void validateVoteRequest(UUID postId, Account account, int choice) {
         if (postId == null) {
             throw new IllegalArgumentException("Post ID cannot be null");
         }
