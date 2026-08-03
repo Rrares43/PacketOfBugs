@@ -213,3 +213,153 @@
 2026-08-03T13:02:09.586+03:00  INFO 24340 --- [spring-reddit] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
 2026-08-03T13:02:09.589+03:00  INFO 24340 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
 2026-08-03T13:02:09.883+03:00  INFO 24340 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-08-03T13:19:37.444+03:00  INFO 5684 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : Starting DemoApplication using Java 26.0.1 with PID 5684 (C:\Pandele\Spring_Reddit\SpringReddit\target\classes started by Thea in C:\Pandele\Spring_Reddit)
+2026-08-03T13:19:37.446+03:00 DEBUG 5684 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : Running with Spring Boot v4.1.0, Spring v7.0.8
+2026-08-03T13:19:37.447+03:00  INFO 5684 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : No active profile set, falling back to 1 default profile: "default"
+2026-08-03T13:19:37.481+03:00  INFO 5684 --- [spring-reddit] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-08-03T13:19:37.481+03:00  INFO 5684 --- [spring-reddit] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-08-03T13:19:38.006+03:00  INFO 5684 --- [spring-reddit] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-03T13:19:38.062+03:00  INFO 5684 --- [spring-reddit] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 47 ms. Found 6 JPA repository interfaces.
+2026-08-03T13:19:38.448+03:00  INFO 5684 --- [spring-reddit] [restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-08-03T13:19:38.462+03:00  INFO 5684 --- [spring-reddit] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-08-03T13:19:38.462+03:00  INFO 5684 --- [spring-reddit] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-08-03T13:19:38.495+03:00  INFO 5684 --- [spring-reddit] [restartedMain] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1013 ms
+2026-08-03T13:19:38.638+03:00  INFO 5684 --- [spring-reddit] [restartedMain] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-08-03T13:19:38.679+03:00  INFO 5684 --- [spring-reddit] [restartedMain] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.1.Final
+2026-08-03T13:19:38.979+03:00  INFO 5684 --- [spring-reddit] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-08-03T13:19:39.000+03:00  INFO 5684 --- [spring-reddit] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-03T13:19:39.573+03:00  INFO 5684 --- [spring-reddit] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@42e2cd83
+2026-08-03T13:19:39.575+03:00  INFO 5684 --- [spring-reddit] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-08-03T13:19:39.816+03:00  INFO 5684 --- [spring-reddit] [restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://ep-holy-wildflower-asaltfim-pooler.c-4.eu-central-1.aws.neon.tech/neondb?sslmode=require]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 18.4
+	Default catalog/schema: neondb/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-08-03T13:19:40.769+03:00  INFO 5684 --- [spring-reddit] [restartedMain] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-03T13:19:41.130+03:00  INFO 5684 --- [spring-reddit] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-03T13:19:41.188+03:00  INFO 5684 --- [spring-reddit] [restartedMain] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-03T13:19:42.069+03:00  INFO 5684 --- [spring-reddit] [restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-08-03T13:19:42.073+03:00  INFO 5684 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : Started DemoApplication in 4.939 seconds (process running for 5.485)
+2026-08-03T13:19:49.540+03:00  INFO 5684 --- [spring-reddit] [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-03T13:19:49.540+03:00  INFO 5684 --- [spring-reddit] [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-08-03T13:19:49.541+03:00  INFO 5684 --- [spring-reddit] [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-08-03T13:20:14.733+03:00 ERROR 5684 --- [spring-reddit] [http-nio-8080-exec-3] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: jakarta.validation.ConstraintDefinitionException: HV000074: com.example.springreddit.validator.ValidPassword contains Constraint annotation, but does not contain a message parameter.] with root cause
+
+jakarta.validation.ConstraintDefinitionException: HV000074: com.example.springreddit.validator.ValidPassword contains Constraint annotation, but does not contain a message parameter.
+	at org.hibernate.validator.internal.metadata.core.ConstraintHelper.assertMessageParameterExists(ConstraintHelper.java:1059) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.core.ConstraintHelper.lambda$isConstraintAnnotation$0(ConstraintHelper.java:1005) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1735) ~[na:na]
+	at org.hibernate.validator.internal.metadata.core.ConstraintHelper.isConstraintAnnotation(ConstraintHelper.java:1004) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.provider.AnnotationMetaDataProvider.findConstraintAnnotations(AnnotationMetaDataProvider.java:544) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.provider.AnnotationMetaDataProvider.findConstraints(AnnotationMetaDataProvider.java:489) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.provider.AnnotationMetaDataProvider.findConstraints(AnnotationMetaDataProvider.java:471) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.provider.AnnotationMetaDataProvider.findPropertyMetaData(AnnotationMetaDataProvider.java:246) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.provider.AnnotationMetaDataProvider.getFieldMetaData(AnnotationMetaDataProvider.java:239) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.provider.AnnotationMetaDataProvider.retrieveBeanConfiguration(AnnotationMetaDataProvider.java:125) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.provider.AnnotationMetaDataProvider.getBeanConfiguration(AnnotationMetaDataProvider.java:116) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.BeanMetaDataManagerImpl.getBeanConfigurationForHierarchy(BeanMetaDataManagerImpl.java:237) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.BeanMetaDataManagerImpl.createBeanMetaData(BeanMetaDataManagerImpl.java:204) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.metadata.BeanMetaDataManagerImpl.getBeanMetaData(BeanMetaDataManagerImpl.java:167) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.hibernate.validator.internal.engine.ValidatorImpl.validate(ValidatorImpl.java:154) ~[hibernate-validator-9.1.0.Final.jar:9.1.0.Final]
+	at org.springframework.validation.beanvalidation.SpringValidatorAdapter.validate(SpringValidatorAdapter.java:103) ~[spring-context-7.0.8.jar:7.0.8]
+	at org.springframework.boot.validation.autoconfigure.ValidatorAdapter.validate(ValidatorAdapter.java:69) ~[spring-boot-validation-4.1.0.jar:4.1.0]
+	at org.springframework.validation.DataBinder.validate(DataBinder.java:1400) ~[spring-context-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.mvc.method.annotation.AbstractMessageConverterMethodArgumentResolver.validateIfApplicable(AbstractMessageConverterMethodArgumentResolver.java:290) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor.resolveArgument(RequestResponseBodyMethodProcessor.java:163) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122) ~[spring-web-7.0.8.jar:7.0.8]
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224) ~[spring-web-7.0.8.jar:7.0.8]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:174) ~[spring-web-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649) ~[tomcat-embed-core-11.0.22.jar:6.1]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874) ~[spring-webmvc-7.0.8.jar:7.0.8]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710) ~[tomcat-embed-core-11.0.22.jar:6.1]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53) ~[tomcat-embed-websocket-11.0.22.jar:11.0.22]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-7.0.8.jar:7.0.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.8.jar:7.0.8]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-7.0.8.jar:7.0.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.8.jar:7.0.8]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199) ~[spring-web-7.0.8.jar:7.0.8]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-7.0.8.jar:7.0.8]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1272) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1801) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57) ~[tomcat-embed-core-11.0.22.jar:11.0.22]
+	at java.base/java.lang.Thread.run(Thread.java:1516) ~[na:na]
+
+2026-08-03T13:24:14.516+03:00  INFO 5684 --- [spring-reddit] [SpringApplicationShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-08-03T13:24:14.531+03:00  INFO 5684 --- [spring-reddit] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-08-03T13:24:14.534+03:00  INFO 5684 --- [spring-reddit] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-08-03T13:24:14.538+03:00  INFO 5684 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-08-03T13:24:14.835+03:00  INFO 5684 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-08-03T13:24:38.404+03:00  INFO 11780 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : Starting DemoApplication using Java 26.0.1 with PID 11780 (C:\Pandele\Spring_Reddit\SpringReddit\target\classes started by Thea in C:\Pandele\Spring_Reddit)
+2026-08-03T13:24:38.406+03:00 DEBUG 11780 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : Running with Spring Boot v4.1.0, Spring v7.0.8
+2026-08-03T13:24:38.407+03:00  INFO 11780 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : No active profile set, falling back to 1 default profile: "default"
+2026-08-03T13:24:38.442+03:00  INFO 11780 --- [spring-reddit] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-08-03T13:24:38.443+03:00  INFO 11780 --- [spring-reddit] [restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-08-03T13:24:38.885+03:00  INFO 11780 --- [spring-reddit] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-03T13:24:38.931+03:00  INFO 11780 --- [spring-reddit] [restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 39 ms. Found 6 JPA repository interfaces.
+2026-08-03T13:24:39.246+03:00  INFO 11780 --- [spring-reddit] [restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-08-03T13:24:39.255+03:00  INFO 11780 --- [spring-reddit] [restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-08-03T13:24:39.255+03:00  INFO 11780 --- [spring-reddit] [restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-08-03T13:24:39.283+03:00  INFO 11780 --- [spring-reddit] [restartedMain] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 840 ms
+2026-08-03T13:24:39.383+03:00  INFO 11780 --- [spring-reddit] [restartedMain] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-08-03T13:24:39.415+03:00  INFO 11780 --- [spring-reddit] [restartedMain] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.1.Final
+2026-08-03T13:24:39.755+03:00  INFO 11780 --- [spring-reddit] [restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-08-03T13:24:39.778+03:00  INFO 11780 --- [spring-reddit] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-03T13:24:40.320+03:00  INFO 11780 --- [spring-reddit] [restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@3d8787e8
+2026-08-03T13:24:40.321+03:00  INFO 11780 --- [spring-reddit] [restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-08-03T13:24:40.552+03:00  INFO 11780 --- [spring-reddit] [restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://ep-holy-wildflower-asaltfim-pooler.c-4.eu-central-1.aws.neon.tech/neondb?sslmode=require]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 18.4
+	Default catalog/schema: neondb/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-08-03T13:24:41.435+03:00  INFO 11780 --- [spring-reddit] [restartedMain] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-03T13:24:41.818+03:00  INFO 11780 --- [spring-reddit] [restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-03T13:24:41.883+03:00  INFO 11780 --- [spring-reddit] [restartedMain] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-03T13:24:42.722+03:00  INFO 11780 --- [spring-reddit] [restartedMain] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-08-03T13:24:42.726+03:00  INFO 11780 --- [spring-reddit] [restartedMain] c.example.springreddit.DemoApplication   : Started DemoApplication in 4.605 seconds (process running for 5.072)
+2026-08-03T13:24:47.961+03:00  INFO 11780 --- [spring-reddit] [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-03T13:24:47.961+03:00  INFO 11780 --- [spring-reddit] [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-08-03T13:24:47.962+03:00  INFO 11780 --- [spring-reddit] [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-08-03T13:25:46.004+03:00  INFO 11780 --- [spring-reddit] [SpringApplicationShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-08-03T13:25:46.019+03:00  INFO 11780 --- [spring-reddit] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-08-03T13:25:46.023+03:00  INFO 11780 --- [spring-reddit] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-08-03T13:25:46.025+03:00  INFO 11780 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-08-03T13:25:46.332+03:00  INFO 11780 --- [spring-reddit] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
