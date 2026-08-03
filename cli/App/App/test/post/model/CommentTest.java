@@ -27,8 +27,8 @@ class CommentTest {
         Comment reply1 = new Comment(2, "Reply 1", "user1");
         Comment reply2 = new Comment(3, "Reply 2", "user2");
 
-        parent.addreply(reply1);
-        parent.addreply(reply2);
+        parent.addReply(reply1);
+        parent.addReply(reply2);
 
         List<Comment> replies = parent.getReplies();
         assertEquals(2, replies.size());
@@ -42,8 +42,8 @@ class CommentTest {
         Comment reply = new Comment(2, "Reply", "user2");
         Comment nestedReply = new Comment(3, "Nested", "user3");
 
-        parent.addreply(reply);
-        reply.addreply(nestedReply);
+        parent.addReply(reply);
+        reply.addReply(nestedReply);
 
         assertEquals(1, parent.getReplies().size());
         assertEquals(1, parent.getReplies().get(0).getReplies().size());

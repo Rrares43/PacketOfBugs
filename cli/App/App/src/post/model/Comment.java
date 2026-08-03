@@ -4,30 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Comment {
-    private int Id;
+    private final int id;
     private String text;
     private String author;
     private List<Comment> replies;
     private int postId;
-    private Integer parentId;
     private int upvotes;
     private int downvotes;
-    private boolean serverVoteCounts;
     private boolean deleted;
 
-    public Comment(int Id, String text, String author) {
-        this.Id = Id;
+    public Comment(int id, String text, String author) {
+        this.id = id;
         this.text = text;
         this.author = author;
         this.replies = new ArrayList<>();
-    }
-
-    public void setText(String newText) {
-        this.text = newText;
-    }
-
-    public void setId(int id) {
-        this.Id = id;
     }
 
     public void setPostId(int postId) {
@@ -35,7 +25,7 @@ public class Comment {
     }
 
     public int getId() {
-        return Id;
+        return id;
     }
 
     public String getText() {
@@ -63,7 +53,7 @@ public class Comment {
         return replies;
     }
 
-    public void addreply(Comment reply) {
+    public void addReply(Comment reply) {
         getReplies().add(reply);
     }
 
@@ -82,18 +72,14 @@ public class Comment {
     public void setVoteCounts(int upvotes, int downvotes) {
         this.upvotes = upvotes;
         this.downvotes = downvotes;
-        this.serverVoteCounts = true;
     }
-
-    public Integer getParentId() { return parentId; }
-    public void setParentId(Integer parentId) { this.parentId = parentId; }
 
     @Override
     public String toString() {
         if (deleted) {
-            return "[ID: " + Id + "] [deleted]: [deleted]";
+            return "[ID: " + id + "] [deleted]: [deleted]";
         }
-        return "[ID: " + Id + "] " + author + ": " + text +
+        return "[ID: " + id + "] " + author + ": " + text +
                 " (▲ " + getUpvotes() + " | ▼ " + getDownvotes() + ")";
     }
 }

@@ -10,6 +10,7 @@ import post.command.PostActionCommand;
 import io.IntReader;
 import io.OutputWriter;
 import io.StringReader;
+import util.SubredditNames;
 
 import java.util.HashMap;
 import java.util.List;
@@ -72,7 +73,7 @@ public class PostInteractionController {
             output.write("Error: Post with ID " + postID + " does not exist in " + subredditName + ".");
             return;
         }
-        handlePostMenu(postID, subredditName);
+        handlePostMenu(postID);
     }
 
     private String askForSubreddit() {
@@ -95,7 +96,7 @@ public class PostInteractionController {
                 return null;
             }
 
-            String normalized = normalizeSubredditName(input);
+            String normalized = SubredditNames.normalize(input);
             for (Subreddit subreddit : subreddits) {
                 if (subreddit.getName().equals(normalized)) {
                     return subreddit.getName();
@@ -106,17 +107,7 @@ public class PostInteractionController {
         }
     }
 
-    private String normalizeSubredditName(String name) {
-        if (name == null) {
-            return "";
-        }
-        if (!name.startsWith("r/")) {
-            return "r/" + name;
-        }
-        return name;
-    }
-
-    private void handlePostMenu(int postID, String subredditName) {
+    private void handlePostMenu(int postID) {
         while (true) {
             Post currentPost = postClient.findPostById(postID);
             if (currentPost == null) {
@@ -142,7 +133,6 @@ public class PostInteractionController {
                     if ("5".equals(choice)) {
                         break;
                     }
-                    postID = currentPost.getId();
                 } catch (Exception e) {
                     output.write("Error: " + e.getMessage());
                 }
@@ -194,18 +184,18 @@ public class PostInteractionController {
         }
     }
 
-    private Comment searchComment(List<Comment> comments, int commentId){
-        if(comments.isEmpty()){
+    private Comment searchComment(List<Comment> comments, int commentId) {
+        if (comments.isEmpty()) {
             return null;
         }
 
-        for(Comment comment : comments){
-            if(comment.getId() == commentId){
+        for (Comment comment : comments) {
+            if (comment.getId() == commentId) {
                 return comment;
             }
 
             Comment foundInReplies = searchComment(comment.getReplies(), commentId);
-            if(foundInReplies != null){
+            if (foundInReplies != null) {
                 return foundInReplies;
             }
         }
