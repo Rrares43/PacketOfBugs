@@ -2,10 +2,9 @@ package post.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class Post {
-    private int Id;
+    private final int id;
     private String title;
     private String content;
     private String author;
@@ -13,10 +12,9 @@ public class Post {
     private int downvotes;
     private List<Comment> comments;
     private String subredditName;
-    private boolean serverVoteCounts;
 
-    public Post(int Id,String title,String content,String author, String subredditName){
-        this.Id = Id;
+    public Post(int id, String title, String content, String author, String subredditName) {
+        this.id = id;
         this.title = title;
         this.content = content;
         this.author = author;
@@ -26,12 +24,8 @@ public class Post {
         this.comments = new ArrayList<>();
     }
 
-    public int getId(){
-        return Id;
-    }
-
-    public void setId(int id) {
-        this.Id = id;
+    public int getId() {
+        return id;
     }
 
     public String getTitle(){
@@ -56,7 +50,6 @@ public class Post {
     public void setVoteCounts(int upvotes, int downvotes) {
         this.upvotes = upvotes;
         this.downvotes = downvotes;
-        this.serverVoteCounts = true;
     }
 
 
@@ -76,11 +69,4 @@ public class Post {
         getComments().add(comment);
     }
 
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
 }

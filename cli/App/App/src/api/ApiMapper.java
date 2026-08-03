@@ -59,12 +59,9 @@ public final class ApiMapper {
         comment.setDeleted(deleted);
         comment.setPostId(postId);
         comment.setVoteCounts(readInt(json, "upvotes"), readInt(json, "downvotes"));
-        if (json.has("parentCommentId") && !json.get("parentCommentId").isJsonNull()) {
-            comment.setParentId(json.get("parentCommentId").getAsInt());
-        }
         if (json.has("replies") && json.get("replies").isJsonArray()) {
             for (JsonElement reply : json.getAsJsonArray("replies")) {
-                comment.addreply(toComment(reply.getAsJsonObject(), postId));
+                comment.addReply(toComment(reply.getAsJsonObject(), postId));
             }
         }
         return comment;
