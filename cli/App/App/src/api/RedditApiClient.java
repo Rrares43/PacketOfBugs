@@ -69,12 +69,6 @@ public final class RedditApiClient {
         return send("GET", "/api/accounts/" + encode(username), null);
     }
 
-    public static JsonArray getAllAccounts() {
-        HttpResponse<String> response = send("GET", "/api/accounts", null);
-        requireSuccess(response, 200);
-        return JsonParser.parseString(response.body()).getAsJsonArray();
-    }
-
     public static boolean isUsernameAvailable(String username) {
         try {
             HttpResponse<String> response = send("GET", "/api/accounts/available/" + encode(username), "");
@@ -103,18 +97,6 @@ public final class RedditApiClient {
         return send("POST", "/api/accounts/register", body.toString());
     }
 
-    public static JsonObject registerAccount(String username, String email, String password) {
-        HttpResponse<String> response = registerAccountRaw(username, email, password);
-        if (response.statusCode() == 400 && response.body() != null
-                && response.body().contains("already exists")) {
-            return getAccount(username).orElse(null);
-        }
-        if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            return JsonParser.parseString(response.body()).getAsJsonObject();
-        }
-        throw new IllegalStateException("Register failed: " + response.statusCode() + " " + response.body());
-    }
-
     public static HttpResponse<String> changePasswordRaw(String username, String email, String newPassword) {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
@@ -123,27 +105,8 @@ public final class RedditApiClient {
         return send("PUT", "/api/accounts/password", body.toString());
     }
 
-    public static void changePassword(String username, String oldPassword, String newPassword) {
-        HttpResponse<String> response = changePasswordRaw(username, oldPassword, newPassword);
-        if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            return;
-        }
-        throw new IllegalStateException("Change password failed: " + response.statusCode() + " " + response.body());
-    }
-
     public static HttpResponse<String> deleteAccountRaw(String username) {
         return send("DELETE", "/api/accounts/" + encode(username), null);
-    }
-
-    public static void deleteAccount(String username) {
-        HttpResponse<String> response = deleteAccountRaw(username);
-        if (response.statusCode() >= 200 && response.statusCode() < 300) {
-            return;
-        }
-        if (response.statusCode() == 400 || response.statusCode() == 404) {
-            return;
-        }
-        throw new IllegalStateException("Delete account failed: " + response.statusCode() + " " + response.body());
     }
 
     public static boolean isSuccess(int statusCode) {

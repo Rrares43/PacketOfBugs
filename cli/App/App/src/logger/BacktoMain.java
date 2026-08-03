@@ -1,6 +1,5 @@
 package logger;
 
-import menu.LoggerSubCommand;
 import io.OutputWriter;
 
 public class BacktoMain implements LoggerSubCommand {

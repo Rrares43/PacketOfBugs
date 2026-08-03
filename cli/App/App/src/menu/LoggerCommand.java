@@ -2,6 +2,7 @@ package menu;
 
 import io.TextFormatter;
 import logger.BacktoMain;
+import logger.LoggerSubCommand;
 import logger.ShowLogOptions;
 import io.OutputWriter;
 import io.StringReader;
@@ -19,7 +20,7 @@ public class LoggerCommand implements MenuCommand {
         this.stringReader = stringReader;
         this.output = output;
 
-        this.options.add(new ShowLogOptions());
+        this.options.add(new ShowLogOptions(output));
         this.options.add(new BacktoMain(output));
     }
 
