@@ -417,8 +417,4 @@ public final class RedditApiClient {
         return GSON;
     }
 
-    public static void logFailure(String entity, Exception e) {
-        String message = "API dual-write failed for " + entity + ": " + e.getMessage();
-        System.err.println(message);
-    }
 }
