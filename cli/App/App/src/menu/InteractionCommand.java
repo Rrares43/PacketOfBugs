@@ -2,10 +2,10 @@ package menu;
 
 import post.PostMenu;
 
-public class InterractionCommand implements MenuCommand {
+public class InteractionCommand implements MenuCommand {
     private final PostMenu postMenu;
 
-    public InterractionCommand(PostMenu postMenu) {
+    public InteractionCommand(PostMenu postMenu) {
         this.postMenu = postMenu;
     }
     @Override

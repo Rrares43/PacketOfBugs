@@ -4,7 +4,7 @@ import account.AccountMenu;
 import subreddit.SubredditMenu;
 import post.PostMenu;
 import menu.AccountCommand;
-import menu.InterractionCommand;
+import menu.InteractionCommand;
 import menu.LoggerCommand;
 import menu.MenuDispatcher;
 import menu.PostCommand;
@@ -26,7 +26,7 @@ final class MenuModule {
         MenuDispatcher dispatcher = new MenuDispatcher(output);
         dispatcher.registerCommand("1", new AccountCommand(accountMenu));
         dispatcher.registerCommand("2", new PostCommand(createPostCommand));
-        dispatcher.registerCommand("3", new InterractionCommand(postMenu));
+        dispatcher.registerCommand("3", new InteractionCommand(postMenu));
         dispatcher.registerCommand("4", new SubredditCommand(subredditMenu));
         dispatcher.registerCommand("5", new LoggerCommand(stringReader, output));
         return dispatcher;

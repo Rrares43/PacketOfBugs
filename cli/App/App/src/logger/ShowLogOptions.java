@@ -1,14 +1,18 @@
 package logger;
 
+import io.OutputWriter;
 import io.TextFormatter;
-import menu.LoggerSubCommand;
 import api.RedditApiClient;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
 public class ShowLogOptions implements LoggerSubCommand {
+    private final OutputWriter output;
 
+    public ShowLogOptions(OutputWriter output) {
+        this.output = output;
+    }
     @Override
     public String getNotificationText() {
         return "Show all logs";
@@ -20,24 +24,24 @@ public class ShowLogOptions implements LoggerSubCommand {
         try {
             allLogs = RedditApiClient.getLogs();
         } catch (Exception e) {
-            System.out.println(TextFormatter.error("Unable to retrieve backend logs: " + e.getMessage()));
+            output.write(TextFormatter.error("Unable to retrieve backend logs: " + e.getMessage()));
             return true;
         }
 
         if (allLogs.isEmpty()) {
-            System.out.println(TextFormatter.warning("No logs available."));
+            output.write(TextFormatter.warning("No logs available."));
             return true;
         }
 
-        System.out.println(TextFormatter.header(" DISPLAYING CAPTURED LOGS"));
+        output.write(TextFormatter.header(" DISPLAYING CAPTURED LOGS"));
         for (JsonElement log : allLogs) {
             String logLine = log.getAsString();
             if (logLine.contains("[ERROR]")) {
-                System.out.println(TextFormatter.error(logLine));
+                output.write(TextFormatter.error(logLine));
             } else if (logLine.contains("[WARN]")) {
-                System.out.println(TextFormatter.warning(logLine));
+                output.write(TextFormatter.warning(logLine));
             } else {
-                System.out.println(logLine);
+                output.write(logLine);
             }
         }
         return true;

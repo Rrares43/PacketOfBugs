@@ -8,14 +8,9 @@ public class TextFormatter {
     public static final String YELLOW = "\u001B[33m";
     public static final String BLUE = "\u001B[34m";
     public static final String BOLD = "\u001B[1m";
-    public static final String UNDERLINE = "\u001B[4m";
 
     public static String color(String text, String color) {
         return color + text + RESET;
-    }
-
-    public static String bold(String text) {
-        return BOLD + text + RESET;
     }
 
     public static String error(String text) {
