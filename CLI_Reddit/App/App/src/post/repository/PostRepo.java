@@ -69,7 +69,5 @@ public class PostRepo implements PostRepository {
         return false;
     }
 
-    @Override
-    public int getNextCommentId() { return 0; }
 
 }
