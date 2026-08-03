@@ -6,10 +6,6 @@ public class SessionService {
     private String currentEmail;
     private Long currentAccountId;
 
-    public void login(String username) {
-        login(username, null, null);
-    }
-
     public void login(String username, String email, Long accountId) {
         this.currentUsername = username;
         this.currentEmail = email;

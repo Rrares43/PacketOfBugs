@@ -2,9 +2,7 @@ package account.verification;
 
 import api.RedditApiClient;
 
-public class NameVerification implements AccountVerifier {
-    public NameVerification() {
-    }
+public class NameVerification  {
 
     public static boolean verify(String name) {
         if (name.length() < 3 || name.length() > 20) {
