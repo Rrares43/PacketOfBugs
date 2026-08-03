@@ -19,8 +19,6 @@ class CommentTest {
         assertTrue(comment.getReplies().isEmpty());
         assertEquals(0, comment.getUpvotes());
         assertEquals(0, comment.getDownvotes());
-        assertNotNull(comment.getVotes());
-        assertTrue(comment.getVotes().isEmpty());
     }
 
     @Test
@@ -53,59 +51,47 @@ class CommentTest {
     }
 
     @Test
-    void shouldUpdateVotesThroughCommentVoteList() {
+    void shouldUpdateVoteCounts() {
         Comment comment = new Comment(1, "Test comment", "testuser");
 
-        comment.getVotes().add(new CommentVote("alice", 1, true));
-        comment.getVotes().add(new CommentVote("bob", 1, false));
+        comment.setVoteCounts(1, 1);
 
         assertEquals(1, comment.getUpvotes());
         assertEquals(1, comment.getDownvotes());
-        assertEquals(2, comment.getVotes().size());
     }
 
     @Test
-    void shouldCountVotesFromCommentVoteList() {
+    void shouldExposeVoteCountsProvidedByTheServer() {
         Comment comment = new Comment(1, "Test comment", "testuser");
 
-        comment.getVotes().add(new CommentVote("alice", 1, true));
-        comment.getVotes().add(new CommentVote("bob", 1, false));
-        comment.getVotes().add(new CommentVote("carol", 1, true));
+        comment.setVoteCounts(2, 1);
 
         assertEquals(2, comment.getUpvotes());
         assertEquals(1, comment.getDownvotes());
-        assertTrue(comment.getUserVote("alice").isPresent());
-        assertTrue(comment.getUserVote("alice").get().isUpvote());
-        assertTrue(comment.getUserVote("nobody").isEmpty());
     }
 
     @Test
-    void shouldToggleExistingCommentVote() {
+    void shouldReplaceVoteCountsWhenTheyAreRefreshed() {
         Comment comment = new Comment(1, "Test comment", "testuser");
-        CommentVote vote = new CommentVote("alice", 1, true);
-        comment.getVotes().add(vote);
+        comment.setVoteCounts(1, 0);
 
         assertEquals(1, comment.getUpvotes());
         assertEquals(0, comment.getDownvotes());
 
-        vote.setUpvote(false);
+        comment.setVoteCounts(0, 1);
 
         assertEquals(0, comment.getUpvotes());
         assertEquals(1, comment.getDownvotes());
-        assertFalse(comment.getUserVote("alice").get().isUpvote());
     }
 
     @Test
-    void shouldRemoveCommentVote() {
+    void shouldUpdateCountsWhenAVoteIsRemoved() {
         Comment comment = new Comment(1, "Test comment", "testuser");
-        comment.getVotes().add(new CommentVote("alice", 1, true));
-        comment.getVotes().add(new CommentVote("bob", 1, false));
+        comment.setVoteCounts(1, 1);
 
-        comment.getUserVote("alice").ifPresent(comment.getVotes()::remove);
+        comment.setVoteCounts(0, 1);
 
         assertEquals(0, comment.getUpvotes());
         assertEquals(1, comment.getDownvotes());
-        assertTrue(comment.getUserVote("alice").isEmpty());
-        assertTrue(comment.getUserVote("bob").isPresent());
     }
 }

@@ -21,8 +21,6 @@ class PostTest {
         assertTrue(post.getComments().isEmpty());
         assertEquals(0, post.getUpvotes());
         assertEquals(0, post.getDownvotes());
-        assertNotNull(post.getVotes());
-        assertTrue(post.getVotes().isEmpty());
     }
 
     @Test
@@ -51,7 +49,7 @@ class PostTest {
         post.addComment(comment2);
         post.addComment(comment3);
 
-        post.removeComment(1);
+        post.getComments().remove(1);
 
         List<Comment> comments = post.getComments();
         assertEquals(2, comments.size());
@@ -65,71 +63,57 @@ class PostTest {
         Comment comment = new Comment(1, "Comment", "user");
         post.addComment(comment);
 
-        post.removeComment(-1);
-        post.removeComment(5);
-
+        assertThrows(IndexOutOfBoundsException.class, () -> post.getComments().remove(-1));
+        assertThrows(IndexOutOfBoundsException.class, () -> post.getComments().remove(5));
         assertEquals(1, post.getComments().size());
 
         Post emptyPost = new Post(2, "Title", "Content", "user", "subreddit");
-        emptyPost.removeComment(0);
-
+        assertThrows(IndexOutOfBoundsException.class, () -> emptyPost.getComments().remove(0));
         assertEquals(0, emptyPost.getComments().size());
     }
 
     @Test
-    void shouldUpdateVotesThroughPostVoteList() {
+    void shouldUpdateVoteCounts() {
         Post post = new Post(1, "Title", "Content", "user", "subreddit");
 
-        post.getVotes().add(new PostVote("alice", 1, true));
-        post.getVotes().add(new PostVote("bob", 1, false));
+        post.setVoteCounts(1, 1);
 
         assertEquals(1, post.getUpvotes());
         assertEquals(1, post.getDownvotes());
-        assertEquals(2, post.getVotes().size());
     }
 
     @Test
-    void shouldCountVotesFromPostVoteList() {
+    void shouldExposeVoteCountsProvidedByTheServer() {
         Post post = new Post(1, "Title", "Content", "user", "subreddit");
 
-        post.getVotes().add(new PostVote("alice", 1, true));
-        post.getVotes().add(new PostVote("bob", 1, false));
-        post.getVotes().add(new PostVote("carol", 1, true));
+        post.setVoteCounts(2, 1);
 
         assertEquals(2, post.getUpvotes());
         assertEquals(1, post.getDownvotes());
-        assertTrue(post.getUserVote("alice").isPresent());
-        assertTrue(post.getUserVote("alice").get().isUpvote());
-        assertTrue(post.getUserVote("nobody").isEmpty());
     }
 
     @Test
-    void shouldToggleExistingPostVote() {
+    void shouldReplaceVoteCountsWhenTheyAreRefreshed() {
         Post post = new Post(1, "Title", "Content", "user", "subreddit");
-        PostVote vote = new PostVote("alice", 1, true);
-        post.getVotes().add(vote);
+        post.setVoteCounts(1, 0);
 
         assertEquals(1, post.getUpvotes());
         assertEquals(0, post.getDownvotes());
 
-        vote.setUpvote(false);
+        post.setVoteCounts(0, 1);
 
         assertEquals(0, post.getUpvotes());
         assertEquals(1, post.getDownvotes());
-        assertFalse(post.getUserVote("alice").get().isUpvote());
     }
 
     @Test
-    void shouldRemovePostVote() {
+    void shouldUpdateCountsWhenAVoteIsRemoved() {
         Post post = new Post(1, "Title", "Content", "user", "subreddit");
-        post.getVotes().add(new PostVote("alice", 1, true));
-        post.getVotes().add(new PostVote("bob", 1, false));
+        post.setVoteCounts(1, 1);
 
-        post.getUserVote("alice").ifPresent(post.getVotes()::remove);
+        post.setVoteCounts(0, 1);
 
         assertEquals(0, post.getUpvotes());
         assertEquals(1, post.getDownvotes());
-        assertTrue(post.getUserVote("alice").isEmpty());
-        assertTrue(post.getUserVote("bob").isPresent());
     }
 }
