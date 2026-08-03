@@ -1,7 +1,7 @@
 package account.verification;
 
-public class EmailVerification implements AccountVerifier {
-    public EmailVerification(){}
+public class EmailVerification {
+
     public static boolean verify(String email) {
         if(email == null || email.isBlank()){
             return false;

@@ -1,7 +1,6 @@
 package account.verification;
 
-public class PasswordVerification implements AccountVerifier {
-    public PasswordVerification(){}
+public class PasswordVerification  {
 
     public static boolean verify(String password){
         if(password == null){
