@@ -3,14 +3,14 @@ package account.command;
 import account.operations.AccountLogin;
 
 public class LoginCommand implements AccountCommand {
-    private final AccountLogin AccountLogin;
+    private final AccountLogin accountLogin;
 
-    public LoginCommand(AccountLogin AccountLogin) {
-        this.AccountLogin = AccountLogin;
+    public LoginCommand(AccountLogin accountLogin) {
+        this.accountLogin = accountLogin;
     }
 
     @Override
     public void execute(){
-        AccountLogin.Login();
+        accountLogin.Login();
     }
 }

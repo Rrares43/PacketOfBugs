@@ -3,14 +3,14 @@ package account.command;
 import account.operations.AccountCreator;
 
 public class CreateAccountCommand implements AccountCommand {
-    private final AccountCreator AccountCreator;
+    private final AccountCreator accountCreator;
 
-    public CreateAccountCommand(AccountCreator AccountCreator) {
-        this.AccountCreator = AccountCreator;
+    public CreateAccountCommand(AccountCreator accountCreator) {
+        this.accountCreator = accountCreator;
     }
 
     @Override
     public void execute(){
-        AccountCreator.createAccount();
+        accountCreator.createAccount();
     }
 }
