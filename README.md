@@ -3,8 +3,13 @@
 A command-line interface (CLI) Reddit prototype built on a modern Client-Server architecture. This project evolved from a monolithic application with local storage (JSON) to a distributed system, utilizing a robust Spring Boot backend and a PostgreSQL database.
 
 ## 🏗️ Architecture
-*   **Backend (Server):** Spring Boot REST API. Handles business logic, validations and data persistence.
-*   **Frontend (Client):** Java CLI. An interactive console interface that communicates exclusively via HTTP requests with the server. The client is stateless (no local data storage).
+```
+cli/  (java.exe)  ──┐
+                    ├──►  backend/ (Spring)  ──►  Database
+                    │
+```
+*   **`backend/`:** Spring Boot REST API. Handles business logic, validations and data persistence.
+*   **`cli/`:** Java CLI client. Interactive console that talks to the API over HTTP only (no local data storage).
 *   **Database:** PostgreSQL (hosted on Neon.tech).
 
 ## ✨ Core Features
@@ -33,20 +38,20 @@ A command-line interface (CLI) Reddit prototype built on a modern Client-Server 
 
 ## 🚀 Installation & Setup
 
-### 1. Database & Backend Configuration
+### 1. Database & Backend (`backend/`)
 1.  Ensure you have a [Neon.tech](https://neon.tech/) account and an active PostgreSQL database.
-2.  Open the `application.properties` file in the Spring Boot project and update your credentials:
+2.  Open `backend/src/main/resources/application.properties` and update your credentials:
     ```properties
     spring.datasource.url=jdbc:postgresql://<neon-url>/<db-name>
     spring.datasource.username=<your-username>
     spring.datasource.password=<your-password>
     spring.jpa.hibernate.ddl-auto=update
     ```
-3.  Start the Spring Boot application. The server will run on `http://localhost:8080` by default.
+3.  Start the Spring Boot application from `backend/`. The server will run on `http://localhost:8080` by default.
 
-### 2. Running the Client (CLI)
+### 2. Running the Client (`cli/`)
 1.  Ensure the Spring Boot server is up and running without errors.
-2.  Compile and run the `main` method in the main class of the CLI project.
+2.  Compile and run `Main` from the `cli/` project.
 3.  The console application will start and automatically connect to the API. If the server is offline, the CLI will handle the error gracefully, preventing any data corruption or desynchronization.
 
 ## 🧹 About the Refactoring Journey

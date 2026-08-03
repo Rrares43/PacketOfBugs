@@ -5,8 +5,8 @@
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
-        <option value="$PROJECT_DIR$/SpringReddit/pom.xml" />
-        <option value="$PROJECT_DIR$/CLI_Reddit/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/pom.xml" />
+        <option value="$PROJECT_DIR$/cli/pom.xml" />
       </list>
     </option>
   </component>
