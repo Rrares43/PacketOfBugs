@@ -1,166 +1,104 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.dto.CommentDto.CommentRequest;
+import com.example.springreddit.dto.CommentDto.CommentResponse;
+import com.example.springreddit.exception.ResourceNotFoundException;
+import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Comment;
+import com.example.springreddit.model.CommentVote;
 import com.example.springreddit.model.Post;
+import com.example.springreddit.repository.AccountRepository;
 import com.example.springreddit.repository.CommentRepository;
+import com.example.springreddit.repository.CommentVoteRepository;
 import com.example.springreddit.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CommentService {
 
+    private static final CustomLogger LOGGER = CustomLogger.getInstance();
+
     private final CommentRepository commentRepository;
+    private final CommentVoteRepository commentVoteRepository;
     private final PostRepository postRepository;
+    private final AccountRepository accountRepository;
 
-    public CommentService(CommentRepository commentRepository, PostRepository postRepository) {
+    public CommentService(CommentRepository commentRepository,
+                          CommentVoteRepository commentVoteRepository,
+                          PostRepository postRepository,
+                          AccountRepository accountRepository) {
         this.commentRepository = commentRepository;
+        this.commentVoteRepository = commentVoteRepository;
         this.postRepository = postRepository;
+        this.accountRepository = accountRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public CommentResponse getComment(UUID commentId) {
+        Comment comment = findComment(commentId);
+        return toResponse(comment, null);
     }
 
     @Transactional
-    public Comment comment(Long postId, String text, Account author) {
-        validateText(text);
-        validateAuthor(author);
+    public CommentResponse createComment(UUID postId, CommentRequest request) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Comment creation failed: post not found with ID: {}", postId);
-                    return new IllegalArgumentException("Post not found");
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
+        Account author = accountRepository.findByUsername(request.author())
+                .orElseThrow(() -> new ResourceNotFoundException("Author not found: " + request.author()));
 
-        Comment newComment = new Comment(text, author, post);
-        post.addComment(newComment);
-        Comment savedComment = commentRepository.save(newComment);
-        com.example.springreddit.logging.CustomLogger.getInstance().info("Comment created successfully with ID: {} on post ID: {} by author ID: {}", savedComment.getId(), postId, author.getId());
-        return savedComment;
+        Comment comment = new Comment(request.content().trim(), author, post);
+        if (request.parentId() == null) {
+            post.addComment(comment);
+        } else {
+            Comment parent = commentRepository.findByIdAndPost_Id(request.parentId(), postId)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Parent comment not found on post: " + request.parentId()));
+            if (parent.isDeleted()) {
+                throw new IllegalArgumentException("Replies cannot be added to a deleted comment");
+            }
+            parent.addReply(comment);
+        }
+
+        Comment saved = commentRepository.save(comment);
+        commentVoteRepository.save(new CommentVote(saved, author, CommentVote.UPVOTE));
+        LOGGER.info("Comment created with ID: {} on post: {} by: {}", saved.getId(), postId, author.getUsername());
+        return toResponse(saved, author);
     }
 
-    public Comment findCommentById(Long commentId) {
-        validateCommentId(commentId);
+    private Comment findComment(UUID commentId) {
         return commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found: " + commentId));
     }
 
-    public List<Comment> getTopLevelComments(Long postId) {
-        validatePostId(postId);
-        if (!postRepository.existsById(postId)) {
-            throw new IllegalArgumentException("Post not found");
-        }
-        return commentRepository.findByPost_IdAndParentCommentIsNullOrderByCreatedAtAscIdAsc(postId);
-    }
+    private CommentResponse toResponse(Comment comment, Account currentUser) {
+        long upvotes = commentVoteRepository.countByComment_IdAndVoteType(comment.getId(), CommentVote.UPVOTE);
+        long downvotes = commentVoteRepository.countByComment_IdAndVoteType(comment.getId(), CommentVote.DOWNVOTE);
+        String userVote = currentUser == null ? null : commentVoteRepository
+                .findByCommentAndAccount(comment, currentUser)
+                .map(vote -> vote.isUpvote() ? "up" : "down")
+                .orElse(null);
+        List<CommentResponse> replies = comment.getReplies().stream()
+                .map(reply -> toResponse(reply, currentUser))
+                .toList();
 
-    @Transactional
-    public Comment replyToComment(Long postId, Long parentCommentId, String text, Account author) {
-        validateText(text);
-        validateAuthor(author);
-        validatePostId(postId);
-        validateParentCommentId(parentCommentId);
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Reply creation failed: post not found with ID: {}", postId);
-                    return new IllegalArgumentException("Post not found");
-                });
-
-        Comment parentComment = findCommentById(parentCommentId);
-        if (!parentComment.belongsToPost(postId)) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Reply creation failed: base comment not found for parent ID: {} on post ID: {}", parentCommentId, postId);
-            throw new IllegalArgumentException("Base comment not found.");
-        }
-        if (parentComment.isDeleted()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Reply creation failed: cannot reply to deleted comment with ID: {}", parentCommentId);
-            throw new IllegalArgumentException("Deleted comments cannot be replied to");
-        }
-
-        Comment reply = new Comment(text, author, post);
-        parentComment.addReply(reply);
-        Comment savedReply = commentRepository.save(reply);
-        com.example.springreddit.logging.CustomLogger.getInstance().info("Reply created successfully with ID: {} to parent comment ID: {} on post ID: {} by author ID: {}", savedReply.getId(), parentCommentId, postId, author.getId());
-        return savedReply;
-    }
-
-    @Transactional
-    public Comment editComment(Long postId, Long commentId, String newText, Account editor) {
-        validateText(newText);
-        validatePostId(postId);
-        validateCommentId(commentId);
-        validateAuthor(editor);
-        Comment comment = findCommentById(commentId);
-        if (!comment.belongsToPost(postId)) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Comment edit failed: comment not found for ID: {} on post ID: {}", commentId, postId);
-            throw new IllegalArgumentException("Comment not found.");
-        }
-        if (comment.isDeleted()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Comment edit failed: cannot edit deleted comment with ID: {}", commentId);
-            throw new IllegalArgumentException("Deleted comments cannot be edited");
-        }
-        if (!comment.isAuthoredBy(editor)) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Comment edit failed: unauthorized access to comment ID: {} by account ID: {}", commentId, editor.getId());
-            throw new SecurityException("Comment cannot be edited");
-        }
-
-        comment.editContent(newText);
-        commentRepository.save(comment);
-        com.example.springreddit.logging.CustomLogger.getInstance().info("Comment edited successfully with ID: {} on post ID: {} by editor ID: {}", commentId, postId, editor.getId());
-        return comment;
-    }
-
-    @Transactional
-    public void deleteComment(Long postId, Long commentId, Account deleter) {
-        validatePostId(postId);
-        validateCommentId(commentId);
-        validateAuthor(deleter);
-        Comment comment = findCommentById(commentId);
-        if (!comment.belongsToPost(postId)) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Comment delete failed: comment not found for ID: {} on post ID: {}", commentId, postId);
-            throw new IllegalArgumentException("Comment not found.");
-        }
-        if (comment.isDeleted()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Comment delete failed: comment with ID: {} is already deleted", commentId);
-            throw new IllegalArgumentException("Comment is already deleted");
-        }
-        if (!comment.isAuthoredBy(deleter)) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Comment delete failed: unauthorized access to comment ID: {} by account ID: {}", commentId, deleter.getId());
-            throw new SecurityException("Comment cannot be deleted");
-        }
-
-        comment.softDelete();
-        commentRepository.save(comment);
-        com.example.springreddit.logging.CustomLogger.getInstance().info("Comment deleted successfully with ID: {} on post ID: {} by deleter ID: {}", commentId, postId, deleter.getId());
-    }
-
-    private void validateText(String text) {
-        if (text == null || text.isBlank()) {
-            throw new IllegalArgumentException("Comment content cannot be blank");
-        }
-        if (text.length() > 3000) {
-            throw new IllegalArgumentException("Comment content must not exceed 3000 characters");
-        }
-    }
-
-    private void validateAuthor(Account author) {
-        if (author == null) {
-            throw new IllegalArgumentException("Author cannot be null");
-        }
-    }
-
-    private void validatePostId(Long postId) {
-        if (postId == null) {
-            throw new IllegalArgumentException("Post ID cannot be null");
-        }
-    }
-
-    private void validateParentCommentId(Long parentCommentId) {
-        if (parentCommentId == null) {
-            throw new IllegalArgumentException("Parent comment ID cannot be null");
-        }
-    }
-
-    private void validateCommentId(Long commentId) {
-        if (commentId == null) {
-            throw new IllegalArgumentException("Comment ID cannot be null");
-        }
+        return new CommentResponse(
+                comment.getId(),
+                comment.getPost().getId(),
+                comment.getParentComment() == null ? null : comment.getParentComment().getId(),
+                comment.isDeleted() ? "[deleted]" : comment.getContent(),
+                comment.isDeleted() ? "[deleted]" : comment.getAuthor().getUsername(),
+                upvotes,
+                downvotes,
+                upvotes - downvotes,
+                userVote,
+                comment.getCreatedAt(),
+                comment.getUpdatedAt(),
+                replies
+        );
     }
 }

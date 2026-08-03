@@ -9,18 +9,19 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface CommentVoteRepository extends JpaRepository<CommentVote, CommentVoteId> {
 
     Optional<CommentVote> findByCommentAndAccount(Comment comment, Account account);
 
-    Optional<CommentVote> findByComment_IdAndAccount_Id(Long commentId, Long accountId);
+    Optional<CommentVote> findByComment_IdAndAccount_Id(UUID commentId, Long accountId);
 
-    long countByComment_IdAndVoteType(Long commentId, short voteType);
+    long countByComment_IdAndVoteType(UUID commentId, short voteType);
 
     /* Currently unused but useful methods
-    List<CommentVote> findByComment_Id(Long commentId);
+    List<CommentVote> findByComment_Id(UUID commentId);
 
     long countByCommentAndVoteType(Comment comment, short voteType);
 

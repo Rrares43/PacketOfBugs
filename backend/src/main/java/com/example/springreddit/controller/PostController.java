@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -56,7 +57,7 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getPost(@PathVariable Long id) {
+    public ResponseEntity<?> getPost(@PathVariable UUID id) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Get post request received for post ID: {}", id);
             return ResponseEntity.ok(toResponse(postService.getPostById(id)));
@@ -74,7 +75,7 @@ public class PostController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> editPost(@PathVariable Long id, @Valid @RequestBody PostDto.EditPostRequest request) {
+    public ResponseEntity<?> editPost(@PathVariable UUID id, @Valid @RequestBody PostDto.EditPostRequest request) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Edit post request received for post ID: {} by account ID: {}", id, request.getAccountId());
             Post post = postService.editPost(id, request.getTitle(), request.getContent(), request.getAccountId());
@@ -89,7 +90,7 @@ public class PostController {
     }
 
     @DeleteMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> deletePost(@PathVariable Long id, @RequestBody PostDto.DeletePostRequest request) {
+    public ResponseEntity<?> deletePost(@PathVariable UUID id, @RequestBody PostDto.DeletePostRequest request) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Delete post request received for post ID: {} by account ID: {}", id, request.getAccountId());
             postService.deletePost(id, request.getAccountId());
@@ -104,7 +105,7 @@ public class PostController {
     }
 
     @PostMapping(value = "/{id}/votes", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> vote(@PathVariable Long id, @Valid @RequestBody VoteDto.VoteRequest request) {
+    public ResponseEntity<?> vote(@PathVariable UUID id, @Valid @RequestBody VoteDto.VoteRequest request) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Vote request received for post ID: {} by account ID: {} - upvote: {}", id, request.getAccountId(), request.isUpvote());
             Account account = accountService.getById(request.getAccountId());

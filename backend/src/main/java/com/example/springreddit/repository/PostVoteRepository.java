@@ -9,22 +9,23 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface PostVoteRepository extends JpaRepository<PostVote, PostVoteId> {
 
     Optional<PostVote> findByPostAndAccount(Post post, Account account);
 
-    Optional<PostVote> findByPost_IdAndAccount_Id(Long postId, Long accountId);
+    Optional<PostVote> findByPost_IdAndAccount_Id(UUID postId, Long accountId);
 
     long countByPostAndVoteType(Post post, short voteType);
 
-    long countByPost_IdAndVoteType(Long postId, short voteType);
+    long countByPost_IdAndVoteType(UUID postId, short voteType);
 
     /* Currently unused but useful methodss
     void deleteByPostAndAccount(Post post, Account account);
 
-    List<PostVote> findByPost_Id(Long postId);
+    List<PostVote> findByPost_Id(UUID postId);
 
      */
 }
