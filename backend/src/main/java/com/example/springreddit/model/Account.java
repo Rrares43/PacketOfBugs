@@ -30,6 +30,9 @@ public class Account {
     @Column(nullable = false, length = 100)
     private String password;
 
+    @Column(length = 20)
+    private String role = "USER";
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

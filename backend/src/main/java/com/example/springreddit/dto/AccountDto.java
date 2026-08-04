@@ -3,6 +3,8 @@ package com.example.springreddit.dto;
 import com.example.springreddit.validator.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import org.hibernate.validator.constraints.UniqueElements;
 
@@ -11,6 +13,8 @@ public class AccountDto {
     @Data
     public static class RegistrationRequest {
         @NotBlank(message = "Username cannot be blank")
+        @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
+        @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Only alphanumeric characters and underscores allowed")
         private String username;
 
         @NotBlank(message = "Email cannot be blank")
@@ -24,7 +28,10 @@ public class AccountDto {
 
     @Data
     public static class LoginRequest {
+        @NotBlank(message = "Username cannot be blank")
         private String username;
+
+        @NotBlank(message = "Password cannot be blank")
         private String password;
     }
 
@@ -41,6 +48,7 @@ public class AccountDto {
         private String username;
 
         @NotBlank(message = "Email cannot be blank")
+        @Email(message = "Invalid email format")
         private String email;
 
         @NotBlank(message = "New password cannot be blank")

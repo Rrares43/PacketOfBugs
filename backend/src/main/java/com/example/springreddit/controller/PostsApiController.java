@@ -1,7 +1,6 @@
 package com.example.springreddit.controller;
 
 import com.example.springreddit.shared.ApiResponse;
-import com.example.springreddit.dto.CommentDto;
 import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.service.PostService;
