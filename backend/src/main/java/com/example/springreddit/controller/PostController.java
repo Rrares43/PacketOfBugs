@@ -1,5 +1,6 @@
 package com.example.springreddit.controller;
 
+import com.example.springreddit.dto.CommentDto;
 import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.VoteDto;
 import com.example.springreddit.model.Account;
@@ -34,7 +35,7 @@ public class PostController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> createPost(@Valid @RequestBody PostDto.CreatePostRequest request) {
+    public ResponseEntity<CommentDto.ApiResponse<PostDto.PostResponse>> createPost(@Valid @RequestBody PostDto.CreatePostRequest request) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Create post request received for subreddit: {} by author ID: {}", request.getSubredditName(), request.getAuthorId());
             Post post = postService.createPost(
@@ -42,50 +43,52 @@ public class PostController {
                     request.getContent(),
                     request.getAuthorId(),
                     request.getSubredditName());
-            return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(post));
+            return ResponseEntity.status(HttpStatus.CREATED).body(new CommentDto.ApiResponse<>(true, postService.toPostResponse(post)));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Create post failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(new CommentDto.ApiResponse<>(false, null));
         }
     }
 
     @GetMapping
-    public ResponseEntity<List<PostDto.PostResponse>> getAllPosts() {
-        return ResponseEntity.ok(postService.getAllPosts().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList()));
+    public ResponseEntity<CommentDto.ApiResponse<List<PostDto.PostResponse>>> getAllPosts() {
+        List<PostDto.PostResponse> posts = postService.getAllPosts().stream()
+                .map(postService::toPostResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(new CommentDto.ApiResponse<>(true, posts));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getPost(@PathVariable UUID id) {
+    public ResponseEntity<CommentDto.ApiResponse<PostDto.PostResponse>> getPost(@PathVariable UUID id) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Get post request received for post ID: {}", id);
-            return ResponseEntity.ok(toResponse(postService.getPostById(id)));
+            return ResponseEntity.ok(new CommentDto.ApiResponse<>(true, postService.toPostResponse(postService.getPostById(id))));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Get post failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new CommentDto.ApiResponse<>(false, null));
         }
     }
 
     @GetMapping("/subreddit/{name}")
-    public ResponseEntity<List<PostDto.PostResponse>> getBySubreddit(@PathVariable String name) {
-        return ResponseEntity.ok(postService.getPostsBySubreddit(name).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList()));
+    public ResponseEntity<CommentDto.ApiResponse<List<PostDto.PostResponse>>> getBySubreddit(@PathVariable String name) {
+        List<PostDto.PostResponse> posts = postService.getPostsBySubreddit(name).stream()
+                .map(postService::toPostResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(new CommentDto.ApiResponse<>(true, posts));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> editPost(@PathVariable UUID id, @Valid @RequestBody PostDto.EditPostRequest request) {
+    public ResponseEntity<CommentDto.ApiResponse<PostDto.PostResponse>> editPost(@PathVariable UUID id, @Valid @RequestBody PostDto.EditPostRequest request) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Edit post request received for post ID: {} by account ID: {}", id, request.getAccountId());
             Post post = postService.editPost(id, request.getTitle(), request.getContent(), request.getAccountId());
-            return ResponseEntity.ok(toResponse(post));
+            return ResponseEntity.ok(new CommentDto.ApiResponse<>(true, postService.toPostResponse(post)));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Edit post failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(new CommentDto.ApiResponse<>(false, null));
         } catch (SecurityException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Edit post failed - security violation: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new CommentDto.ApiResponse<>(false, null));
         }
     }
 
@@ -123,21 +126,5 @@ public class PostController {
         }
     }
 
-    private PostDto.PostResponse toResponse(Post post) {
-        PostDto.PostResponse response = new PostDto.PostResponse();
-        response.setId(post.getId());
-        response.setTitle(post.getTitle());
-        response.setContent(post.getContent());
-        if (post.getAuthor() != null) {
-            response.setAuthorId(post.getAuthor().getId());
-            response.setAuthorUsername(post.getAuthor().getUsername());
-        }
-        if (post.getSubreddit() != null) {
-            response.setSubredditId(post.getSubreddit().getId());
-            response.setSubredditName(post.getSubreddit().getName());
-        }
-        response.setUpvotes(postService.countUpvotes(post));
-        response.setDownvotes(postService.countDownvotes(post));
-        return response;
-    }
+
 }
