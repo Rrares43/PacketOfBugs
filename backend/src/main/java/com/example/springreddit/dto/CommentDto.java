@@ -1,5 +1,5 @@
 package com.example.springreddit.dto;
-
+import com.example.springreddit.shared.ApiResponse;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -23,6 +23,12 @@ public final class CommentDto {
             UUID parentId
     ) {
     }
+    public record UpdateCommentRequest(
+            @NotBlank(message = "Comment cannot be empty")
+            @Size(max = 1000, message = "Comment must not exceed 1000 characters")
+            String content
+    ) {
+    }
 
     public record CommentResponse(
             UUID id,
@@ -43,9 +49,9 @@ public final class CommentDto {
         }
     }
 
-    public record ApiResponse<T>(boolean success, T data) {
-        public static <T> ApiResponse<T> success(T data) {
-            return new ApiResponse<>(true, data);
-        }
+    @GetMapping("/{id}")
+    public ApiResponse<CommentDto.CommentResponse> getComment(@PathVariable UUID id) {
+        CommentDto.CommentResponse response = commentService.getCommentById(id);
+        return ApiResponse.success(response);
     }
 }

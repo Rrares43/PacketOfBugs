@@ -1,17 +1,20 @@
 package com.example.springreddit.controller;
 
-import com.example.springreddit.dto.CommentDto.ApiResponse;
+import com.example.springreddit.shared.ApiResponse;
 import com.example.springreddit.dto.CommentDto.CommentRequest;
 import com.example.springreddit.dto.CommentDto.CommentResponse;
+import com.example.springreddit.dto.CommentDto.UpdateCommentRequest;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.service.CommentService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,6 +30,7 @@ public class CommentController {
     public CommentController(CommentService commentService) {
         this.commentService = commentService;
     }
+
 
     @GetMapping(value = "/comments/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<CommentResponse>> getComment(@PathVariable UUID id) {
@@ -46,4 +50,19 @@ public class CommentController {
         CommentResponse comment = commentService.createComment(postId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(comment));
     }
+
+    @PutMapping(
+            value = "/comments/{id}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ApiResponse<CommentResponse>> updateComment(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateCommentRequest request) {
+        LOGGER.info("Update comment request received for ID: {}", id);
+        CommentResponse updatedComment = commentService.updateComment(id, request);
+        return ResponseEntity.ok(ApiResponse.success(updatedComment));
+    }
+
+
 }
