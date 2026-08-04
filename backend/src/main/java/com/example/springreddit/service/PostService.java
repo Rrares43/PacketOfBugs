@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -357,6 +358,104 @@ public class PostService {
         
         com.example.springreddit.logging.CustomLogger.getInstance().info("Image uploaded successfully: {}", uniqueFilename);
         return "/uploads/" + uniqueFilename;
+    }
+
+    @Transactional
+    public com.example.springreddit.dto.VoteResponse voteOnPost(UUID postId, String currentUsername, String voteType) {
+        if (postId == null) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Vote failed: post ID is null");
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+        if (currentUsername == null || currentUsername.isBlank()) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Vote failed: missing authenticated username");
+            throw new UnauthorizedException("Authentication is required");
+        }
+        if (voteType == null || (!voteType.equals("up") && !voteType.equals("down") && !voteType.equals("none"))) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Vote failed: invalid voteType '{}'", voteType);
+            throw new IllegalArgumentException("Vote type must be 'up', 'down', or 'none'");
+        }
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> {
+                    com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                            "Vote failed: post not found with ID: {}", postId);
+                    return new ResourceNotFoundException("Post not found: " + postId);
+                });
+
+        Account account = accountRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> {
+                    com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                            "Vote failed: account not found with username: {}", currentUsername);
+                    return new UnauthorizedException("User not found");
+                });
+
+        Optional<PostVote> existingVoteOpt = postVoteRepository.findByPostAndAccount(post, account);
+        short newVoteType;
+        boolean voteChanged = false;
+
+        switch (voteType) {
+            case "up":
+                newVoteType = PostVote.UPVOTE;
+                break;
+            case "down":
+                newVoteType = PostVote.DOWNVOTE;
+                break;
+            case "none":
+                if (existingVoteOpt.isPresent()) {
+                    PostVote existingVote = existingVoteOpt.get();
+                    postVoteRepository.delete(existingVote);
+                    com.example.springreddit.logging.CustomLogger.getInstance().info(
+                            "Vote removed for post ID: {} by user: {}", postId, currentUsername);
+                    return new com.example.springreddit.dto.VoteResponse(
+                            countUpvotes(post),
+                            countDownvotes(post),
+                            countUpvotes(post) - countDownvotes(post),
+                            "none"
+                    );
+                }
+                return new com.example.springreddit.dto.VoteResponse(
+                        countUpvotes(post),
+                        countDownvotes(post),
+                        countUpvotes(post) - countDownvotes(post),
+                        "none"
+                );
+            default:
+                throw new IllegalArgumentException("Invalid vote type: " + voteType);
+        }
+
+        if (existingVoteOpt.isPresent()) {
+            PostVote existingVote = existingVoteOpt.get();
+            if (existingVote.getVoteType() == newVoteType) {
+                com.example.springreddit.logging.CustomLogger.getInstance().info(
+                        "Vote unchanged for post ID: {} by user: {}", postId, currentUsername);
+                return new com.example.springreddit.dto.VoteResponse(
+                        countUpvotes(post),
+                        countDownvotes(post),
+                        countUpvotes(post) - countDownvotes(post),
+                        newVoteType == PostVote.UPVOTE ? "up" : "down"
+                );
+            }
+            existingVote.setVoteType(newVoteType);
+            postVoteRepository.save(existingVote);
+            voteChanged = true;
+        } else {
+            PostVote newVote = new PostVote(account, post, newVoteType);
+            postVoteRepository.save(newVote);
+            voteChanged = true;
+        }
+
+        if (voteChanged) {
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "Vote {} for post ID: {} by user: {}", newVoteType == PostVote.UPVOTE ? "upvoted" : "downvoted", postId, currentUsername);
+        }
+
+        String userVoteStr = newVoteType == PostVote.UPVOTE ? "up" : "down";
+        return new com.example.springreddit.dto.VoteResponse(
+                countUpvotes(post),
+                countDownvotes(post),
+                countUpvotes(post) - countDownvotes(post),
+                userVoteStr
+        );
     }
 
     @Transactional(readOnly = true)
