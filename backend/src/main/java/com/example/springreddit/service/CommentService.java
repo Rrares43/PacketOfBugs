@@ -1,5 +1,6 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.dto.CommentDto.UpdateCommentRequest;
 import com.example.springreddit.dto.CommentDto.CommentRequest;
 import com.example.springreddit.dto.CommentDto.CommentResponse;
 import com.example.springreddit.exception.ResourceNotFoundException;
@@ -68,6 +69,17 @@ public class CommentService {
         commentVoteRepository.save(new CommentVote(saved, author, CommentVote.UPVOTE));
         LOGGER.info("Comment created with ID: {} on post: {} by: {}", saved.getId(), postId, author.getUsername());
         return toResponse(saved, author);
+    }
+    @Transactional
+    public CommentResponse updateComment(UUID commentId, UpdateCommentRequest request) {
+        Comment comment = findComment(commentId);
+        if (comment.isDeleted()) {
+            throw new IllegalArgumentException("Cannot update a deleted comment");
+        }
+        comment.setContent(request.content().trim());
+        Comment saved = commentRepository.save(comment);
+        LOGGER.info("Comment updated with ID: {}", saved.getId());
+        return toResponse(saved, comment.getAuthor());
     }
 
     private Comment findComment(UUID commentId) {
