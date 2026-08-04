@@ -193,4 +193,54 @@ public class PostsApiController {
                     new ApiResponse<>(false, null));
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<String>> deletePost(@PathVariable UUID id) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null
+                    || !authentication.isAuthenticated()
+                    || "anonymousUser".equals(authentication.getPrincipal())) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                        "DELETE /posts/{} request failed: user not authenticated", id);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                        new ApiResponse<>(false, null));
+            }
+            String currentUsername = authentication.getName();
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "DELETE /posts/{} request received from user: {}", id, currentUsername);
+
+            postService.deletePost(id, currentUsername);
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "DELETE /posts/{} request successful", id);
+            return ResponseEntity.ok(ApiResponse.success("Postarea a fost stearsa cu succes"));
+        } catch (ResourceNotFoundException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "DELETE /posts/{} request failed: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new ApiResponse<>(false, null));
+        } catch (ForbiddenException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "DELETE /posts/{} request failed - forbidden: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    new ApiResponse<>(false, null));
+        } catch (UnauthorizedException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "DELETE /posts/{} request failed - unauthorized: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    new ApiResponse<>(false, null));
+        } catch (IllegalArgumentException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "DELETE /posts/{} request failed: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "DELETE /posts/{} request failed with unexpected error: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new ApiResponse<>(false, null));
+        }
+    }
 }

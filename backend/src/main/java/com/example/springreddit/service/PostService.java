@@ -241,6 +241,35 @@ public class PostService {
         com.example.springreddit.logging.CustomLogger.getInstance().info("Post deleted successfully with ID: {} by account ID: {}", postId, accountId);
     }
 
+    @Transactional
+    public void deletePost(UUID id, String currentUsername) {
+        if (id == null) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete post failed: post ID is null");
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+        if (currentUsername == null || currentUsername.isBlank()) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete post failed: missing authenticated username");
+            throw new UnauthorizedException("Authentication is required");
+        }
+
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> {
+                    com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                            "Delete post failed: post not found with ID: {}", id);
+                    return new ResourceNotFoundException("Post not found: " + id);
+                });
+
+        if (post.getAuthor() == null || !currentUsername.equals(post.getAuthor().getUsername())) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "Delete post failed: user '{}' is not the author of post ID: {}", currentUsername, id);
+            throw new ForbiddenException("Only the post author can delete it");
+        }
+
+        postRepository.delete(post);
+        com.example.springreddit.logging.CustomLogger.getInstance().info(
+                "Post deleted successfully with ID: {} by author: {}", id, currentUsername);
+    }
+
     public long countUpvotes(Post post) {
         if (post == null) {
             throw new IllegalArgumentException("Post cannot be null");
