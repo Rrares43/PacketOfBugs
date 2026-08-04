@@ -1,6 +1,10 @@
 package com.example.springreddit.service;
 
 import com.example.springreddit.dto.PostDto;
+import com.example.springreddit.dto.UpdatePostRequest;
+import com.example.springreddit.exception.ForbiddenException;
+import com.example.springreddit.exception.ResourceNotFoundException;
+import com.example.springreddit.exception.UnauthorizedException;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
@@ -18,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -153,6 +158,61 @@ public class PostService {
         postRepository.save(post);
         com.example.springreddit.logging.CustomLogger.getInstance().info("Post edited successfully with ID: {} by account ID: {}", postId, accountId);
         return post;
+    }
+
+    @Transactional
+    public Post updatePost(UUID id, UpdatePostRequest request, String currentUsername) {
+        if (id == null) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Update post failed: post ID is null");
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+        if (currentUsername == null || currentUsername.isBlank()) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Update post failed: missing authenticated username");
+            throw new UnauthorizedException("Authentication is required");
+        }
+        if (request == null) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Update post failed: request body is null");
+            throw new IllegalArgumentException("Request body cannot be null");
+        }
+
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> {
+                    com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                            "Update post failed: post not found with ID: {}", id);
+                    return new ResourceNotFoundException("Post not found: " + id);
+                });
+
+        if (post.getAuthor() == null || !currentUsername.equals(post.getAuthor().getUsername())) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "Update post failed: user '{}' is not the author of post ID: {}", currentUsername, id);
+            throw new ForbiddenException("Only the post author can update it");
+        }
+
+        if (request.getTitle() != null) {
+            validatePostTitle(request.getTitle());
+            post.setTitle(request.getTitle().trim());
+        }
+        if (request.getContent() != null) {
+            validateContent(request.getContent());
+            post.setContent(request.getContent());
+        }
+
+        post.setUpdatedAt(LocalDateTime.now());
+        Post savedPost = postRepository.save(post);
+        com.example.springreddit.logging.CustomLogger.getInstance().info(
+                "Post updated successfully with ID: {} by author: {}", id, currentUsername);
+        return savedPost;
+    }
+
+    @Transactional(readOnly = true)
+    public String resolveUserVote(Post post, String username) {
+        if (post == null || username == null || username.isBlank()) {
+            return null;
+        }
+        return accountRepository.findByUsername(username)
+                .flatMap(account -> postVoteRepository.findByPostAndAccount(post, account))
+                .map(vote -> vote.isUpvote() ? "up" : "down")
+                .orElse("none");
     }
 
     @Transactional

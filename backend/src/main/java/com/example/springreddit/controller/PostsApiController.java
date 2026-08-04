@@ -1,9 +1,14 @@
 package com.example.springreddit.controller;
 
-import com.example.springreddit.shared.ApiResponse;
 import com.example.springreddit.dto.PostDto;
+import com.example.springreddit.dto.UpdatePostRequest;
+import com.example.springreddit.exception.ForbiddenException;
+import com.example.springreddit.exception.ResourceNotFoundException;
+import com.example.springreddit.exception.UnauthorizedException;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.service.PostService;
+import com.example.springreddit.shared.ApiResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -130,6 +135,60 @@ public class PostsApiController {
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "POST /posts request failed with unexpected error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new ApiResponse<>(false, null));
+        }
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse<PostDto.PostResponse>> updatePost(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdatePostRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null
+                    || !authentication.isAuthenticated()
+                    || "anonymousUser".equals(authentication.getPrincipal())) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                        "PUT /posts/{} request failed: user not authenticated", id);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                        new ApiResponse<>(false, null));
+            }
+            String currentUsername = authentication.getName();
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /posts/{} request received from user: {}", id, currentUsername);
+
+            Post post = postService.updatePost(id, request, currentUsername);
+            String userVote = postService.resolveUserVote(post, currentUsername);
+            PostDto.PostResponse postResponse = postService.toPostResponse(post, userVote);
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /posts/{} request successful", id);
+            return ResponseEntity.ok(new ApiResponse<>(true, postResponse));
+        } catch (ResourceNotFoundException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "PUT /posts/{} request failed: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new ApiResponse<>(false, null));
+        } catch (ForbiddenException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "PUT /posts/{} request failed - forbidden: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    new ApiResponse<>(false, null));
+        } catch (UnauthorizedException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "PUT /posts/{} request failed - unauthorized: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    new ApiResponse<>(false, null));
+        } catch (IllegalArgumentException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "PUT /posts/{} request failed: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "PUT /posts/{} request failed with unexpected error: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     new ApiResponse<>(false, null));
         }

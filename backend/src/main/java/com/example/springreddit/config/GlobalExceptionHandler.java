@@ -6,13 +6,16 @@ import com.example.springreddit.logging.CustomLogger;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -40,6 +43,55 @@ public class GlobalExceptionHandler {
                 .code("VALIDATION_ERROR")
                 .message("The supplied data is invalid")
                 .details(fieldErrors)
+                .build())
+            .timestamp(Instant.now().toString())
+            .path(request.getRequestURI())
+            .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            HttpServletRequest request) {
+
+        String message = "Invalid request parameter";
+        if (ex.getRequiredType() != null && UUID.class.isAssignableFrom(ex.getRequiredType())) {
+            message = "Invalid UUID format for parameter: " + ex.getName();
+        } else if (ex.getName() != null) {
+            message = "Invalid value for parameter: " + ex.getName();
+        }
+
+        LOGGER.warn("Type mismatch at {}: {}", request.getRequestURI(), message);
+
+        ErrorResponse response = ErrorResponse.builder()
+            .success(false)
+            .error(ErrorResponse.ErrorDetails.builder()
+                .code("BAD_REQUEST")
+                .message(message)
+                .details(new ArrayList<>())
+                .build())
+            .timestamp(Instant.now().toString())
+            .path(request.getRequestURI())
+            .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableMessage(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
+
+        LOGGER.warn("Malformed request body at {}: {}", request.getRequestURI(), ex.getMessage());
+
+        ErrorResponse response = ErrorResponse.builder()
+            .success(false)
+            .error(ErrorResponse.ErrorDetails.builder()
+                .code("BAD_REQUEST")
+                .message("Invalid or malformed JSON payload")
+                .details(new ArrayList<>())
                 .build())
             .timestamp(Instant.now().toString())
             .path(request.getRequestURI())
