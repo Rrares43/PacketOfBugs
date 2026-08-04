@@ -35,17 +35,30 @@ public class AccountLogin {
                 try {
                     JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
                     
-                    if (!jsonResponse.has("accessToken")) {
+                    if (!jsonResponse.has("data") || !jsonResponse.get("data").isJsonObject()) {
+                        output.write("Login failed: Invalid response format - missing data field");
+                        return;
+                    }
+                    
+                    JsonObject data = jsonResponse.get("data").getAsJsonObject();
+                    
+                    if (!data.has("accessToken")) {
                         output.write("Login failed: Invalid response format - missing accessToken");
                         return;
                     }
                     
-                    String accessToken = jsonResponse.get("accessToken").getAsString();
-                    String returnedUsername = jsonResponse.get("username").getAsString();
-                    String email = jsonResponse.get("email").getAsString();
-                    Long userId = jsonResponse.get("userId").getAsLong();
+                    String accessToken = data.get("accessToken").getAsString();
                     
-                    sessionService.login(returnedUsername, email, userId, accessToken);
+                    if (!data.has("user") || !data.get("user").isJsonObject()) {
+                        output.write("Login failed: Invalid response format - missing user field");
+                        return;
+                    }
+                    
+                    JsonObject user = data.get("user").getAsJsonObject();
+                    String returnedUsername = user.get("username").getAsString();
+                    String email = user.get("email").getAsString();
+                    
+                    sessionService.login(returnedUsername, email, null, accessToken);
                     RedditApiClient.setJwtToken(accessToken);
                     output.write("Login Successful. Logged in as: " + returnedUsername);
                 } catch (Exception e) {

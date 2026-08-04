@@ -39,7 +39,10 @@ public class EditSubredditCommand implements SubredditCommand{
                 }
                 long subId = subredditJson.get().get("id").getAsLong();
                 long creatorId = subredditJson.get().get("creatorId").getAsLong();
-                long currentAccountId = sessionService.getCurrentAccountId();
+                Long currentAccountId = sessionService.getCurrentAccountId();
+                if (currentAccountId == null) {
+                    currentAccountId = RedditApiClient.resolveAccountId(sessionService.getCurrentUsername());
+                }
                 
                 if (creatorId != currentAccountId) {
                     System.out.println("You do not have permission to edit this subreddit.");
