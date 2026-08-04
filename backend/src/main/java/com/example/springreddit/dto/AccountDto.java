@@ -55,4 +55,16 @@ public class AccountDto {
         @ValidPassword
         private String newPassword;
     }
+
+    @Data
+    public static class UserInfo {
+        private String username;
+        private String email;
+    }
+
+    @Data
+    public static class AuthResponse {
+        private String accessToken;
+        private UserInfo user;
+    }
 }

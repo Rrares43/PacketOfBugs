@@ -3,7 +3,10 @@ package com.example.springreddit.controller;
 import com.example.springreddit.config.JwtTokenProvider;
 import com.example.springreddit.dto.AccountDto;
 import com.example.springreddit.model.Account;
+import com.example.springreddit.model.CustomUserDetails;
 import com.example.springreddit.service.AccountService;
+import com.example.springreddit.shared.ApiResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -82,35 +85,39 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody AccountDto.RegistrationRequest registrationRequest) {
+    public ResponseEntity<ApiResponse<AccountDto.AuthResponse>> register(
+            @Valid @RequestBody AccountDto.RegistrationRequest registrationRequest) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Registration attempt for username: {}", registrationRequest.getUsername());
 
             Account account = accountService.registerAccount(registrationRequest);
 
-            String jwt = jwtTokenProvider.generateToken(
-                    new com.example.springreddit.model.CustomUserDetails(account)
-            );
+            UserDetails userDetails = new CustomUserDetails(account);
+            String jwt = jwtTokenProvider.generateToken(userDetails);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("accessToken", jwt);
-            response.put("tokenType", "Bearer");
-            response.put("username", account.getUsername());
-            response.put("userId", account.getId());
-            response.put("email", account.getEmail());
+            AccountDto.UserInfo userInfo = new AccountDto.UserInfo();
+            userInfo.setUsername(account.getUsername());
+            userInfo.setEmail(account.getEmail());
+
+            AccountDto.AuthResponse authResponse = new AccountDto.AuthResponse();
+            authResponse.setAccessToken(jwt);
+            authResponse.setUser(userInfo);
 
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Registration successful for username: {}", account.getUsername());
 
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.success(authResponse));
+        } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "Registration failed: {}", e.getMessage());
-            return ResponseEntity.status(400).body(Map.of(
-                    "error", "Bad Request",
-                    "message", e.getMessage()
-            ));
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "Registration failed with unexpected error: {}", e.getMessage());
+            return ResponseEntity.status(500).body(
+                    new ApiResponse<>(false, null));
         }
     }
 }

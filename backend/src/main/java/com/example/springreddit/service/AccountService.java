@@ -24,6 +24,10 @@ public class AccountService {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Registration failed: username already exists: {}", request.getUsername());
             throw new IllegalArgumentException("Username already exists");
         }
+        if (accountRepository.existsByEmail(request.getEmail())) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Registration failed: email already exists: {}", request.getEmail());
+            throw new IllegalArgumentException("Email already exists");
+        }
 
         Account newAccount = new Account();
         newAccount.setUsername(request.getUsername());
