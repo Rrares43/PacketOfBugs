@@ -8,6 +8,8 @@ import com.example.springreddit.service.PostService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -93,16 +95,23 @@ public class PostsApiController {
     public ResponseEntity<ApiResponse<PostDto.PostResponse>> createPost(
             @RequestParam String title,
             @RequestParam(required = false) String content,
-            @RequestParam String author,
             @RequestParam String subreddit,
             @RequestParam(required = false) MultipartFile image,
             @RequestParam(required = false) Integer filter) {
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn("POST /posts request failed: user not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                        new ApiResponse<>(false, null));
+            }
+            String authorUsername = authentication.getName();
+            
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "POST /posts request received - title: {}, author: {}, subreddit: {}", 
-                    title, author, subreddit);
+                    title, authorUsername, subreddit);
             
-            Post post = postService.createPost(title, content, author, subreddit, image, filter);
+            Post post = postService.createPost(title, content, authorUsername, subreddit, image, filter);
             PostDto.PostResponse postResponse = postService.toPostResponse(post, "up");
             
             com.example.springreddit.logging.CustomLogger.getInstance().info(

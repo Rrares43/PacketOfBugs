@@ -1,6 +1,7 @@
 package account.operations;
 
 import account.SessionService;
+import api.RedditApiClient;
 
 public class AccountLogout {
     private final SessionService service;
@@ -12,5 +13,6 @@ public class AccountLogout {
     public void Logout() {
         System.out.println("Logged out of account");
         service.logout();
+        RedditApiClient.clearJwtToken();
     }
 }

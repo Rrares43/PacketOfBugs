@@ -16,8 +16,6 @@ public class PostDto {
         private String title;
         @NotBlank(message = "Content cannot be blank")
         private String content;
-        @NotNull(message = "Author id is required")
-        private Long authorId;
         @NotBlank(message = "Subreddit name cannot be blank")
         private String subredditName;
     }

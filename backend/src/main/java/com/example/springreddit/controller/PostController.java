@@ -12,6 +12,8 @@ import com.example.springreddit.service.PostVoteService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -38,11 +40,20 @@ public class PostController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<PostDto.PostResponse>> createPost(@Valid @RequestBody PostDto.CreatePostRequest request) {
         try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Create post request received for subreddit: {} by author ID: {}", request.getSubredditName(), request.getAuthorId());
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn("Create post request failed: user not authenticated");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, null));
+            }
+            String authorUsername = authentication.getName();
+            Account authorAccount = accountService.getByUsername(authorUsername);
+            Long authorId = authorAccount.getId();
+            
+            com.example.springreddit.logging.CustomLogger.getInstance().info("Create post request received for subreddit: {} by author ID: {}", request.getSubredditName(), authorId);
             Post post = postService.createPost(
                     request.getTitle(),
                     request.getContent(),
-                    request.getAuthorId(),
+                    authorId,
                     request.getSubredditName());
             return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, postService.toPostResponse(post)));
         } catch (IllegalArgumentException e) {
