@@ -8,4 +8,8 @@ public record ApiResponse<T>(
     public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<>(true, data);
     }
+
+    public static <T> ApiResponse<T> failure(T data) {
+        return new ApiResponse<>(false, data);
+    }
 }

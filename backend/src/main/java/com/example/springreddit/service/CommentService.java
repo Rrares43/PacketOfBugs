@@ -1,116 +1,21 @@
 package com.example.springreddit.service;
 
-import com.example.springreddit.dto.CommentDto.UpdateCommentRequest;
-import com.example.springreddit.dto.CommentDto.CommentRequest;
-import com.example.springreddit.dto.CommentDto.CommentResponse;
-import com.example.springreddit.exception.ResourceNotFoundException;
-import com.example.springreddit.logging.CustomLogger;
-import com.example.springreddit.model.Account;
-import com.example.springreddit.model.Comment;
-import com.example.springreddit.model.CommentVote;
-import com.example.springreddit.model.Post;
-import com.example.springreddit.repository.AccountRepository;
-import com.example.springreddit.repository.CommentRepository;
-import com.example.springreddit.repository.CommentVoteRepository;
-import com.example.springreddit.repository.PostRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.example.springreddit.dto.CommentResponse;
+import com.example.springreddit.dto.CreateCommentRequest;
+import com.example.springreddit.dto.UpdateCommentRequest;
+import com.example.springreddit.dto.VoteRequest;
 
-import java.util.List;
 import java.util.UUID;
 
-@Service
-public class CommentService {
+public interface CommentService {
 
-    private static final CustomLogger LOGGER = CustomLogger.getInstance();
+    CommentResponse getComment(UUID commentId);
 
-    private final CommentRepository commentRepository;
-    private final CommentVoteRepository commentVoteRepository;
-    private final PostRepository postRepository;
-    private final AccountRepository accountRepository;
+    CommentResponse createComment(UUID postId, CreateCommentRequest request);
 
-    public CommentService(CommentRepository commentRepository,
-                          CommentVoteRepository commentVoteRepository,
-                          PostRepository postRepository,
-                          AccountRepository accountRepository) {
-        this.commentRepository = commentRepository;
-        this.commentVoteRepository = commentVoteRepository;
-        this.postRepository = postRepository;
-        this.accountRepository = accountRepository;
-    }
+    CommentResponse updateComment(UUID commentId, UpdateCommentRequest request);
 
-    @Transactional(readOnly = true)
-    public CommentResponse getComment(UUID commentId) {
-        Comment comment = findComment(commentId);
-        return toResponse(comment, null);
-    }
+    void deleteComment(UUID commentId);
 
-    @Transactional
-    public CommentResponse createComment(UUID postId, CommentRequest request) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
-        Account author = accountRepository.findByUsername(request.author())
-                .orElseThrow(() -> new ResourceNotFoundException("Author not found: " + request.author()));
-
-        Comment comment = new Comment(request.content().trim(), author, post);
-        if (request.parentId() == null) {
-            post.addComment(comment);
-        } else {
-            Comment parent = commentRepository.findByIdAndPost_Id(request.parentId(), postId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Parent comment not found on post: " + request.parentId()));
-            if (parent.isDeleted()) {
-                throw new IllegalArgumentException("Replies cannot be added to a deleted comment");
-            }
-            parent.addReply(comment);
-        }
-
-        Comment saved = commentRepository.save(comment);
-        commentVoteRepository.save(new CommentVote(saved, author, CommentVote.UPVOTE));
-        LOGGER.info("Comment created with ID: {} on post: {} by: {}", saved.getId(), postId, author.getUsername());
-        return toResponse(saved, author);
-    }
-    @Transactional
-    public CommentResponse updateComment(UUID commentId, UpdateCommentRequest request) {
-        Comment comment = findComment(commentId);
-        if (comment.isDeleted()) {
-            throw new IllegalArgumentException("Cannot update a deleted comment");
-        }
-        comment.setContent(request.content().trim());
-        Comment saved = commentRepository.save(comment);
-        LOGGER.info("Comment updated with ID: {}", saved.getId());
-        return toResponse(saved, comment.getAuthor());
-    }
-
-    private Comment findComment(UUID commentId) {
-        return commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Comment not found: " + commentId));
-    }
-
-    private CommentResponse toResponse(Comment comment, Account currentUser) {
-        long upvotes = commentVoteRepository.countByComment_IdAndVoteType(comment.getId(), CommentVote.UPVOTE);
-        long downvotes = commentVoteRepository.countByComment_IdAndVoteType(comment.getId(), CommentVote.DOWNVOTE);
-        String userVote = currentUser == null ? null : commentVoteRepository
-                .findByCommentAndAccount(comment, currentUser)
-                .map(vote -> vote.isUpvote() ? "up" : "down")
-                .orElse(null);
-        List<CommentResponse> replies = comment.getReplies().stream()
-                .map(reply -> toResponse(reply, currentUser))
-                .toList();
-
-        return new CommentResponse(
-                comment.getId(),
-                comment.getPost().getId(),
-                comment.getParentComment() == null ? null : comment.getParentComment().getId(),
-                comment.isDeleted() ? "[deleted]" : comment.getContent(),
-                comment.isDeleted() ? "[deleted]" : comment.getAuthor().getUsername(),
-                upvotes,
-                downvotes,
-                upvotes - downvotes,
-                userVote,
-                comment.getCreatedAt(),
-                comment.getUpdatedAt(),
-                replies
-        );
-    }
+    CommentResponse vote(UUID commentId, VoteRequest request);
 }
