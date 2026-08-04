@@ -2,6 +2,8 @@ package com.example.springreddit.dto;
 import com.example.springreddit.shared.ApiResponse;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.Instant;
 import java.util.List;
@@ -49,9 +51,4 @@ public final class CommentDto {
         }
     }
 
-    @GetMapping("/{id}")
-    public ApiResponse<CommentDto.CommentResponse> getComment(@PathVariable UUID id) {
-        CommentDto.CommentResponse response = commentService.getCommentById(id);
-        return ApiResponse.success(response);
-    }
 }
