@@ -1,5 +1,6 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
@@ -11,7 +12,12 @@ import com.example.springreddit.repository.PostVoteRepository;
 import com.example.springreddit.repository.SubredditRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -63,6 +69,41 @@ public class PostService {
         Post post = new Post(title, content, author, subreddit);
         Post savedPost = postRepository.save(post);
         com.example.springreddit.logging.CustomLogger.getInstance().info("Post created successfully with ID: {} in subreddit: {} by author ID: {}", savedPost.getId(), name, authorId);
+        return savedPost;
+    }
+
+    @Transactional
+    public Post createPost(String title, String content, String authorUsername, String subredditName,
+                          MultipartFile image, Integer filter) throws IOException {
+        validatePostTitle(title);
+        validateContent(content);
+        validateAuthor(authorUsername);
+        validateSubreddit(subredditName);
+        
+        Account author = accountRepository.findByUsername(authorUsername)
+                .orElseThrow(() -> {
+                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Create post failed: author not found with username: {}", authorUsername);
+                    return new IllegalArgumentException("Author not found");
+                });
+
+        String name = normalizeSubredditName(subredditName);
+        Subreddit subreddit = subredditRepository.findByName(name)
+                .orElseThrow(() -> {
+                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Create post failed: subreddit not found: {}", name);
+                    return new IllegalArgumentException("Subreddit not found");
+                });
+
+        String imageUrl = null;
+        if (image != null && !image.isEmpty()) {
+            imageUrl = handleImageUpload(image);
+        }
+
+        Post post = new Post(title, content, author, subreddit, imageUrl, filter);
+        Post savedPost = postRepository.save(post);
+        
+        PostVote upvote = new PostVote(author, savedPost, PostVote.UPVOTE);
+        postVoteRepository.save(upvote);
+        com.example.springreddit.logging.CustomLogger.getInstance().info("Post created successfully with ID: {} in subreddit: {} by author: {}", savedPost.getId(), name, authorUsername);
         return savedPost;
     }
 
@@ -167,15 +208,82 @@ public class PostService {
         if (content == null || content.isBlank()) throw new IllegalArgumentException("Content cannot be blank");
     }
 
+    private void validatePostTitle(String title) {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("Title is required and cannot be blank");
+        }
+        if (title.length() < 3 || title.length() > 300) {
+            throw new IllegalArgumentException("Title must be between 3 and 300 characters");
+        }
+    }
+
+    private void validateContent(String content) {
+        if (content != null && content.length() > 10000) {
+            throw new IllegalArgumentException("Content must not exceed 10000 characters");
+        }
+    }
+
+    private void validateAuthor(String authorUsername) {
+        if (authorUsername == null || authorUsername.isBlank()) {
+            throw new IllegalArgumentException("Author is required and cannot be blank");
+        }
+    }
+
+    private void validateSubreddit(String subredditName) {
+        if (subredditName == null || subredditName.isBlank()) {
+            throw new IllegalArgumentException("Subreddit is required and cannot be blank");
+        }
+    }
+
+    private void validateImage(MultipartFile image) {
+        if (image != null && !image.isEmpty()) {
+            long maxSize = 5 * 1024 * 1024; // 5MB
+            if (image.getSize() > maxSize) {
+                throw new IllegalArgumentException("Image size must not exceed 5MB");
+            }
+            String contentType = image.getContentType();
+            if (contentType == null || (!contentType.equals("image/jpeg") && !contentType.equals("image/png"))) {
+                throw new IllegalArgumentException("Image must be JPG or PNG");
+            }
+        }
+    }
+
+    private String handleImageUpload(MultipartFile image) throws IOException {
+        validateImage(image);
+        
+        String uploadDir = "uploads";
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+        
+        String originalFilename = image.getOriginalFilename();
+        String fileExtension = originalFilename != null && originalFilename.contains(".") 
+                ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
+                : ".jpg";
+        String uniqueFilename = UUID.randomUUID() + fileExtension;
+        Path filePath = uploadPath.resolve(uniqueFilename);
+        
+        Files.copy(image.getInputStream(), filePath);
+        
+        com.example.springreddit.logging.CustomLogger.getInstance().info("Image uploaded successfully: {}", uniqueFilename);
+        return "/uploads/" + uniqueFilename;
+    }
+
     @Transactional(readOnly = true)
-    public com.example.springreddit.dto.PostDto.PostResponse toPostResponse(Post post) {
+    public PostDto.PostResponse toPostResponse(Post post) {
+        return toPostResponse(post, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PostDto.PostResponse toPostResponse(Post post, String userVote) {
         java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ISO_DATE_TIME;
         String authorName = (post.getAuthor() != null) ? post.getAuthor().getUsername() : "unknown";
         String subredditName = (post.getSubreddit() != null) ? post.getSubreddit().getName() : "unknown";
         long commentCount = commentRepository.countByPost_Id(post.getId());
         long score = countUpvotes(post) - countDownvotes(post);
 
-        return new com.example.springreddit.dto.PostDto.PostResponse(
+        return new PostDto.PostResponse(
                 post.getId(),
                 post.getTitle(),
                 post.getContent(),
@@ -187,7 +295,7 @@ public class PostService {
                 countDownvotes(post),
                 score,
                 commentCount,
-                null,
+                userVote,
                 post.getCreatedAt() != null ? post.getCreatedAt().format(formatter) : null,
                 post.getUpdatedAt() != null ? post.getUpdatedAt().format(formatter) : null
         );
