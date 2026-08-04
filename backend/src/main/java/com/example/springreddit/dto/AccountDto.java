@@ -55,4 +55,40 @@ public class AccountDto {
         @ValidPassword
         private String newPassword;
     }
+
+    @Data
+    public static class UserInfo {
+        private String username;
+        private String email;
+    }
+
+    @Data
+    public static class AuthResponse {
+        private String accessToken;
+        private UserInfo user;
+    }
+
+    @Data
+    public static class UserProfile {
+        private String username;
+        private String email;
+        private String displayName;
+        private String avatarUrl;
+    }
+
+    @Data
+    public static class UpdateUserProfileRequest {
+        private String displayName;
+        private String avatarUrl;
+    }
+
+    @Data
+    public static class UpdatePasswordRequest {
+        @NotBlank(message = "Current password cannot be blank")
+        private String currentPassword;
+
+        @NotBlank(message = "New password cannot be blank")
+        @ValidPassword
+        private String newPassword;
+    }
 }

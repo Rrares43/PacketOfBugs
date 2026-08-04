@@ -3,20 +3,23 @@ package com.example.springreddit.controller;
 import com.example.springreddit.config.JwtTokenProvider;
 import com.example.springreddit.dto.AccountDto;
 import com.example.springreddit.model.Account;
+import com.example.springreddit.model.CustomUserDetails;
 import com.example.springreddit.service.AccountService;
+import com.example.springreddit.shared.ApiResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,7 +38,8 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AccountDto.LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<AccountDto.AuthResponse>> login(
+            @Valid @RequestBody AccountDto.LoginRequest loginRequest) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Login attempt for username: {}", loginRequest.getUsername());
@@ -52,65 +56,166 @@ public class AuthenticationController {
 
             Account account = accountService.getByUsername(loginRequest.getUsername());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("accessToken", jwt);
-            response.put("tokenType", "Bearer");
-            response.put("expiresIn", 86400);
-            response.put("username", account.getUsername());
-            response.put("userId", account.getId());
-            response.put("email", account.getEmail());
+            AccountDto.UserInfo userInfo = new AccountDto.UserInfo();
+            userInfo.setUsername(account.getUsername());
+            userInfo.setEmail(account.getEmail());
+
+            AccountDto.AuthResponse authResponse = new AccountDto.AuthResponse();
+            authResponse.setAccessToken(jwt);
+            authResponse.setUser(userInfo);
 
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Login successful for username: {}", loginRequest.getUsername());
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success(authResponse));
         } catch (AuthenticationException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "Login failed for username: {} - {}", loginRequest.getUsername(), e.getMessage());
-            return ResponseEntity.status(401).body(Map.of(
-                    "error", "Unauthorized",
-                    "message", "Invalid username or password"
-            ));
+            return ResponseEntity.status(401).body(
+                    new ApiResponse<>(false, null));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "Login error for username: {} - {}", loginRequest.getUsername(), e.getMessage());
-            return ResponseEntity.status(500).body(Map.of(
-                    "error", "Internal Server Error",
-                    "message", e.getMessage()
-            ));
+            return ResponseEntity.status(500).body(
+                    new ApiResponse<>(false, null));
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<AccountDto.UserProfile>> getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                        "GET /auth/me request failed: user not authenticated");
+                return ResponseEntity.status(401).body(
+                        new ApiResponse<>(false, null));
+            }
+
+            String username = authentication.getName();
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "GET /auth/me request received for username: {}", username);
+
+            AccountDto.UserProfile userProfile = accountService.getCurrentUserProfile(username);
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "GET /auth/me request successful for username: {}", username);
+            return ResponseEntity.ok(ApiResponse.success(userProfile));
+        } catch (IllegalArgumentException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "GET /auth/me request failed: {}", e.getMessage());
+            return ResponseEntity.status(401).body(
+                    new ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "GET /auth/me request failed with unexpected error: {}", e.getMessage());
+            return ResponseEntity.status(500).body(
+                    new ApiResponse<>(false, null));
+        }
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<AccountDto.UserProfile>> updateCurrentUser(
+            @Valid @RequestBody AccountDto.UpdateUserProfileRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                        "PUT /auth/me request failed: user not authenticated");
+                return ResponseEntity.status(401).body(
+                        new ApiResponse<>(false, null));
+            }
+
+            String username = authentication.getName();
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /auth/me request received for username: {} with request: {}", username, request);
+
+            AccountDto.UserProfile userProfile = accountService.updateUserProfile(username, request);
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /auth/me request successful for username: {}", username);
+            return ResponseEntity.ok(ApiResponse.success(userProfile));
+        } catch (IllegalArgumentException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "PUT /auth/me request failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "PUT /auth/me request failed with unexpected error: {}", e.getMessage());
+            return ResponseEntity.status(500).body(
+                    new ApiResponse<>(false, null));
+        }
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<ApiResponse<String>> changePassword(
+            @Valid @RequestBody AccountDto.UpdatePasswordRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                        "PUT /auth/me/password request failed: user not authenticated");
+                return ResponseEntity.status(401).body(
+                        new ApiResponse<>(false, null));
+            }
+
+            String username = authentication.getName();
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /auth/me/password request received for username: {}", username);
+
+            accountService.changePassword(username, request);
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /auth/me/password request successful for username: {}", username);
+            return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
+        } catch (IllegalArgumentException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "PUT /auth/me/password request failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "PUT /auth/me/password request failed with unexpected error: {}", e.getMessage());
+            return ResponseEntity.status(500).body(
+                    new ApiResponse<>(false, null));
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody AccountDto.RegistrationRequest registrationRequest) {
+    public ResponseEntity<ApiResponse<AccountDto.AuthResponse>> register(
+            @Valid @RequestBody AccountDto.RegistrationRequest registrationRequest) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Registration attempt for username: {}", registrationRequest.getUsername());
 
             Account account = accountService.registerAccount(registrationRequest);
 
-            String jwt = jwtTokenProvider.generateToken(
-                    new com.example.springreddit.model.CustomUserDetails(account)
-            );
+            UserDetails userDetails = new CustomUserDetails(account);
+            String jwt = jwtTokenProvider.generateToken(userDetails);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("accessToken", jwt);
-            response.put("tokenType", "Bearer");
-            response.put("username", account.getUsername());
-            response.put("userId", account.getId());
-            response.put("email", account.getEmail());
+            AccountDto.UserInfo userInfo = new AccountDto.UserInfo();
+            userInfo.setUsername(account.getUsername());
+            userInfo.setEmail(account.getEmail());
+
+            AccountDto.AuthResponse authResponse = new AccountDto.AuthResponse();
+            authResponse.setAccessToken(jwt);
+            authResponse.setUser(userInfo);
 
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Registration successful for username: {}", account.getUsername());
 
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.success(authResponse));
+        } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "Registration failed: {}", e.getMessage());
-            return ResponseEntity.status(400).body(Map.of(
-                    "error", "Bad Request",
-                    "message", e.getMessage()
-            ));
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "Registration failed with unexpected error: {}", e.getMessage());
+            return ResponseEntity.status(500).body(
+                    new ApiResponse<>(false, null));
         }
     }
 }
