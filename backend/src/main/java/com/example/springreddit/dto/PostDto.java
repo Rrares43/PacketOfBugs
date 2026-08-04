@@ -50,7 +50,7 @@ public class PostDto {
             long downvotes,
             long score,
             long commentCount,
-            Integer userVote,
+            String userVote,
             String createdAt,
             String updatedAt
     ) {}

@@ -59,4 +59,30 @@ public class PostsApiController {
                     new CommentDto.ApiResponse<>(false, null));
         }
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CommentDto.ApiResponse<PostDto.PostResponse>> getPostById(
+            @PathVariable UUID id) {
+        try {
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "GET /posts/{} request received", id);
+            
+            Post post = postService.getPostById(id);
+            PostDto.PostResponse postResponse = postService.toPostResponse(post);
+            
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "GET /posts/{} request successful", id);
+            return ResponseEntity.ok(new CommentDto.ApiResponse<>(true, postResponse));
+        } catch (IllegalArgumentException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "GET /posts/{} request failed: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    new CommentDto.ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "GET /posts/{} request failed with unexpected error: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new CommentDto.ApiResponse<>(false, null));
+        }
+    }
 }
