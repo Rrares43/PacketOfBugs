@@ -76,6 +76,30 @@ public class AccountService {
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
     }
 
+    public AccountDto.UserProfile getCurrentUserProfile(String username) {
+        if (username == null || username.isBlank()) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn("Get user profile failed: username is blank");
+            throw new IllegalArgumentException("Username cannot be blank");
+        }
+
+        Account account = accountRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                            "Get user profile failed: account not found for username: {}", username);
+                    return new IllegalArgumentException("Account not found");
+                });
+
+        AccountDto.UserProfile userProfile = new AccountDto.UserProfile();
+        userProfile.setUsername(account.getUsername());
+        userProfile.setEmail(account.getEmail());
+        userProfile.setDisplayName(account.getDisplayName());
+        userProfile.setAvatarUrl(account.getAvatarUrl());
+
+        com.example.springreddit.logging.CustomLogger.getInstance().info(
+                "User profile retrieved successfully for username: {}", username);
+        return userProfile;
+    }
+
     public boolean isUsernameAvailable(String username) {
         if (username == null || username.isBlank()) {
             return false;

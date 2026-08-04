@@ -33,6 +33,12 @@ public class Account {
     @Column(length = 20)
     private String role = "USER";
 
+    @Column(name = "display_name", length = 50)
+    private String displayName;
+
+    @Column(name = "avatar_url", length = 255)
+    private String avatarUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -53,5 +59,13 @@ public class Account {
         this.username = username;
         this.email = email;
         this.password = password;
+    }
+
+    public Account(String username, String email, String password, String displayName, String avatarUrl) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.displayName = displayName;
+        this.avatarUrl = avatarUrl;
     }
 }

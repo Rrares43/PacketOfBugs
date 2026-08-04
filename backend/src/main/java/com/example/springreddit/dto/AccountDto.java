@@ -67,4 +67,12 @@ public class AccountDto {
         private String accessToken;
         private UserInfo user;
     }
+
+    @Data
+    public static class UserProfile {
+        private String username;
+        private String email;
+        private String displayName;
+        private String avatarUrl;
+    }
 }
