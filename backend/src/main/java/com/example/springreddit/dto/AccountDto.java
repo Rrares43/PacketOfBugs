@@ -75,4 +75,20 @@ public class AccountDto {
         private String displayName;
         private String avatarUrl;
     }
+
+    @Data
+    public static class UpdateUserProfileRequest {
+        private String displayName;
+        private String avatarUrl;
+    }
+
+    @Data
+    public static class UpdatePasswordRequest {
+        @NotBlank(message = "Current password cannot be blank")
+        private String currentPassword;
+
+        @NotBlank(message = "New password cannot be blank")
+        @ValidPassword
+        private String newPassword;
+    }
 }

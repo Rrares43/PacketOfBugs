@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -108,6 +109,74 @@ public class AuthenticationController {
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "GET /auth/me request failed with unexpected error: {}", e.getMessage());
+            return ResponseEntity.status(500).body(
+                    new ApiResponse<>(false, null));
+        }
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<AccountDto.UserProfile>> updateCurrentUser(
+            @Valid @RequestBody AccountDto.UpdateUserProfileRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                        "PUT /auth/me request failed: user not authenticated");
+                return ResponseEntity.status(401).body(
+                        new ApiResponse<>(false, null));
+            }
+
+            String username = authentication.getName();
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /auth/me request received for username: {} with request: {}", username, request);
+
+            AccountDto.UserProfile userProfile = accountService.updateUserProfile(username, request);
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /auth/me request successful for username: {}", username);
+            return ResponseEntity.ok(ApiResponse.success(userProfile));
+        } catch (IllegalArgumentException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "PUT /auth/me request failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "PUT /auth/me request failed with unexpected error: {}", e.getMessage());
+            return ResponseEntity.status(500).body(
+                    new ApiResponse<>(false, null));
+        }
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<ApiResponse<String>> changePassword(
+            @Valid @RequestBody AccountDto.UpdatePasswordRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                        "PUT /auth/me/password request failed: user not authenticated");
+                return ResponseEntity.status(401).body(
+                        new ApiResponse<>(false, null));
+            }
+
+            String username = authentication.getName();
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /auth/me/password request received for username: {}", username);
+
+            accountService.changePassword(username, request);
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /auth/me/password request successful for username: {}", username);
+            return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
+        } catch (IllegalArgumentException e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    "PUT /auth/me/password request failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse<>(false, null));
+        } catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "PUT /auth/me/password request failed with unexpected error: {}", e.getMessage());
             return ResponseEntity.status(500).body(
                     new ApiResponse<>(false, null));
         }
