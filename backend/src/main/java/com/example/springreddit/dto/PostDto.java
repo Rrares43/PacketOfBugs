@@ -38,18 +38,20 @@ public class PostDto {
         private Long accountId;
     }
 
-    @Data
-    public static class PostResponse {
-        private UUID id;
-        private String title;
-        private String content;
-        private Long authorId;
-        private String authorUsername;
-        private Long subredditId;
-        private String subredditName;
-        private long upvotes;
-        private long downvotes;
-        /** 1 = upvoted, -1 = downvoted, 0 = no vote (when accountId is supplied). */
-        private int currentUserVote;
-    }
+    public record PostResponse(
+            UUID id,
+            String title,
+            String content,
+            String imageUrl,
+            Integer filter,
+            String author,
+            String subreddit,
+            long upvotes,
+            long downvotes,
+            long score,
+            long commentCount,
+            Integer userVote,
+            String createdAt,
+            String updatedAt
+    ) {}
 }

@@ -5,6 +5,7 @@ import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
 import com.example.springreddit.model.Subreddit;
 import com.example.springreddit.repository.AccountRepository;
+import com.example.springreddit.repository.CommentRepository;
 import com.example.springreddit.repository.PostRepository;
 import com.example.springreddit.repository.PostVoteRepository;
 import com.example.springreddit.repository.SubredditRepository;
@@ -21,15 +22,18 @@ public class PostService {
     private final SubredditRepository subredditRepository;
     private final AccountRepository accountRepository;
     private final PostVoteRepository postVoteRepository;
+    private final CommentRepository commentRepository;
 
     public PostService(PostRepository postRepository,
                        SubredditRepository subredditRepository,
                        AccountRepository accountRepository,
-                       PostVoteRepository postVoteRepository) {
+                       PostVoteRepository postVoteRepository,
+                       CommentRepository commentRepository) {
         this.postRepository = postRepository;
         this.subredditRepository = subredditRepository;
         this.accountRepository = accountRepository;
         this.postVoteRepository = postVoteRepository;
+        this.commentRepository = commentRepository;
     }
 
     @Transactional
@@ -161,5 +165,31 @@ public class PostService {
         if (title == null || title.isBlank()) throw new IllegalArgumentException("Title cannot be blank");
         if (title.length() > 150) throw new IllegalArgumentException("Title must not exceed 150 characters");
         if (content == null || content.isBlank()) throw new IllegalArgumentException("Content cannot be blank");
+    }
+
+    @Transactional(readOnly = true)
+    public com.example.springreddit.dto.PostDto.PostResponse toPostResponse(Post post) {
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ISO_DATE_TIME;
+        String authorName = (post.getAuthor() != null) ? post.getAuthor().getUsername() : "unknown";
+        String subredditName = (post.getSubreddit() != null) ? post.getSubreddit().getName() : "unknown";
+        long commentCount = commentRepository.countByPost_Id(post.getId());
+        long score = countUpvotes(post) - countDownvotes(post);
+
+        return new com.example.springreddit.dto.PostDto.PostResponse(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getImageUrl(),
+                post.getFilter(),
+                authorName,
+                subredditName,
+                countUpvotes(post),
+                countDownvotes(post),
+                score,
+                commentCount,
+                null,
+                post.getCreatedAt() != null ? post.getCreatedAt().format(formatter) : null,
+                post.getUpdatedAt() != null ? post.getUpdatedAt().format(formatter) : null
+        );
     }
 }

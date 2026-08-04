@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -42,15 +43,34 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostVote> votes = new ArrayList<>();
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "filter_value")
+    private Integer filter;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     public Post(String title, String content, Account author, Subreddit subreddit) {
         this.title = title;
         this.content = content;
         this.author = author;
         this.subreddit = subreddit;
+    }
+
+    public Post(String title, String content, Account author, Subreddit subreddit, String imageUrl, Integer filter) {
+        this.title = title;
+        this.content = content;
+        this.author = author;
+        this.subreddit = subreddit;
+        this.imageUrl = imageUrl;
+        this.filter = filter;
     }
 
     public void addComment(Comment comment) {
