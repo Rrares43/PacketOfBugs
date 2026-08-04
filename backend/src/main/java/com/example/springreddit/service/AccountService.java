@@ -4,6 +4,7 @@ import com.example.springreddit.dto.AccountDto;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +13,9 @@ public class AccountService {
 
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public Account registerAccount(AccountDto.RegistrationRequest request) {
         com.example.springreddit.logging.CustomLogger.getInstance().info("Attempting to register account with username: {}", request.getUsername());
@@ -24,10 +28,10 @@ public class AccountService {
         Account newAccount = new Account();
         newAccount.setUsername(request.getUsername());
         newAccount.setEmail(request.getEmail());
-        newAccount.setPassword(request.getPassword());
+        // Encode password before saving
+        newAccount.setPassword(passwordEncoder.encode(request.getPassword()));
 
         Account saved = accountRepository.save(newAccount);
-        saved.setEmail(request.getEmail());
         com.example.springreddit.logging.CustomLogger.getInstance().info("Account registered successfully for username: {}", request.getUsername());
         return saved;
     }
@@ -51,7 +55,8 @@ public class AccountService {
                     return new IllegalArgumentException("Invalid credentials");
                 });
 
-        if (!account.getPassword().equals(request.getPassword())) {
+        // Use passwordEncoder to verify password
+        if (!passwordEncoder.matches(request.getPassword(), account.getPassword())) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Authentication failed: invalid password for username: {}", request.getUsername());
             throw new IllegalArgumentException("Invalid credentials");
         }
@@ -111,7 +116,7 @@ public class AccountService {
             throw new IllegalArgumentException("Incorrect email address");
         }
 
-        account.setPassword(request.getNewPassword());
+        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         accountRepository.save(account);
         com.example.springreddit.logging.CustomLogger.getInstance().info("Password changed successfully for username: {}", request.getUsername());
     }
