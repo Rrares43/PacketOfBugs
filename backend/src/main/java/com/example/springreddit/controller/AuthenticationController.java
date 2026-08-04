@@ -18,9 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/auth")
 public class AuthenticationController {
@@ -38,7 +35,8 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AccountDto.LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<AccountDto.AuthResponse>> login(
+            @Valid @RequestBody AccountDto.LoginRequest loginRequest) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Login attempt for username: {}", loginRequest.getUsername());
@@ -55,32 +53,28 @@ public class AuthenticationController {
 
             Account account = accountService.getByUsername(loginRequest.getUsername());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("accessToken", jwt);
-            response.put("tokenType", "Bearer");
-            response.put("expiresIn", 86400);
-            response.put("username", account.getUsername());
-            response.put("userId", account.getId());
-            response.put("email", account.getEmail());
+            AccountDto.UserInfo userInfo = new AccountDto.UserInfo();
+            userInfo.setUsername(account.getUsername());
+            userInfo.setEmail(account.getEmail());
+
+            AccountDto.AuthResponse authResponse = new AccountDto.AuthResponse();
+            authResponse.setAccessToken(jwt);
+            authResponse.setUser(userInfo);
 
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Login successful for username: {}", loginRequest.getUsername());
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success(authResponse));
         } catch (AuthenticationException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "Login failed for username: {} - {}", loginRequest.getUsername(), e.getMessage());
-            return ResponseEntity.status(401).body(Map.of(
-                    "error", "Unauthorized",
-                    "message", "Invalid username or password"
-            ));
+            return ResponseEntity.status(401).body(
+                    new ApiResponse<>(false, null));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "Login error for username: {} - {}", loginRequest.getUsername(), e.getMessage());
-            return ResponseEntity.status(500).body(Map.of(
-                    "error", "Internal Server Error",
-                    "message", e.getMessage()
-            ));
+            return ResponseEntity.status(500).body(
+                    new ApiResponse<>(false, null));
         }
     }
 
