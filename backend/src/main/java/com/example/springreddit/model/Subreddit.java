@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "subreddits")
@@ -18,14 +19,25 @@ import java.util.List;
 public class Subreddit {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(unique = true, nullable = false, length = 50)
     private String name;
 
+    @Column(unique = true, nullable = false, length = 50)
+    private String displayName;
+
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(nullable = false)
+    private long postCount = 0;
+
+    @Column(nullable = false)
+    private long memberCount = 0;
+
+    private String iconURl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", nullable = false)
