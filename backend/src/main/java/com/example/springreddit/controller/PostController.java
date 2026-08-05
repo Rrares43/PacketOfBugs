@@ -85,7 +85,7 @@ public class PostController {
         List<PostDto.PostResponse> posts = postService.getPostsBySubreddit(name).stream()
                 .map(postService::toPostResponse)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(new ApiResponse<>(true, posts));
+        return ResponseEntity.ok(ApiResponse.success(posts));
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)

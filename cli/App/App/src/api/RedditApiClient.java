@@ -24,17 +24,8 @@ public final class RedditApiClient {
     private static final HttpClient CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
-    private static String JWT_TOKEN;
 
     private RedditApiClient() {
-    }
-
-    public static void setJwtToken(String token) {
-        JWT_TOKEN = token;
-    }
-
-    public static void clearJwtToken() {
-        JWT_TOKEN = null;
     }
 
     private static Dotenv loadDotenv() {
@@ -95,7 +86,7 @@ public final class RedditApiClient {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
         body.addProperty("password", password);
-        return send("POST", "/api/auth/login", body.toString());
+        return send("POST", "/api/accounts/login", body.toString());
     }
 
     public static HttpResponse<String> registerAccountRaw(String username, String email, String password) {
@@ -135,13 +126,13 @@ public final class RedditApiClient {
     public static JsonArray getAllSubreddits() {
         HttpResponse<String> response = send("GET", "/api/subreddits", null);
         requireSuccess(response, 200);
-        return JsonParser.parseString(response.body()).getAsJsonArray();
+        return JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonArray("data");
     }
 
     public static Optional<JsonObject> getSubredditByName(String name) {
         HttpResponse<String> response = getSubredditRaw(name);
         if (response.statusCode() == 200) {
-            return Optional.of(JsonParser.parseString(response.body()).getAsJsonObject());
+            return Optional.of(JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonObject("data"));
         }
         return Optional.empty();
     }
@@ -160,27 +151,32 @@ public final class RedditApiClient {
     public static JsonObject createSubreddit(String name, String description, long creatorId) {
         JsonObject body = new JsonObject();
         body.addProperty("subredditName", SubredditNames.normalize(name));
+        body.addProperty("displayName", name);
         body.addProperty("description", description);
         body.addProperty("creatorId", creatorId);
         HttpResponse<String> response = send("POST", "/api/subreddits", body.toString());
         requireSuccess(response, 201, 200);
-        return JsonParser.parseString(response.body()).getAsJsonObject();
+        return JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonObject("data");
     }
 
-    public static JsonObject editSubreddit(long id, String name, String description, Long accountId) {
+    public static JsonObject editSubreddit(String targetName, String name, String description, Long accountId) {
         JsonObject body = new JsonObject();
-        body.addProperty("subredditName", name);
+        body.addProperty("subredditName", targetName);
+        body.addProperty("displayName", name);
         body.addProperty("description", description);
         body.addProperty("accountId", accountId);
-        HttpResponse<String> response = send("PUT", "/api/subreddits/" + id, body.toString());
+
+        String pathName = SubredditNames.stripPrefix(name);
+        HttpResponse<String> response = send("PUT", "/api/subreddits/" + encode(pathName), body.toString());
         requireSuccess(response, 200);
-        return JsonParser.parseString(response.body()).getAsJsonObject();
+        return JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonObject("data");
     }
 
-    public static void deleteSubreddit(long id, long accountId) {
+    public static void deleteSubreddit(String name, long accountId) {
         JsonObject body = new JsonObject();
         body.addProperty("accountId", accountId);
-        HttpResponse<String> response = send("DELETE", "/api/subreddits/" + id, body.toString());
+        String pathName = SubredditNames.stripPrefix(name);
+        HttpResponse<String> response = send("DELETE", "/api/subreddits/" + encode(pathName), body.toString());
         requireSuccess(response, 200);
     }
 
@@ -202,7 +198,7 @@ public final class RedditApiClient {
         String pathName = SubredditNames.stripPrefix(subredditName);
         HttpResponse<String> response = send("GET", "/api/posts/subreddit/" + encode(pathName), null);
         requireSuccess(response, 200);
-        return JsonParser.parseString(response.body()).getAsJsonArray();
+        return JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonArray("data");
     }
 
     public static JsonObject createPost(String title, String content, long authorId, String subredditName) {
@@ -333,10 +329,6 @@ public final class RedditApiClient {
                     .uri(URI.create(BASE_URL + path))
                     .timeout(Duration.ofSeconds(30))
                     .header("Accept", "application/json");
-
-            if (JWT_TOKEN != null && !JWT_TOKEN.isEmpty()) {
-                builder.header("Authorization", "Bearer " + JWT_TOKEN);
-            }
 
             if (jsonBody != null) {
                 builder.header("Content-Type", "application/json");

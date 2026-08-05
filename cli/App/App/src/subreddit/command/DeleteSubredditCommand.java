@@ -36,16 +36,17 @@ public class DeleteSubredditCommand implements SubredditCommand{
                     System.out.println("Subreddit not found.");
                     return;
                 }
-                long subId = subredditJson.get().get("id").getAsLong();
                 long creatorId = subredditJson.get().get("creatorId").getAsLong();
-                Long currentAccountId = sessionService.getCurrentAccountId();
-                if (currentAccountId == null) {
-                    currentAccountId = RedditApiClient.resolveAccountId(sessionService.getCurrentUsername());
-                }
+                long currentAccountId = sessionService.getCurrentAccountId();
 
                 if (creatorId == currentAccountId) {
-                    RedditApiClient.deleteSubreddit(subId, currentAccountId);
-                    System.out.println("Subreddit successfully deleted.");
+                    if(targetSub.get().getPostCount() > 0) {
+                        RedditApiClient.deleteSubreddit(targetSub.get().getName(), currentAccountId);
+                        System.out.println("Subreddit successfully deleted.");
+                    }
+                    else{
+                        System.out.println("Subreddit cannot be deleted because it has no posts.");
+                    }
                 } else {
                     System.out.println("You do not have permission to delete this subreddit.");
                 }

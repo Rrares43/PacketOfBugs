@@ -33,10 +33,7 @@ public class PostClient {
     }
 
     public Post createPost(String author, String title, String content, String subreddit) {
-        Long authorId = sessionService.getCurrentAccountId();
-        if (authorId == null) {
-            authorId = RedditApiClient.resolveAccountId(sessionService.getCurrentUsername());
-        }
+        long authorId = sessionService.getCurrentAccountId();
         JsonObject post = RedditApiClient.createPost(title, content, authorId, subreddit);
         return ApiMapper.toPost(post);
     }

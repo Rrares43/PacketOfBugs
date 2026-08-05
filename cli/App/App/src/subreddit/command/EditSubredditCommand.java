@@ -37,12 +37,9 @@ public class EditSubredditCommand implements SubredditCommand{
                     System.out.println("Subreddit not found.");
                     return;
                 }
-                long subId = subredditJson.get().get("id").getAsLong();
+                String subId = subredditJson.get().get("id").getAsString();
                 long creatorId = subredditJson.get().get("creatorId").getAsLong();
-                Long currentAccountId = sessionService.getCurrentAccountId();
-                if (currentAccountId == null) {
-                    currentAccountId = RedditApiClient.resolveAccountId(sessionService.getCurrentUsername());
-                }
+                long currentAccountId = sessionService.getCurrentAccountId();
                 
                 if (creatorId != currentAccountId) {
                     System.out.println("You do not have permission to edit this subreddit.");
@@ -51,7 +48,7 @@ public class EditSubredditCommand implements SubredditCommand{
 
                 String newName = stringReader.readString("Enter new name:");
                 String newDescription = stringReader.readString("Enter new description:");
-                RedditApiClient.editSubreddit(subId, newName, newDescription, currentAccountId);
+                RedditApiClient.editSubreddit(targetSub.get().getName(), newName, newDescription, currentAccountId);
                 System.out.println("Subreddit successfully edited.");
             }
         }
