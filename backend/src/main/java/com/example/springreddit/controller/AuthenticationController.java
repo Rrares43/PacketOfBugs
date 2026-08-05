@@ -2,10 +2,12 @@ package com.example.springreddit.controller;
 
 import com.example.springreddit.config.JwtTokenProvider;
 import com.example.springreddit.dto.AccountDto;
+import com.example.springreddit.dto.ErrorResponse;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.CustomUserDetails;
 import com.example.springreddit.service.AccountService;
 import com.example.springreddit.shared.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,9 +39,22 @@ public class AuthenticationController {
         this.accountService = accountService;
     }
 
+    private ErrorResponse buildErrorResponse(String message, String code, HttpServletRequest request) {
+        return ErrorResponse.builder()
+                .success(false)
+                .error(ErrorResponse.ErrorDetails.builder()
+                        .code(code)
+                        .message(message)
+                        .details(new java.util.ArrayList<>())
+                        .build())
+                .timestamp(java.time.Instant.now().toString())
+                .path(request.getRequestURI())
+                .build();
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AccountDto.AuthResponse>> login(
-            @Valid @RequestBody AccountDto.LoginRequest loginRequest) {
+    public ResponseEntity<?> login(
+            @Valid @RequestBody AccountDto.LoginRequest loginRequest, HttpServletRequest request) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Login attempt for username: {}", loginRequest.getUsername());
@@ -71,25 +86,37 @@ public class AuthenticationController {
         } catch (AuthenticationException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "Login failed for username: {} - {}", loginRequest.getUsername(), e.getMessage());
-            return ResponseEntity.status(401).body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    "Invalid username or password", 
+                    "UNAUTHORIZED", 
+                    request
+            );
+            return ResponseEntity.status(401).body(errorResponse);
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "Login error for username: {} - {}", loginRequest.getUsername(), e.getMessage());
-            return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    "An unexpected error occurred during login", 
+                    "INTERNAL_SERVER_ERROR", 
+                    request
+            );
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<AccountDto.UserProfile>> getCurrentUser() {
+    public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "GET /auth/me request failed: user not authenticated");
-                return ResponseEntity.status(401).body(
-                        new ApiResponse<>(false, null));
+                ErrorResponse errorResponse = buildErrorResponse(
+                        "Authentication required", 
+                        "UNAUTHORIZED", 
+                        request
+                );
+                return ResponseEntity.status(401).body(errorResponse);
             }
 
             String username = authentication.getName();
@@ -104,26 +131,38 @@ public class AuthenticationController {
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "GET /auth/me request failed: {}", e.getMessage());
-            return ResponseEntity.status(401).body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    e.getMessage(), 
+                    "UNAUTHORIZED", 
+                    request
+            );
+            return ResponseEntity.status(401).body(errorResponse);
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "GET /auth/me request failed with unexpected error: {}", e.getMessage());
-            return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    "An unexpected error occurred", 
+                    "INTERNAL_SERVER_ERROR", 
+                    request
+            );
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 
     @PutMapping("/me")
-    public ResponseEntity<ApiResponse<AccountDto.UserProfile>> updateCurrentUser(
-            @Valid @RequestBody AccountDto.UpdateUserProfileRequest request) {
+    public ResponseEntity<?> updateCurrentUser(
+            @Valid @RequestBody AccountDto.UpdateUserProfileRequest request, HttpServletRequest servletRequest) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "PUT /auth/me request failed: user not authenticated");
-                return ResponseEntity.status(401).body(
-                        new ApiResponse<>(false, null));
+                ErrorResponse errorResponse = buildErrorResponse(
+                        "Authentication required", 
+                        "UNAUTHORIZED", 
+                        servletRequest
+                );
+                return ResponseEntity.status(401).body(errorResponse);
             }
 
             String username = authentication.getName();
@@ -138,26 +177,38 @@ public class AuthenticationController {
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /auth/me request failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    e.getMessage(), 
+                    "BAD_REQUEST", 
+                    servletRequest
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "PUT /auth/me request failed with unexpected error: {}", e.getMessage());
-            return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    "An unexpected error occurred", 
+                    "INTERNAL_SERVER_ERROR", 
+                    servletRequest
+            );
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 
     @PutMapping("/me/password")
-    public ResponseEntity<ApiResponse<String>> changePassword(
-            @Valid @RequestBody AccountDto.UpdatePasswordRequest request) {
+    public ResponseEntity<?> changePassword(
+            @Valid @RequestBody AccountDto.UpdatePasswordRequest request, HttpServletRequest servletRequest) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "PUT /auth/me/password request failed: user not authenticated");
-                return ResponseEntity.status(401).body(
-                        new ApiResponse<>(false, null));
+                ErrorResponse errorResponse = buildErrorResponse(
+                        "Authentication required", 
+                        "UNAUTHORIZED", 
+                        servletRequest
+                );
+                return ResponseEntity.status(401).body(errorResponse);
             }
 
             String username = authentication.getName();
@@ -172,19 +223,27 @@ public class AuthenticationController {
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /auth/me/password request failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    e.getMessage(), 
+                    "BAD_REQUEST", 
+                    servletRequest
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "PUT /auth/me/password request failed with unexpected error: {}", e.getMessage());
-            return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    "An unexpected error occurred", 
+                    "INTERNAL_SERVER_ERROR", 
+                    servletRequest
+            );
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AccountDto.AuthResponse>> register(
-            @Valid @RequestBody AccountDto.RegistrationRequest registrationRequest) {
+    public ResponseEntity<?> register(
+            @Valid @RequestBody AccountDto.RegistrationRequest registrationRequest, HttpServletRequest request) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "Registration attempt for username: {}", registrationRequest.getUsername());
@@ -209,13 +268,21 @@ public class AuthenticationController {
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "Registration failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    e.getMessage(), 
+                    "BAD_REQUEST", 
+                    request
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "Registration failed with unexpected error: {}", e.getMessage());
-            return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+            ErrorResponse errorResponse = buildErrorResponse(
+                    "An unexpected error occurred during registration", 
+                    "INTERNAL_SERVER_ERROR", 
+                    request
+            );
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 }
