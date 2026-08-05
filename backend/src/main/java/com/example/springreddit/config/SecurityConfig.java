@@ -51,6 +51,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/subreddits", "/api/subreddits/**").permitAll()
                     .requestMatchers("/", "/api/subreddits").permitAll()
                     .requestMatchers("/filters", "/").permitAll()
+                    .requestMatchers("/api/auth/**", "/auth/**").permitAll()
+                    .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             );
 
@@ -63,7 +65,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         return request -> {
             CorsConfiguration config = new CorsConfiguration();
-            config.setAllowedOrigins(List.of("*"));
+            config.setAllowedOriginPatterns(List.of("*"));
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("*"));
             config.setExposedHeaders(List.of("Authorization"));
