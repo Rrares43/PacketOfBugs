@@ -298,4 +298,43 @@ public class PostsApiController {
                     new ApiResponse<>(false, null));
         }
     }
+
+    @PutMapping("/{id}/apply-filter")
+    public ResponseEntity<ApiResponse<PostDto.PostResponse>> applyFilter(
+            @PathVariable UUID id,
+            @RequestParam String filter) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null
+                    || !authentication.isAuthenticated()
+                    || "anonymousUser".equals(authentication.getPrincipal())) {
+                com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                        "PUT /posts/{}/apply-filter request failed: user not authenticated", id);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                        new ApiResponse<>(false, null));
+                    }
+            String currentUsername = authentication.getName();
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /posts/{}/apply-filter request received from user: {}", id, currentUsername, filter
+            );
+            Post post = postService.applyFilterToPost(id, filter, currentUsername);
+
+            String userVote = postService.resolveUserVote(post, currentUsername);
+            PostDto.PostResponse postResponse = postService.toPostResponse(post, userVote);
+
+            com.example.springreddit.logging.CustomLogger.getInstance().info(
+                    "PUT /posts/{}/apply-filter request successful", id);
+            return ResponseEntity.ok(ApiResponse.success(postResponse));
+
+        } catch (IOException | ResourceNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        catch (Exception e) {
+            com.example.springreddit.logging.CustomLogger.getInstance().error(
+                    "PUT /posts/{}/apply-filter request failed with unexpected error: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                    new ApiResponse<>(false, null));
+        }
+    }
 }

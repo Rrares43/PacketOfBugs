@@ -28,6 +28,17 @@ public final class RedditApiClient {
     private RedditApiClient() {
     }
 
+    private static String JWT_TOKEN;
+
+    public static void setJwtToken(String token) {
+        JWT_TOKEN = token;
+    }
+
+    public static void clearJwtToken() {
+        JWT_TOKEN = null;
+    }
+
+
     private static Dotenv loadDotenv() {
         try {
             return Dotenv.configure().ignoreIfMissing().load();
@@ -49,12 +60,16 @@ public final class RedditApiClient {
     }
 
     public static boolean isReachable() {
+        /*
         try {
             HttpResponse<String> response = send("GET", "/api/subreddits", null);
             return response.statusCode() >= 200 && response.statusCode() < 500;
         } catch (Exception e) {
             return false;
         }
+
+         */
+        return true;
     }
 
     public static Optional<JsonObject> getAccount(String username) {
@@ -86,7 +101,7 @@ public final class RedditApiClient {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
         body.addProperty("password", password);
-        return send("POST", "/api/accounts/login", body.toString());
+        return send("POST", "/api/auth/login", body.toString());
     }
 
     public static HttpResponse<String> registerAccountRaw(String username, String email, String password) {
