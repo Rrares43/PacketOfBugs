@@ -14,10 +14,20 @@ import com.example.springreddit.repository.CommentRepository;
 import com.example.springreddit.repository.PostRepository;
 import com.example.springreddit.repository.PostVoteRepository;
 import com.example.springreddit.repository.SubredditRepository;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -456,6 +466,75 @@ public class PostService {
                 countUpvotes(post) - countDownvotes(post),
                 userVoteStr
         );
+    }
+
+    @Transactional
+    public Post applyFilterToPost(UUID postId, String filter, String currentUsername) throws IOException {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
+
+        if (post.getAuthor() == null || !currentUsername.equals(post.getAuthor().getUsername())) {
+            throw new ForbiddenException("Only the post author can apply filters");
+        }
+
+        if (post.getImageUrl() == null || post.getImageUrl().isBlank()) {
+            throw new IllegalArgumentException("This post does not have an attached image");
+        }
+
+        if (!"grayscale".equalsIgnoreCase(filter)) {
+            throw new IllegalArgumentException("Unsupported filter type. Currently only 'grayscale' is supported.");
+        }
+
+        String filePathString = post.getImageUrl().startsWith("/") ? post.getImageUrl().substring(1) : post.getImageUrl();
+        Path originalPath = Paths.get(filePathString);
+
+        if (!Files.exists(originalPath)) {
+            throw new ResourceNotFoundException("Original image file not found on the server.");
+        }
+
+        byte[] originalBytes = Files.readAllBytes(originalPath);
+        String originalFilename = originalPath.getFileName().toString();
+
+        RestTemplate restTemplate = new RestTemplate();
+        String csharpApiUrl = "http://localhost:5000/api/images/grayscale"; // Make sure your C# app is running on this port!
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        ByteArrayResource fileAsResource = new ByteArrayResource(originalBytes) {
+            @Override
+            public String getFilename() {
+                return originalFilename;
+            }
+        };
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", fileAsResource);
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<byte[]> response = restTemplate.postForEntity(
+                csharpApiUrl,
+                requestEntity,
+                byte[].class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("C# microservice failed to process the image");
+        }
+
+        byte[] filteredBytes = response.getBody();
+        String extension = originalFilename.contains(".") ? originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
+        String uniqueFilename = UUID.randomUUID() + "_grayscale" + extension;
+        Path newFilePath = Paths.get("uploads").resolve(uniqueFilename);
+
+        Files.write(newFilePath, filteredBytes);
+
+        post.setImageUrl("/uploads/" + uniqueFilename);
+        post.setFilter(1);
+        post.setUpdatedAt(LocalDateTime.now());
+
+        return postRepository.save(post);
     }
 
     @Transactional(readOnly = true)

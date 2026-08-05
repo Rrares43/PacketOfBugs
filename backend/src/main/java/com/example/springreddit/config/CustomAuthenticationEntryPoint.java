@@ -20,6 +20,6 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write("{\"success\":false,\"data\":null}");
+        response.getWriter().write("{\"success\":false,\"message\":\"Buggit Authentication required before main functions of the App \",\"data\":null}");
     }
 }
