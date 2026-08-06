@@ -52,22 +52,19 @@ public class PostsApiController {
                     .map(postService::toPostResponse)
                     .collect(Collectors.toList());
             
-            ApiResponse<List<PostDto.PostResponse>> response = 
-                    new ApiResponse<>(true, postResponses);
-            
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "GET /posts request successful, returned {} posts", postResponses.size());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success(postResponses));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "GET /posts request failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/posts"));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "GET /posts request failed with unexpected error: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/posts"));
         }
     }
 
@@ -83,17 +80,17 @@ public class PostsApiController {
             
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "GET /posts/{} request successful", id);
-            return ResponseEntity.ok(new ApiResponse<>(true, postResponse));
+            return ResponseEntity.ok(ApiResponse.success(postResponse));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "GET /posts/{} request failed: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/posts/" + id));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "GET /posts/{} request failed with unexpected error: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/posts/" + id));
         }
     }
 
@@ -109,7 +106,7 @@ public class PostsApiController {
             if (authentication == null || !authentication.isAuthenticated()) {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn("POST /posts request failed: user not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                        new ApiResponse<>(false, null));
+                        ApiResponse.error("User not authenticated", "UNAUTHORIZED", "/posts"));
             }
             String authorUsername = authentication.getName();
             
@@ -123,22 +120,22 @@ public class PostsApiController {
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "POST /posts request successful - created post ID: {}", post.getId());
             return ResponseEntity.status(HttpStatus.CREATED).body(
-                    new ApiResponse<>(true, postResponse));
+                    ApiResponse.success(postResponse));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "POST /posts request failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/posts"));
         } catch (IOException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "POST /posts request failed - image upload error: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/posts"));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "POST /posts request failed with unexpected error: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/posts"));
         }
     }
 
@@ -154,7 +151,7 @@ public class PostsApiController {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "PUT /posts/{} request failed: user not authenticated", id);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                        new ApiResponse<>(false, null));
+                        ApiResponse.error("User not authenticated", "UNAUTHORIZED", "/posts/" + id));
             }
             String currentUsername = authentication.getName();
 
@@ -167,32 +164,32 @@ public class PostsApiController {
 
             com.example.springreddit.logging.CustomLogger.getInstance().info(
                     "PUT /posts/{} request successful", id);
-            return ResponseEntity.ok(new ApiResponse<>(true, postResponse));
+            return ResponseEntity.ok(ApiResponse.success(postResponse));
         } catch (ResourceNotFoundException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /posts/{} request failed: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "NOT_FOUND", "/posts/" + id));
         } catch (ForbiddenException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /posts/{} request failed - forbidden: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "FORBIDDEN", "/posts/" + id));
         } catch (UnauthorizedException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /posts/{} request failed - unauthorized: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "UNAUTHORIZED", "/posts/" + id));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /posts/{} request failed: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/posts/" + id));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "PUT /posts/{} request failed with unexpected error: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/posts/" + id));
         }
     }
 
@@ -206,7 +203,7 @@ public class PostsApiController {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "DELETE /posts/{} request failed: user not authenticated", id);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                        new ApiResponse<>(false, null));
+                        ApiResponse.error("User not authenticated", "UNAUTHORIZED", "/posts/" + id));
             }
             String currentUsername = authentication.getName();
 
@@ -222,27 +219,27 @@ public class PostsApiController {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "DELETE /posts/{} request failed: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "NOT_FOUND", "/posts/" + id));
         } catch (ForbiddenException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "DELETE /posts/{} request failed - forbidden: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "FORBIDDEN", "/posts/" + id));
         } catch (UnauthorizedException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "DELETE /posts/{} request failed - unauthorized: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "UNAUTHORIZED", "/posts/" + id));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "DELETE /posts/{} request failed: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/posts/" + id));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "DELETE /posts/{} request failed with unexpected error: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/posts/" + id));
         }
     }
 
@@ -258,7 +255,7 @@ public class PostsApiController {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "PUT /posts/{}/vote request failed: user not authenticated", id);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                        new ApiResponse<>(false, null));
+                        ApiResponse.error("User not authenticated", "UNAUTHORIZED", "/posts/" + id + "/vote"));
             }
             String currentUsername = authentication.getName();
 
@@ -275,27 +272,27 @@ public class PostsApiController {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /posts/{}/vote request failed: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "NOT_FOUND", "/posts/" + id + "/vote"));
         } catch (ForbiddenException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /posts/{}/vote request failed - forbidden: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "FORBIDDEN", "/posts/" + id + "/vote"));
         } catch (UnauthorizedException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /posts/{}/vote request failed - unauthorized: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "UNAUTHORIZED", "/posts/" + id + "/vote"));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /posts/{}/vote request failed: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/posts/" + id + "/vote"));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "PUT /posts/{}/vote request failed with unexpected error: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/posts/" + id + "/vote"));
         }
     }
 
@@ -311,13 +308,12 @@ public class PostsApiController {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "PUT /posts/{}/apply-filter request failed: user not authenticated", id);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                        new ApiResponse<>(false, null));
-                    }
+                        ApiResponse.error("User not authenticated", "UNAUTHORIZED", "/posts/" + id + "/apply-filter"));
+            }
             String currentUsername = authentication.getName();
 
             com.example.springreddit.logging.CustomLogger.getInstance().info(
-                    "PUT /posts/{}/apply-filter request received from user: {}", id, currentUsername, filter
-            );
+                    "PUT /posts/{}/apply-filter request received from user: {}", id, currentUsername, filter);
             Post post = postService.applyFilterToPost(id, filter, currentUsername);
 
             String userVote = postService.resolveUserVote(post, currentUsername);
@@ -334,7 +330,7 @@ public class PostsApiController {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "PUT /posts/{}/apply-filter request failed with unexpected error: {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/posts/" + id + "/apply-filter"));
         }
     }
 }

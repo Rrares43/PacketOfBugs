@@ -1,9 +1,10 @@
 package com.example.springreddit.controller;
 
+import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.SubredditDto;
 import com.example.springreddit.model.Subreddit;
-import com.example.springreddit.service.SubredditService;
 import com.example.springreddit.repository.SubredditSummary;
+import com.example.springreddit.service.SubredditService;
 import com.example.springreddit.shared.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,15 +25,10 @@ public class SubredditController {
     private SubredditService subredditService;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> createNewSubreddit(@Valid @RequestBody SubredditDto.CreateSubredditRequest request) {
-        try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Create subreddit request received for subreddit name: {}", request.name());
-            Subreddit savedSub = subredditService.createSubreddit(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(mapToResponse(savedSub)));
-        } catch (IllegalArgumentException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Create subreddit failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    public ResponseEntity<ApiResponse<SubredditDto.SubredditResponse>> createNewSubreddit(@Valid @RequestBody SubredditDto.CreateSubredditRequest request) {
+        com.example.springreddit.logging.CustomLogger.getInstance().info("Create subreddit request received for subreddit name: {}", request.name());
+        Subreddit savedSub = subredditService.createSubreddit(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(mapToResponse(savedSub)));
     }
 
     @GetMapping
@@ -45,57 +41,42 @@ public class SubredditController {
     }
 
     @GetMapping("/by-creator/{username}")
-    public ResponseEntity<List<SubredditDto.SubredditResponse>> getByCreator(@PathVariable String username) {
+    public ResponseEntity<ApiResponse<List<SubredditDto.SubredditResponse>>> getByCreator(@PathVariable String username) {
         List<SubredditDto.SubredditResponse> subreddits = subredditService.getSubredditsByCreatorUsername(username)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(subreddits);
+        return ResponseEntity.ok(ApiResponse.success(subreddits));
     }
 
     @GetMapping("/{name}")
-    public ResponseEntity<?> getSubredditByName(@PathVariable String name) {
-        try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Get subreddit request received for subreddit name: {}", name);
-            Subreddit subreddit = subredditService.getSubredditByName(name);
-            return ResponseEntity.ok(ApiResponse.success(mapToResponse(subreddit)));
-        } catch (IllegalArgumentException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Get subreddit failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<ApiResponse<SubredditDto.SubredditResponse>> getSubredditByName(@PathVariable String name) {
+        com.example.springreddit.logging.CustomLogger.getInstance().info("Get subreddit request received for subreddit name: {}", name);
+        Subreddit subreddit = subredditService.getSubredditByName(name);
+        return ResponseEntity.ok(ApiResponse.success(mapToResponse(subreddit)));
+    }
+
+    @GetMapping("/{name}/posts")
+    public ResponseEntity<ApiResponse<List<PostDto.PostResponse>>> getPostsBySubreddit(@PathVariable String name) {
+        com.example.springreddit.logging.CustomLogger.getInstance().info("Get posts for subreddit request received for subreddit name: {}", name);
+        List<PostDto.PostResponse> posts = subredditService.getPostsBySubredditName(name);
+        return ResponseEntity.ok(ApiResponse.success(posts));
     }
 
     @PutMapping(value = "/{name}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> editSubreddit(@PathVariable String name,
-                                           @RequestBody SubredditDto.EditSubredditRequest request) {
-        try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Edit subreddit request received for subreddit ID: {} by account ID: {}", name, request.creatorId());
-            Subreddit editedSubreddit = subredditService.editSubreddit(name, request);
-            return ResponseEntity.ok(ApiResponse.success(mapToResponse(editedSubreddit)));
-        } catch (IllegalArgumentException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Edit subreddit failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-        catch (SecurityException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Edit subreddit failed - security violation: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        }
+    public ResponseEntity<ApiResponse<SubredditDto.SubredditResponse>> editSubreddit(
+            @PathVariable String name,
+            @Valid @RequestBody SubredditDto.EditSubredditRequest request) {
+        com.example.springreddit.logging.CustomLogger.getInstance().info("Edit subreddit request received for subreddit name: {}", name);
+        Subreddit editedSubreddit = subredditService.editSubreddit(name, request);
+        return ResponseEntity.ok(ApiResponse.success(mapToResponse(editedSubreddit)));
     }
 
     @DeleteMapping("/{name}")
-    public ResponseEntity<?> deleteSubreddit(@PathVariable String name, @RequestBody SubredditDto.DeleteSubredditRequest request) {
-        try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Delete subreddit request received for subreddit name: {} by account ID: {}", name, request.creatorId());
-            subredditService.deleteSubreddit(name, request.creatorId());
-            return ResponseEntity.ok(ApiResponse.success("Subreddit deleted successfully"));
-        } catch (IllegalArgumentException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete subreddit failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
-        catch (SecurityException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete subreddit failed - security violation: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        }
+    public ResponseEntity<ApiResponse<String>> deleteSubreddit(@PathVariable String name) {
+        com.example.springreddit.logging.CustomLogger.getInstance().info("Delete subreddit request received for subreddit name: {}", name);
+        subredditService.deleteSubreddit(name);
+        return ResponseEntity.ok(ApiResponse.success("Subreddit deleted successfully"));
     }
 
     private SubredditDto.SubredditResponse mapToResponse(Subreddit subreddit) {
@@ -113,14 +94,14 @@ public class SubredditController {
 
     private SubredditDto.SubredditResponse mapSummaryToResponse(SubredditSummary summary) {
         return new SubredditDto.SubredditResponse(
-            summary.getId(),
-            summary.getName(),
-            summary.getDisplayName(),
-            summary.getDescription(),
-            summary.getMemberCount(),
-            summary.getPostCount(),
-            summary.getIconURL(),
-            summary.getCreatedAt()
+                summary.getId(),
+                summary.getName(),
+                summary.getDisplayName(),
+                summary.getDescription(),
+                summary.getMemberCount(),
+                summary.getPostCount(),
+                summary.getIconURL(),
+                summary.getCreatedAt()
         );
     }
 }
