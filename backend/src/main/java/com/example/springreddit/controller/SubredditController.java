@@ -36,12 +36,12 @@ public class SubredditController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SubredditDto.SubredditResponse>> getAllSubreddits() {
+    public ResponseEntity<SubredditDto.SubredditListResponse> getAllSubreddits() {
         List<SubredditDto.SubredditResponse> subreddits = subredditService.getAllSubredditSummaries()
                 .stream()
                 .map(this::mapSummaryToResponse)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(new SubredditDto.SubredditListResponse(true, subreddits, subreddits.size()).subreddits());
+        return ResponseEntity.ok(new SubredditDto.SubredditListResponse(true, subreddits, subreddits.size()));
     }
 
     @GetMapping("/by-creator/{username}")

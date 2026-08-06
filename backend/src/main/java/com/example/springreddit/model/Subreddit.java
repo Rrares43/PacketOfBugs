@@ -25,7 +25,7 @@ public class Subreddit {
     @Column(unique = true, nullable = false, length = 50)
     private String name;
 
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(nullable = false, length = 50)
     private String displayName;
 
     @Column(columnDefinition = "TEXT")

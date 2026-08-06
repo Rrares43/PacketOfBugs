@@ -42,10 +42,11 @@ public class SubredditService {
                 });
 
         Subreddit subreddit = new Subreddit();
-        subreddit.setName(normalizedName);
+        subreddit.setName(request.name());
         subreddit.setDisplayName(request.displayName());
         subreddit.setDescription(request.description());
         subreddit.setIconURL(request.iconUrl());
+        subreddit.setCreator(creator);
 
         Subreddit savedSubreddit = subredditRepository.save(subreddit);
         com.example.springreddit.logging.CustomLogger.getInstance().info("Subreddit created successfully with ID: {} and name: {} by user: {}", savedSubreddit.getId(), normalizedName, currentUsername);

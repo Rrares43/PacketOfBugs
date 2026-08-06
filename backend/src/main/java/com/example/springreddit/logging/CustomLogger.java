@@ -44,6 +44,21 @@ public final class CustomLogger {
     }
 
     private synchronized void add(String level, String message) {
+        if (message == null) {
+            return;
+        }
+
+        String lowerMessage = message.toLowerCase();
+        if (lowerMessage.contains("select ") ||
+                lowerMessage.contains("insert into") ||
+                lowerMessage.contains("update ") ||
+                lowerMessage.contains("delete from") ||
+                lowerMessage.contains("hibernate") ||
+                lowerMessage.contains("jdbc") ||
+                lowerMessage.contains("binding parameter")) {
+            return;
+        }
+
         logs.add("[" + LocalDateTime.now().format(TIMESTAMP) + "] [" + level + "] " + message);
         if (logs.size() > MAX_ENTRIES) {
             logs.remove(0);

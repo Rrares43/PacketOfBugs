@@ -28,7 +28,7 @@ public class SubredditDto {
 
     public record SubredditListResponse(
        boolean success,
-       List<SubredditResponse> subreddits,
+       List<SubredditResponse> data,
        long total
     ){}
 
