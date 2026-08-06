@@ -1,6 +1,6 @@
 package com.example.springreddit.repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public interface SubredditSummary {
@@ -12,6 +12,6 @@ public interface SubredditSummary {
     long getMemberCount();
     Long getCreatorId();
     String getCreatorUsername();
-    LocalDateTime getCreatedAt();
+    Instant getCreatedAt();
     long getPostCount();
 }
