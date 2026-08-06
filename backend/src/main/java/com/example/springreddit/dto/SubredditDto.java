@@ -46,8 +46,7 @@ public class SubredditDto {
         @Size(max = 500, message = "Subreddit description must not exceed 500 characters")
         String description,
 
-        @Positive(message = "Creator id is required")
-        Long creatorId
+        String iconUrl
         ){}
 
 

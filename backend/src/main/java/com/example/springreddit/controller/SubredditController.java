@@ -26,7 +26,7 @@ public class SubredditController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createNewSubreddit(@Valid @RequestBody SubredditDto.CreateSubredditRequest request) {
         try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Create subreddit request received for subreddit name: {} by creator ID: {}", request.name(), request.creatorId());
+            com.example.springreddit.logging.CustomLogger.getInstance().info("Create subreddit request received for subreddit name: {}", request.name());
             Subreddit savedSub = subredditService.createSubreddit(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(mapToResponse(savedSub)));
         } catch (IllegalArgumentException e) {
