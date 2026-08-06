@@ -27,9 +27,11 @@ public class SubredditDto {
     }
 
     public record SubredditListResponse(
-        List<SubredditResponse> subreddits,
-        long total
-    ) {}
+       boolean success,
+       List<SubredditResponse> data,
+       long total
+    ){}
+
 
     public record CreateSubredditRequest(
         @NotBlank(message = "Subreddit name cannot be blank")

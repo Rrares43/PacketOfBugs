@@ -52,7 +52,7 @@ public class SubredditService {
                 });
 
         Subreddit subreddit = new Subreddit();
-        subreddit.setName(normalizedName);
+        subreddit.setName(request.name());
         subreddit.setDisplayName(request.displayName());
         subreddit.setDescription(request.description());
         subreddit.setIconURL(request.iconUrl());
