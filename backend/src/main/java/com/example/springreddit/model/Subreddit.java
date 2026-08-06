@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +25,7 @@ public class Subreddit {
     @Column(unique = true, nullable = false, length = 50)
     private String name;
 
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(unique = true, nullable = false, length = 100)
     private String displayName;
 
     @Column(columnDefinition = "TEXT")
@@ -49,7 +49,7 @@ public class Subreddit {
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     public Subreddit(String name, String description, Account creator) {
         setName(name);
@@ -58,10 +58,6 @@ public class Subreddit {
     }
 
     public void setName(String name) {
-        if (name != null && !name.startsWith("r/")) {
-            this.name = "r/" + name;
-        } else {
-            this.name = name;
-        }
+        this.name = name;
     }
 }

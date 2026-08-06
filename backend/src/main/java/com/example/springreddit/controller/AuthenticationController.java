@@ -72,12 +72,12 @@ public class AuthenticationController {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "Login failed for username: {} - {}", loginRequest.getUsername(), e.getMessage());
             return ResponseEntity.status(401).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "UNAUTHORIZED", "/auth/login"));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "Login error for username: {} - {}", loginRequest.getUsername(), e.getMessage());
             return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/auth/login"));
         }
     }
 
@@ -89,7 +89,7 @@ public class AuthenticationController {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "GET /auth/me request failed: user not authenticated");
                 return ResponseEntity.status(401).body(
-                        new ApiResponse<>(false, null));
+                        ApiResponse.error("User not authenticated", "UNAUTHORIZED", "/auth/me"));
             }
 
             String username = authentication.getName();
@@ -105,12 +105,12 @@ public class AuthenticationController {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "GET /auth/me request failed: {}", e.getMessage());
             return ResponseEntity.status(401).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "UNAUTHORIZED", "/auth/me"));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "GET /auth/me request failed with unexpected error: {}", e.getMessage());
             return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/auth/me"));
         }
     }
 
@@ -123,7 +123,7 @@ public class AuthenticationController {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "PUT /auth/me request failed: user not authenticated");
                 return ResponseEntity.status(401).body(
-                        new ApiResponse<>(false, null));
+                        ApiResponse.error("User not authenticated", "UNAUTHORIZED", "/auth/me"));
             }
 
             String username = authentication.getName();
@@ -139,12 +139,12 @@ public class AuthenticationController {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /auth/me request failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/auth/me"));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "PUT /auth/me request failed with unexpected error: {}", e.getMessage());
             return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/auth/me"));
         }
     }
 
@@ -157,7 +157,7 @@ public class AuthenticationController {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn(
                         "PUT /auth/me/password request failed: user not authenticated");
                 return ResponseEntity.status(401).body(
-                        new ApiResponse<>(false, null));
+                        ApiResponse.error("User not authenticated", "UNAUTHORIZED", "/auth/me/password"));
             }
 
             String username = authentication.getName();
@@ -173,12 +173,12 @@ public class AuthenticationController {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "PUT /auth/me/password request failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/auth/me/password"));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "PUT /auth/me/password request failed with unexpected error: {}", e.getMessage());
             return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/auth/me/password"));
         }
     }
 
@@ -210,12 +210,12 @@ public class AuthenticationController {
             com.example.springreddit.logging.CustomLogger.getInstance().warn(
                     "Registration failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/auth/register"));
         } catch (Exception e) {
             com.example.springreddit.logging.CustomLogger.getInstance().error(
                     "Registration failed with unexpected error: {}", e.getMessage());
             return ResponseEntity.status(500).body(
-                    new ApiResponse<>(false, null));
+                    ApiResponse.error(e.getMessage(), "INTERNAL_SERVER_ERROR", "/auth/register"));
         }
     }
 }

@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -208,7 +208,7 @@ public class PostService {
             post.setContent(request.getContent());
         }
 
-        post.setUpdatedAt(LocalDateTime.now());
+        post.setUpdatedAt(Instant.now());
         Post savedPost = postRepository.save(post);
         com.example.springreddit.logging.CustomLogger.getInstance().info(
                 "Post updated successfully with ID: {} by author: {}", id, currentUsername);
@@ -532,7 +532,7 @@ public class PostService {
 
         post.setImageUrl("/uploads/" + uniqueFilename);
         post.setFilter(1);
-        post.setUpdatedAt(LocalDateTime.now());
+        post.setUpdatedAt(Instant.now());
 
         return postRepository.save(post);
     }
@@ -544,7 +544,6 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostDto.PostResponse toPostResponse(Post post, String userVote) {
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ISO_DATE_TIME;
         String authorName = (post.getAuthor() != null) ? post.getAuthor().getUsername() : "unknown";
         String subredditName = (post.getSubreddit() != null) ? post.getSubreddit().getName() : "unknown";
         long commentCount = commentRepository.countByPost_Id(post.getId());
@@ -563,8 +562,8 @@ public class PostService {
                 score,
                 commentCount,
                 userVote,
-                post.getCreatedAt() != null ? post.getCreatedAt().format(formatter) : null,
-                post.getUpdatedAt() != null ? post.getUpdatedAt().format(formatter) : null
+                post.getCreatedAt() != null ? post.getCreatedAt().toString() : null,
+                post.getUpdatedAt() != null ? post.getUpdatedAt().toString() : null
         );
     }
 }

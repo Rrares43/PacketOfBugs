@@ -42,7 +42,8 @@ public class PostController {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
                 com.example.springreddit.logging.CustomLogger.getInstance().warn("Create post request failed: user not authenticated");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse<>(false, null));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                        ApiResponse.error("User not authenticated", "UNAUTHORIZED", "/posts"));
             }
             String authorUsername = authentication.getName();
             Account authorAccount = accountService.getByUsername(authorUsername);
@@ -54,10 +55,11 @@ public class PostController {
                     request.getContent(),
                     authorId,
                     request.getSubredditName());
-            return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, postService.toPostResponse(post)));
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(postService.toPostResponse(post)));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Create post failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, null));
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/posts"));
         }
     }
 
@@ -66,17 +68,18 @@ public class PostController {
         List<PostDto.PostResponse> posts = postService.getAllPosts().stream()
                 .map(postService::toPostResponse)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(new ApiResponse<>(true, posts));
+        return ResponseEntity.ok(ApiResponse.success(posts));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PostDto.PostResponse>> getPost(@PathVariable UUID id) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Get post request received for post ID: {}", id);
-            return ResponseEntity.ok(new ApiResponse<>(true, postService.toPostResponse(postService.getPostById(id))));
+            return ResponseEntity.ok(ApiResponse.success(postService.toPostResponse(postService.getPostById(id))));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Get post failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>(false, null));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    ApiResponse.error(e.getMessage(), "NOT_FOUND", "/posts/" + id));
         }
     }
 
@@ -93,28 +96,32 @@ public class PostController {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Edit post request received for post ID: {} by account ID: {}", id, request.getAccountId());
             Post post = postService.editPost(id, request.getTitle(), request.getContent(), request.getAccountId());
-            return ResponseEntity.ok(new ApiResponse<>(true, postService.toPostResponse(post)));
+            return ResponseEntity.ok(ApiResponse.success(postService.toPostResponse(post)));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Edit post failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, null));
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/posts/" + id));
         } catch (SecurityException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Edit post failed - security violation: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse<>(false, null));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    ApiResponse.error(e.getMessage(), "FORBIDDEN", "/posts/" + id));
         }
     }
 
     @DeleteMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> deletePost(@PathVariable UUID id, @RequestBody PostDto.DeletePostRequest request) {
+    public ResponseEntity<ApiResponse<String>> deletePost(@PathVariable UUID id, @RequestBody PostDto.DeletePostRequest request) {
         try {
             com.example.springreddit.logging.CustomLogger.getInstance().info("Delete post request received for post ID: {} by account ID: {}", id, request.getAccountId());
             postService.deletePost(id, request.getAccountId());
-            return ResponseEntity.ok("Post deleted successfully");
+            return ResponseEntity.ok(ApiResponse.success("Post deleted successfully"));
         } catch (IllegalArgumentException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete post failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.error(e.getMessage(), "BAD_REQUEST", "/posts/" + id));
         } catch (SecurityException e) {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete post failed - security violation: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    ApiResponse.error(e.getMessage(), "FORBIDDEN", "/posts/" + id));
         }
     }
 
