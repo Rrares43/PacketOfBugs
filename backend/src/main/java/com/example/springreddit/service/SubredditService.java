@@ -8,6 +8,7 @@ import com.example.springreddit.repository.SubredditRepository;
 import com.example.springreddit.repository.SubredditSummary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,29 +26,29 @@ public class SubredditService {
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Create subreddit failed: request is null");
             throw new IllegalArgumentException("Request cannot be null");
         }
-        if (request.creatorId() == null) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Create subreddit failed: creator ID is null");
-            throw new IllegalArgumentException("Creator ID cannot be null");
-        }
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
         String normalizedName = normalizeName(request.name());
         if(subredditRepository.existsByName(normalizedName)){
             com.example.springreddit.logging.CustomLogger.getInstance().warn("Create subreddit failed: subreddit already exists with name: {}", normalizedName);
             throw new IllegalArgumentException("Subreddit already exists");
         }
 
-        Account creator = accountRepository.findById(request.creatorId())
+        Account creator = accountRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Create subreddit failed: creator not found with ID: {}", request.creatorId());
+                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Create subreddit failed: creator not found with username: {}", currentUsername);
                     return new IllegalArgumentException("Creator not found");
                 });
 
         Subreddit subreddit = new Subreddit();
         subreddit.setName(normalizedName);
+        subreddit.setDisplayName(request.displayName());
         subreddit.setDescription(request.description());
-        subreddit.setCreator(creator);
+        subreddit.setIconURL(request.iconUrl());
 
         Subreddit savedSubreddit = subredditRepository.save(subreddit);
-        com.example.springreddit.logging.CustomLogger.getInstance().info("Subreddit created successfully with ID: {} and name: {} by creator ID: {}", savedSubreddit.getId(), normalizedName, request.creatorId());
+        com.example.springreddit.logging.CustomLogger.getInstance().info("Subreddit created successfully with ID: {} and name: {} by user: {}", savedSubreddit.getId(), normalizedName, currentUsername);
         return savedSubreddit;
     }
 
@@ -128,7 +129,6 @@ public class SubredditService {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Subreddit name cannot be blank");
         }
-        String trimmed = name.trim();
-        return trimmed.startsWith("r/") ? trimmed : "r/" + trimmed;
+        return name.trim();
     }
 }
