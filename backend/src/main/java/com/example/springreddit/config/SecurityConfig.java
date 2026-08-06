@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/posts", "/posts/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/comments/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/subreddits", "/api/subreddits/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/subreddits", "/api/subreddits/**", "/subreddits", "/subreddits/**").permitAll()
                     .requestMatchers("/", "/api/subreddits").permitAll()
                     .requestMatchers("/filters", "/").permitAll()
                     .requestMatchers("/api/auth/**", "/auth/**").permitAll()

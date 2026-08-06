@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping(value = "/api/subreddits", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/subreddits", produces = MediaType.APPLICATION_JSON_VALUE)
 public class SubredditController {
 
     @Autowired
@@ -106,7 +106,7 @@ public class SubredditController {
                 subreddit.getDescription(),
                 subreddit.getMemberCount(),
                 subreddit.getPostCount(),
-                subreddit.getIconURl(),
+                subreddit.getIconURL(),
                 subreddit.getCreatedAt()
         );
     }

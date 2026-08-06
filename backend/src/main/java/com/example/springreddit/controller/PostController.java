@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@RestController
-@RequestMapping(value = "/api/posts", produces = MediaType.APPLICATION_JSON_VALUE)
+// @RestController
+@RequestMapping(value = "/posts", produces = MediaType.APPLICATION_JSON_VALUE)
 public class PostController {
 
     private final PostService postService;

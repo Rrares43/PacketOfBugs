@@ -37,7 +37,7 @@ public class Subreddit {
     @Column(nullable = false)
     private long memberCount = 0;
 
-    private String iconURl;
+    private String iconURL;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", nullable = false)
