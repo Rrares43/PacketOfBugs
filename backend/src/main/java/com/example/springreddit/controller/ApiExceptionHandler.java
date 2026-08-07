@@ -2,7 +2,7 @@ package com.example.springreddit.controller;
 
 import com.example.springreddit.exception.ResourceNotFoundException;
 import com.example.springreddit.logging.CustomLogger;
-import com.example.springreddit.shared.ApiResponse;
+import com.example.springreddit.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 

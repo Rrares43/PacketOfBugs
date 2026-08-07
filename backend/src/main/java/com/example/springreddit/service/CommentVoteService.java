@@ -1,5 +1,6 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Comment;
 import com.example.springreddit.model.CommentVote;
@@ -16,6 +17,7 @@ public class CommentVoteService {
 
     private final CommentVoteRepository commentVoteRepository;
     private final CommentRepository commentRepository;
+    private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
     public CommentVoteService(CommentVoteRepository commentVoteRepository,
                               CommentRepository commentRepository) {
@@ -28,11 +30,11 @@ public class CommentVoteService {
         validateVoteRequest(postId, commentId, account, choice);
         Comment comment = commentRepository.findByIdAndPost_Id(commentId, postId)
                 .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Vote failed: comment not found with ID: {} on post ID: {}", commentId, postId);
+                    LOGGER.warn("Vote failed: comment not found with ID: {} on post ID: {}", commentId, postId);
                     return new IllegalArgumentException("Comment does not exist.");
                 });
         if (comment.isDeleted()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Vote failed: cannot vote on deleted comment with ID: {}", commentId);
+            LOGGER.warn("Vote failed: cannot vote on deleted comment with ID: {}", commentId);
             throw new IllegalArgumentException("Deleted comments cannot be voted on");
         }
 
@@ -43,16 +45,16 @@ public class CommentVoteService {
             if (existingVoteOpt.isPresent()) {
                 CommentVote existingVote = existingVoteOpt.get();
                 if (existingVote.isUpvote() == isUpvote) {
-                    com.example.springreddit.logging.CustomLogger.getInstance().info("Vote failed: duplicate {} for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
+                    LOGGER.info("Vote failed: duplicate {} for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
                     return "You have already added an " + voteType + " to this comment.";
                 }
                 existingVote.setUpvote(isUpvote);
                 commentVoteRepository.save(existingVote);
-                com.example.springreddit.logging.CustomLogger.getInstance().info("Vote changed to {} for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
+                LOGGER.info("Vote changed to {} for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
                 return voteType + " updated successfully.";
             }
             commentVoteRepository.save(new CommentVote(comment, account, isUpvote ? CommentVote.UPVOTE : CommentVote.DOWNVOTE));
-            com.example.springreddit.logging.CustomLogger.getInstance().info("{} added for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
+            LOGGER.info("{} added for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
             return voteType + " added successfully.";
         }
 
@@ -61,13 +63,13 @@ public class CommentVoteService {
                 CommentVote existingVote = existingVoteOpt.get();
                 if (existingVote.isUpvote() == isUpvote) {
                     commentVoteRepository.delete(existingVote);
-                    com.example.springreddit.logging.CustomLogger.getInstance().info("{} removed for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
+                    LOGGER.info("{} removed for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
                     return voteType + " removed successfully.";
                 }
-                com.example.springreddit.logging.CustomLogger.getInstance().info("Vote removal failed: vote type mismatch for comment ID: {} by account ID: {}", commentId, account.getId());
+                LOGGER.info("Vote removal failed: vote type mismatch for comment ID: {} by account ID: {}", commentId, account.getId());
                 return "You cannot remove a vote you have not cast.";
             }
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Vote removal failed: no existing {} for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
+            LOGGER.info("Vote removal failed: no existing {} for comment ID: {} by account ID: {}", voteType, commentId, account.getId());
             return "No " + voteType + " exists to remove.";
         }
 

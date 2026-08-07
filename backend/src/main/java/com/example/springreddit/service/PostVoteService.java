@@ -1,5 +1,6 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
@@ -16,6 +17,7 @@ public class PostVoteService {
 
     private final PostVoteRepository postVoteRepository;
     private final PostRepository postRepository;
+    private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
     public PostVoteService(PostVoteRepository postVoteRepository, PostRepository postRepository) {
         this.postVoteRepository = postVoteRepository;
@@ -27,7 +29,7 @@ public class PostVoteService {
         validateVoteRequest(postId, currentAccount, choice);
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Vote failed: post not found with ID: {}", postId);
+                    LOGGER.warn("Vote failed: post not found with ID: {}", postId);
                     return new IllegalArgumentException("Post with ID " + postId + " does not exist.");
                 });
 
@@ -38,31 +40,31 @@ public class PostVoteService {
             if (existingVoteOpt.isPresent()) {
                 PostVote existingVote = existingVoteOpt.get();
                 if (existingVote.isUpvote() == isUpvote) {
-                    com.example.springreddit.logging.CustomLogger.getInstance().info("Vote failed: duplicate vote for post ID: {} by account ID: {}", postId, currentAccount.getId());
+                    LOGGER.info("Vote failed: duplicate vote for post ID: {} by account ID: {}", postId, currentAccount.getId());
                     return "You have already voted! You cannot " + voteTypeStr + " twice.";
                 }
                 existingVote.setUpvote(isUpvote);
                 postVoteRepository.save(existingVote);
-                com.example.springreddit.logging.CustomLogger.getInstance().info("Vote changed to {} for post ID: {} by account ID: {}", voteTypeStr, postId, currentAccount.getId());
+                LOGGER.info("Vote changed to {} for post ID: {} by account ID: {}", voteTypeStr, postId, currentAccount.getId());
                 return "Vote changed to " + voteTypeStr + " successfully.";
             }
             postVoteRepository.save(new PostVote(isUpvote, post, currentAccount));
-            com.example.springreddit.logging.CustomLogger.getInstance().info("{} added for post ID: {} by account ID: {}", isUpvote ? "Upvote" : "Downvote", postId, currentAccount.getId());
+            LOGGER.info("{} added for post ID: {} by account ID: {}", isUpvote ? "Upvote" : "Downvote", postId, currentAccount.getId());
             return voteTypeStr.substring(0, 1).toUpperCase() + voteTypeStr.substring(1) + " added successfully.";
         }
 
         if (choice == 2) {
             if (existingVoteOpt.isEmpty()) {
-                com.example.springreddit.logging.CustomLogger.getInstance().info("Vote removal failed: no existing vote found for post ID: {} by account ID: {}", postId, currentAccount.getId());
+                LOGGER.info("Vote removal failed: no existing vote found for post ID: {} by account ID: {}", postId, currentAccount.getId());
                 return "Error: You have not voted on this post, so you cannot remove a vote";
             }
             PostVote existingVote = existingVoteOpt.get();
             if (existingVote.isUpvote() != isUpvote) {
-                com.example.springreddit.logging.CustomLogger.getInstance().info("Vote removal failed: vote type mismatch for post ID: {} by account ID: {}", postId, currentAccount.getId());
+                LOGGER.info("Vote removal failed: vote type mismatch for post ID: {} by account ID: {}", postId, currentAccount.getId());
                 return "Error: You are trying to remove an " + voteTypeStr + ", but you cast the opposite vote";
             }
             postVoteRepository.delete(existingVote);
-            com.example.springreddit.logging.CustomLogger.getInstance().info("{} removed for post ID: {} by account ID: {}", isUpvote ? "Upvote" : "Downvote", postId, currentAccount.getId());
+            LOGGER.info("{} removed for post ID: {} by account ID: {}", isUpvote ? "Upvote" : "Downvote", postId, currentAccount.getId());
             return voteTypeStr.substring(0, 1).toUpperCase() + voteTypeStr.substring(1) + " removed successfully";
         }
 

@@ -1,5 +1,6 @@
 package com.example.springreddit.config;
 
+import com.example.springreddit.logging.CustomLogger;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
@@ -8,14 +9,15 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-
+/*
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
+    private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
-        com.example.springreddit.logging.CustomLogger.getInstance().warn(
+        LOGGER.warn(
                 "Unauthorized request - {}: {}", request.getRequestURI(), authException.getMessage());
         
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -24,3 +26,5 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         response.getWriter().write("{\"success\":false,\"message\":\"Buggit Authentication required before main functions of the App \",\"data\":null}");
     }
 }
+
+ */

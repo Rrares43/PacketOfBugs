@@ -5,6 +5,7 @@ import com.example.springreddit.dto.CreateCommentRequest;
 import com.example.springreddit.dto.UpdateCommentRequest;
 import com.example.springreddit.dto.VoteRequest;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface CommentService {
@@ -18,4 +19,6 @@ public interface CommentService {
     void deleteComment(UUID commentId);
 
     CommentResponse vote(UUID commentId, VoteRequest request);
+
+    List<CommentResponse> getCommentsByPostId(UUID postId);
 }

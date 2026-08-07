@@ -1,5 +1,6 @@
 package com.example.springreddit.config;
 
+import com.example.springreddit.logging.CustomLogger;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
+    private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
@@ -56,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception ex) {
-            com.example.springreddit.logging.CustomLogger.getInstance().error(
+            LOGGER.error(
                     "Cannot set user authentication: {}", ex.getMessage());
         }
 

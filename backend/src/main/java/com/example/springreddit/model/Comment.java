@@ -31,9 +31,6 @@ public class Comment {
     @Column(name = "content", nullable = false, length = 1000)
     private String content;
 
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
     private Account author;
@@ -56,6 +53,9 @@ public class Comment {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)

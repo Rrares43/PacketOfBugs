@@ -1,14 +1,9 @@
 package bootstrap;
 
 import account.AccountMenu;
+import menu.*;
 import subreddit.SubredditMenu;
 import post.PostMenu;
-import menu.AccountCommand;
-import menu.InteractionCommand;
-import menu.LoggerCommand;
-import menu.MenuDispatcher;
-import menu.PostCommand;
-import menu.SubredditCommand;
 import io.OutputWriter;
 import io.StringReader;
 import post.command.CreatePostCommand;

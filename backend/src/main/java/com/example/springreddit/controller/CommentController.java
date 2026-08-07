@@ -7,7 +7,7 @@ import com.example.springreddit.dto.UpdateCommentRequest;
 import com.example.springreddit.dto.VoteRequest;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.service.CommentService;
-import com.example.springreddit.shared.ApiResponse;
+import com.example.springreddit.dto.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -72,5 +73,11 @@ public class CommentController {
             @Valid @RequestBody VoteRequest request) {
         LOGGER.info("Vote request received for comment ID: {}", id);
         return ResponseEntity.ok(ApiResponse.success(commentService.vote(id, request)));
+    }
+
+    @GetMapping(value = "/posts/{postId}/comments")
+    public ResponseEntity<ApiResponse<List<CommentResponse>>> getCommentsByPostId(@PathVariable UUID postId){
+        LOGGER.info("Show comments request received for post: {}", postId);
+        return ResponseEntity.ok(ApiResponse.success(commentService.getCommentsByPostId(postId)));
     }
 }

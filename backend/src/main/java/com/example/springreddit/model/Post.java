@@ -53,6 +53,9 @@ public class Post {
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
@@ -81,5 +84,13 @@ public class Post {
     public void editPostContent(String newTitle, String newContent) {
         this.title = newTitle;
         this.content = newContent;
+    }
+
+    public void softDelete() {
+        this.deletedAt = Instant.now();
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
     }
 }
