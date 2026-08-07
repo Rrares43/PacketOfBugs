@@ -1,4 +1,4 @@
-package com.example.springreddit.shared;
+package com.example.springreddit.dto;
 
 import java.time.Instant;
 import java.util.List;

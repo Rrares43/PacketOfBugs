@@ -145,6 +145,17 @@ public class CommentServiceImpl implements CommentService {
         return toResponse(comment, currentAccount);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<CommentResponse> getCommentsByPostId(UUID postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
+        return post.getComments().stream()
+                .map(comment -> toResponse(comment, currentAccountOrNull()))
+                .toList();
+    }
+
+
     private void saveVote(Comment comment, Account account, CommentVote existingVote, short voteType) {
         if (existingVote == null) {
             voteRepository.save(new CommentVote(comment, account, voteType));

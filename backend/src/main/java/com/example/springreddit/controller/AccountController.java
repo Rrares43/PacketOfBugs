@@ -1,6 +1,7 @@
 package com.example.springreddit.controller;
 
 import com.example.springreddit.dto.AccountDto;
+import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.service.AccountService;
 import jakarta.validation.Valid;
@@ -16,15 +17,16 @@ public class AccountController {
 
     @Autowired
     private AccountService accountService;
+    private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
     @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> registerAccount(@Valid @RequestBody AccountDto.RegistrationRequest request) {
         try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Register request received for username: {}", request.getUsername());
+            LOGGER.info("Register request received for username: {}", request.getUsername());
             Account savedAccount = accountService.registerAccount(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(savedAccount));
         } catch (IllegalArgumentException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Registration failed: {}", e.getMessage());
+            LOGGER.warn("Registration failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
@@ -32,11 +34,11 @@ public class AccountController {
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> login(@RequestBody AccountDto.LoginRequest request) {
         try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Login request received for username: {}", request.getUsername());
+            LOGGER.info("Login request received for username: {}", request.getUsername());
             Account loggedInAccount = accountService.authenticateUser(request);
             return ResponseEntity.ok(toResponse(loggedInAccount));
         } catch (IllegalArgumentException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Login failed: {}", e.getMessage());
+            LOGGER.warn("Login failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
@@ -53,11 +55,11 @@ public class AccountController {
     @PutMapping(value = "/password", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> changePassword(@Valid @RequestBody AccountDto.ChangePasswordRequest request) {
         try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Change password request received for username: {}", request.getUsername());
+            LOGGER.info("Change password request received for username: {}", request.getUsername());
             accountService.changePassword(request);
             return ResponseEntity.ok("Password changed successfully");
         } catch (IllegalArgumentException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password failed: {}", e.getMessage());
+            LOGGER.warn("Change password failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -65,11 +67,11 @@ public class AccountController {
     @DeleteMapping("/{username}")
     public ResponseEntity<?> deleteAccount(@PathVariable String username) {
         try {
-            com.example.springreddit.logging.CustomLogger.getInstance().info("Delete account request received for username: {}", username);
+            LOGGER.info("Delete account request received for username: {}", username);
             accountService.deleteAccount(username);
             return ResponseEntity.ok("Account deleted successfully");
         } catch (IllegalArgumentException e) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete account failed: {}", e.getMessage());
+            LOGGER.warn("Delete account failed: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

@@ -23,12 +23,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
     }
 
     @Bean
@@ -36,9 +32,6 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(customAuthenticationEntryPoint)
-            )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )

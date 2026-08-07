@@ -1,6 +1,7 @@
 package com.example.springreddit.service;
 
 import com.example.springreddit.dto.AccountDto;
+import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,16 +17,17 @@ public class AccountService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
     public Account registerAccount(AccountDto.RegistrationRequest request) {
-        com.example.springreddit.logging.CustomLogger.getInstance().info("Attempting to register account with username: {}", request.getUsername());
+        LOGGER.info("Attempting to register account with username: {}", request.getUsername());
         validateRegistrationRequest(request);
         if (accountRepository.existsByUsername(request.getUsername())) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Registration failed: username already exists: {}", request.getUsername());
+            LOGGER.warn("Registration failed: username already exists: {}", request.getUsername());
             throw new IllegalArgumentException("Username already exists");
         }
         if (accountRepository.existsByEmail(request.getEmail())) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Registration failed: email already exists: {}", request.getEmail());
+            LOGGER.warn("Registration failed: email already exists: {}", request.getEmail());
             throw new IllegalArgumentException("Email already exists");
         }
 
@@ -36,35 +38,35 @@ public class AccountService {
         newAccount.setPassword(passwordEncoder.encode(request.getPassword()));
 
         Account saved = accountRepository.save(newAccount);
-        com.example.springreddit.logging.CustomLogger.getInstance().info("Account registered successfully for username: {}", request.getUsername());
+        LOGGER.info("Account registered successfully for username: {}", request.getUsername());
         return saved;
     }
 
     public Account authenticateUser(AccountDto.LoginRequest request) {
         if (request == null) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Authentication attempt with null request");
+            LOGGER.warn("Authentication attempt with null request");
             throw new IllegalArgumentException("Request cannot be null");
         }
         if (request.getUsername() == null || request.getUsername().isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Authentication attempt with blank username");
+            LOGGER.warn("Authentication attempt with blank username");
             throw new IllegalArgumentException("Username cannot be blank");
         }
         if (request.getPassword() == null || request.getPassword().isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Authentication attempt with blank password for username: {}", request.getUsername());
+            LOGGER.warn("Authentication attempt with blank password for username: {}", request.getUsername());
             throw new IllegalArgumentException("Password cannot be blank");
         }
         Account account = accountRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Authentication failed: user not found for username: {}", request.getUsername());
+                    LOGGER.warn("Authentication failed: user not found for username: {}", request.getUsername());
                     return new IllegalArgumentException("Invalid credentials");
                 });
 
         // Use passwordEncoder to verify password
         if (!passwordEncoder.matches(request.getPassword(), account.getPassword())) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Authentication failed: invalid password for username: {}", request.getUsername());
+            LOGGER.warn("Authentication failed: invalid password for username: {}", request.getUsername());
             throw new IllegalArgumentException("Invalid credentials");
         }
-        com.example.springreddit.logging.CustomLogger.getInstance().info("User authenticated successfully: {}", request.getUsername());
+        LOGGER.info("User authenticated successfully: {}", request.getUsername());
         return account;
     }
 
@@ -78,13 +80,13 @@ public class AccountService {
 
     public AccountDto.UserProfile getCurrentUserProfile(String username) {
         if (username == null || username.isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Get user profile failed: username is blank");
+            LOGGER.warn("Get user profile failed: username is blank");
             throw new IllegalArgumentException("Username cannot be blank");
         }
 
         Account account = accountRepository.findByUsername(username)
                 .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    LOGGER.warn(
                             "Get user profile failed: account not found for username: {}", username);
                     return new IllegalArgumentException("Account not found");
                 });
@@ -95,7 +97,7 @@ public class AccountService {
         userProfile.setDisplayName(account.getDisplayName());
         userProfile.setAvatarUrl(account.getAvatarUrl());
 
-        com.example.springreddit.logging.CustomLogger.getInstance().info(
+        LOGGER.info(
                 "User profile retrieved successfully for username: {}", username);
         return userProfile;
     }
@@ -103,17 +105,17 @@ public class AccountService {
     @Transactional
     public AccountDto.UserProfile updateUserProfile(String username, AccountDto.UpdateUserProfileRequest request) {
         if (username == null || username.isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Update user profile failed: username is blank");
+            LOGGER.warn("Update user profile failed: username is blank");
             throw new IllegalArgumentException("Username cannot be blank");
         }
         if (request == null) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Update user profile failed: request is null");
+            LOGGER.warn("Update user profile failed: request is null");
             throw new IllegalArgumentException("Request cannot be null");
         }
 
         Account account = accountRepository.findByUsername(username)
                 .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    LOGGER.warn(
                             "Update user profile failed: account not found for username: {}", username);
                     return new IllegalArgumentException("Account not found");
                 });
@@ -130,10 +132,10 @@ public class AccountService {
 
         if (updated) {
             accountRepository.save(account);
-            com.example.springreddit.logging.CustomLogger.getInstance().info(
+            LOGGER.info(
                     "User profile updated successfully for username: {}", username);
         } else {
-            com.example.springreddit.logging.CustomLogger.getInstance().info(
+            LOGGER.info(
                     "User profile update: no changes for username: {}", username);
         }
 
@@ -149,31 +151,31 @@ public class AccountService {
     @Transactional
     public void changePassword(String username, AccountDto.UpdatePasswordRequest request) {
         if (username == null || username.isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password failed: username is blank");
+            LOGGER.warn("Change password failed: username is blank");
             throw new IllegalArgumentException("Username cannot be blank");
         }
         if (request == null) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password failed: request is null");
+            LOGGER.warn("Change password failed: request is null");
             throw new IllegalArgumentException("Request cannot be null");
         }
         if (request.getCurrentPassword() == null || request.getCurrentPassword().isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password failed: current password is blank");
+            LOGGER.warn("Change password failed: current password is blank");
             throw new IllegalArgumentException("Current password cannot be blank");
         }
         if (request.getNewPassword() == null || request.getNewPassword().isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password failed: new password is blank");
+            LOGGER.warn("Change password failed: new password is blank");
             throw new IllegalArgumentException("New password cannot be blank");
         }
 
         Account account = accountRepository.findByUsername(username)
                 .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn(
+                    LOGGER.warn(
                             "Change password failed: account not found for username: {}", username);
                     return new IllegalArgumentException("Account not found");
                 });
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPassword())) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn(
+            LOGGER.warn(
                     "Change password failed: incorrect current password for username: {}", username);
             throw new IllegalArgumentException("Current password is incorrect");
         }
@@ -181,7 +183,7 @@ public class AccountService {
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         accountRepository.save(account);
 
-        com.example.springreddit.logging.CustomLogger.getInstance().info(
+        LOGGER.info(
                 "Password changed successfully for username: {}", username);
     }
 
@@ -203,49 +205,49 @@ public class AccountService {
     @Transactional
     public void changePassword(AccountDto.ChangePasswordRequest request) {
         if (request == null) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password attempt with null request");
+            LOGGER.warn("Change password attempt with null request");
             throw new IllegalArgumentException("Request cannot be null");
         }
         if (request.getUsername() == null || request.getUsername().isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password attempt with blank username");
+            LOGGER.warn("Change password attempt with blank username");
             throw new IllegalArgumentException("Username cannot be blank");
         }
         if (request.getEmail() == null || request.getEmail().isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password attempt with blank email for username: {}", request.getUsername());
+            LOGGER.warn("Change password attempt with blank email for username: {}", request.getUsername());
             throw new IllegalArgumentException("Email cannot be blank");
         }
         if (request.getNewPassword() == null || request.getNewPassword().isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password attempt with blank new password for username: {}", request.getUsername());
+            LOGGER.warn("Change password attempt with blank new password for username: {}", request.getUsername());
             throw new IllegalArgumentException("New password cannot be blank");
         }
         Account account = accountRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> {
-                    com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password failed: account not found for username: {}", request.getUsername());
+                    LOGGER.warn("Change password failed: account not found for username: {}", request.getUsername());
                     return new IllegalArgumentException("Account not found");
                 });
 
         if (!request.getEmail().equals(account.getEmail())) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Change password failed: incorrect email for username: {}", request.getUsername());
+            LOGGER.warn("Change password failed: incorrect email for username: {}", request.getUsername());
             throw new IllegalArgumentException("Incorrect email address");
         }
 
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         accountRepository.save(account);
-        com.example.springreddit.logging.CustomLogger.getInstance().info("Password changed successfully for username: {}", request.getUsername());
+        LOGGER.info("Password changed successfully for username: {}", request.getUsername());
     }
 
     @Transactional
     public void deleteAccount(String username) {
         if (username == null || username.isBlank()) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete account attempt with blank username");
+            LOGGER.warn("Delete account attempt with blank username");
             throw new IllegalArgumentException("Username cannot be blank");
         }
         if (!accountRepository.existsByUsername(username)) {
-            com.example.springreddit.logging.CustomLogger.getInstance().warn("Delete account failed: account not found for username: {}", username);
+            LOGGER.warn("Delete account failed: account not found for username: {}", username);
             throw new IllegalArgumentException("Account not found");
         }
         accountRepository.deleteByUsername(username);
-        com.example.springreddit.logging.CustomLogger.getInstance().info("Account deleted successfully for username: {}", username);
+        LOGGER.info("Account deleted successfully for username: {}", username);
     }
 
     private void validateRegistrationRequest(AccountDto.RegistrationRequest request) {
