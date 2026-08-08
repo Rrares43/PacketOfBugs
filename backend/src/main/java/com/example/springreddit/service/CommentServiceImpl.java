@@ -148,9 +148,10 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public List<CommentResponse> getCommentsByPostId(UUID postId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
-        return post.getComments().stream()
+        if (!postRepository.existsById(postId)) {
+            throw new ResourceNotFoundException("Post not found: " + postId);
+        }
+        return commentRepository.findByPost_IdAndParentCommentIsNullOrderByCreatedAtAscIdAsc(postId).stream()
                 .map(comment -> toResponse(comment, currentAccountOrNull()))
                 .toList();
     }
