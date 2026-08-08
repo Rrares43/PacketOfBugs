@@ -4,6 +4,7 @@ import com.example.springreddit.dto.CommentResponse;
 import com.example.springreddit.dto.CreateCommentRequest;
 import com.example.springreddit.dto.UpdateCommentRequest;
 import com.example.springreddit.dto.VoteRequest;
+import com.example.springreddit.dto.VoteResponse;
 import com.example.springreddit.exception.ResourceNotFoundException;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
@@ -22,7 +23,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -119,7 +125,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentResponse vote(UUID commentId, VoteRequest request) {
+    public VoteResponse vote(UUID commentId, VoteRequest request) {
         Account currentAccount = requireCurrentAccount();
         Comment comment = findComment(commentId);
         if (comment.isDeleted()) {
@@ -129,9 +135,10 @@ public class CommentServiceImpl implements CommentService {
         CommentVote existingVote = voteRepository
                 .findByComment_IdAndAccount_Id(commentId, currentAccount.getId())
                 .orElse(null);
-        switch (request.voteType()) {
-            case "up" -> saveVote(comment, currentAccount, existingVote, CommentVote.UPVOTE);
-            case "down" -> saveVote(comment, currentAccount, existingVote, CommentVote.DOWNVOTE);
+        String userVote = request.voteType();
+        switch (userVote) {
+            case "up" -> applyCommentVote(comment, currentAccount, existingVote, CommentVote.UPVOTE);
+            case "down" -> applyCommentVote(comment, currentAccount, existingVote, CommentVote.DOWNVOTE);
             case "none" -> {
                 if (existingVote != null) {
                     voteRepository.delete(existingVote);
@@ -139,11 +146,10 @@ public class CommentServiceImpl implements CommentService {
             }
             default -> throw new IllegalArgumentException("Vote type must be up, down, or none");
         }
-        voteRepository.flush();
 
         LOGGER.info("Comment vote set to {} for ID: {} by account ID: {}",
-                request.voteType(), commentId, currentAccount.getId());
-        return toResponse(comment, currentAccount);
+                userVote, commentId, currentAccount.getId());
+        return buildVoteResponse(commentId, userVote);
     }
 
     @Override
@@ -152,19 +158,57 @@ public class CommentServiceImpl implements CommentService {
         if (!postRepository.existsById(postId)) {
             throw new ResourceNotFoundException("Post not found: " + postId);
         }
-        return commentRepository.findByPost_IdAndParentCommentIsNullOrderByCreatedAtAscIdAsc(postId).stream()
-                .map(comment -> toResponse(comment, currentAccountOrNull()))
+
+        List<Comment> comments = commentRepository.findAllByPostIdWithDetails(postId);
+        if (comments.isEmpty()) {
+            return List.of();
+        }
+
+        Account currentUser = currentAccountOrNull();
+        List<UUID> commentIds = comments.stream().map(Comment::getId).toList();
+        Map<UUID, long[]> voteCounts = loadCommentVoteCounts(commentIds);
+        Map<UUID, String> userVotes = loadUserVotes(commentIds, currentUser);
+
+        Map<UUID, List<Comment>> childrenByParentId = new LinkedHashMap<>();
+        List<Comment> roots = new ArrayList<>();
+        for (Comment comment : comments) {
+            Comment parent = comment.getParentComment();
+            if (parent == null) {
+                roots.add(comment);
+            } else {
+                childrenByParentId
+                        .computeIfAbsent(parent.getId(), id -> new ArrayList<>())
+                        .add(comment);
+            }
+        }
+
+        return roots.stream()
+                .map(comment -> toResponse(comment, childrenByParentId, voteCounts, userVotes))
                 .toList();
     }
 
-
-    private void saveVote(Comment comment, Account account, CommentVote existingVote, short voteType) {
+    private void applyCommentVote(Comment comment, Account account, CommentVote existingVote, short voteType) {
         if (existingVote == null) {
             voteRepository.save(new CommentVote(comment, account, voteType));
         } else if (existingVote.getVoteType() != voteType) {
             existingVote.setVoteType(voteType);
             voteRepository.save(existingVote);
         }
+    }
+
+    private VoteResponse buildVoteResponse(UUID commentId, String userVote) {
+        long upvotes = 0L;
+        long downvotes = 0L;
+        for (Object[] row : voteRepository.countGroupedByCommentId(commentId)) {
+            short type = ((Number) row[0]).shortValue();
+            long count = ((Number) row[1]).longValue();
+            if (type == CommentVote.UPVOTE) {
+                upvotes = count;
+            } else if (type == CommentVote.DOWNVOTE) {
+                downvotes = count;
+            }
+        }
+        return new VoteResponse(upvotes, downvotes, upvotes - downvotes, userVote);
     }
 
     private Comment findComment(UUID commentId) {
@@ -212,6 +256,34 @@ public class CommentServiceImpl implements CommentService {
                 .map(reply -> toResponse(reply, currentUser))
                 .toList();
 
+        return buildCommentResponse(comment, upvotes, downvotes, userVote, replies);
+    }
+
+    private CommentResponse toResponse(
+            Comment comment,
+            Map<UUID, List<Comment>> childrenByParentId,
+            Map<UUID, long[]> voteCounts,
+            Map<UUID, String> userVotes) {
+        long[] counts = voteCounts.getOrDefault(comment.getId(), new long[]{0L, 0L});
+        List<CommentResponse> replies = childrenByParentId
+                .getOrDefault(comment.getId(), List.of())
+                .stream()
+                .map(reply -> toResponse(reply, childrenByParentId, voteCounts, userVotes))
+                .toList();
+        return buildCommentResponse(
+                comment,
+                counts[0],
+                counts[1],
+                userVotes.get(comment.getId()),
+                replies);
+    }
+
+    private CommentResponse buildCommentResponse(
+            Comment comment,
+            long upvotes,
+            long downvotes,
+            String userVote,
+            List<CommentResponse> replies) {
         return new CommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
@@ -226,5 +298,40 @@ public class CommentServiceImpl implements CommentService {
                 comment.getUpdatedAt(),
                 replies
         );
+    }
+
+    private Map<UUID, long[]> loadCommentVoteCounts(Collection<UUID> commentIds) {
+        Map<UUID, long[]> counts = new HashMap<>();
+        for (Object[] row : voteRepository.countGroupedByCommentIds(commentIds)) {
+            UUID commentId = (UUID) row[0];
+            short voteType = ((Number) row[1]).shortValue();
+            long count = ((Number) row[2]).longValue();
+            long[] bucket = counts.computeIfAbsent(commentId, id -> new long[]{0L, 0L});
+            if (voteType == CommentVote.UPVOTE) {
+                bucket[0] = count;
+            } else if (voteType == CommentVote.DOWNVOTE) {
+                bucket[1] = count;
+            }
+        }
+        return counts;
+    }
+
+    private Map<UUID, String> loadUserVotes(Collection<UUID> commentIds, Account currentUser) {
+        Map<UUID, String> userVotes = new HashMap<>();
+        if (currentUser == null) {
+            return userVotes;
+        }
+
+        for (Object[] row : voteRepository.findVoteTypesByCommentIdsAndAccountId(
+                commentIds, currentUser.getId())) {
+            UUID commentId = (UUID) row[0];
+            short voteType = ((Number) row[1]).shortValue();
+            userVotes.put(commentId, voteType == CommentVote.UPVOTE ? "up" : "down");
+        }
+
+        for (UUID commentId : commentIds) {
+            userVotes.putIfAbsent(commentId, "none");
+        }
+        return userVotes;
     }
 }

@@ -10,6 +10,7 @@ import com.example.springreddit.exception.UnauthorizedException;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.service.PostService;
+import com.example.springreddit.service.PostVoteService;
 import com.example.springreddit.dto.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -24,17 +25,18 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/posts", produces = MediaType.APPLICATION_JSON_VALUE)
 public class PostsApiController {
 
     private final PostService postService;
+    private final PostVoteService postVoteService;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
-    public PostsApiController(PostService postService) {
+    public PostsApiController(PostService postService, PostVoteService postVoteService) {
         this.postService = postService;
+        this.postVoteService = postVoteService;
     }
 
     @GetMapping
@@ -56,14 +58,7 @@ public class PostsApiController {
                     ? authentication.getName()
                     : null;
             
-            List<PostDto.PostResponse> postResponses = posts.stream()
-                    .map(post -> {
-                        String userVote = currentUsername != null 
-                                ? postService.resolveUserVote(post, currentUsername) 
-                                : null;
-                        return postService.toPostResponse(post, userVote);
-                    })
-                    .collect(Collectors.toList());
+            List<PostDto.PostResponse> postResponses = postService.toPostResponses(posts, currentUsername);
             
             LOGGER.info(
                     "GET /posts request successful, returned {} posts", postResponses.size());
@@ -285,7 +280,7 @@ public class PostsApiController {
                     "PUT /posts/{}/vote request received from user: {} with voteType: {}", 
                     id, currentUsername, request.voteType());
 
-            VoteResponse voteResponse = postService.voteOnPost(id, currentUsername, request.voteType());
+            VoteResponse voteResponse = postVoteService.voteOnPost(id, currentUsername, request.voteType());
 
             LOGGER.info(
                     "PUT /posts/{}/vote request successful", id);

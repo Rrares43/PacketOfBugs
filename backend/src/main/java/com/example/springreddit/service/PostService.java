@@ -34,7 +34,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -125,23 +128,26 @@ public class PostService {
         return savedPost;
     }
 
+    @Transactional(readOnly = true)
     public Post getPostById(UUID postId) {
         if (postId == null) {
             throw new IllegalArgumentException("Post ID cannot be null");
         }
-        return postRepository.findById(postId)
+        return postRepository.findByIdWithAuthorAndSubreddit(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
     }
 
+    @Transactional(readOnly = true)
     public List<Post> getAllPosts() {
-        return postRepository.findAll();
+        return postRepository.findAllWithAuthorAndSubreddit();
     }
 
+    @Transactional(readOnly = true)
     public List<Post> getPostsBySubreddit(String subredditName) {
         if (subredditName == null || subredditName.isBlank()) {
             throw new IllegalArgumentException("Subreddit name cannot be blank");
         }
-        return postRepository.findBySubreddit_Name(normalizeSubredditName(subredditName));
+        return postRepository.findBySubredditNameWithAuthorAndSubreddit(normalizeSubredditName(subredditName));
     }
 
     @Transactional
@@ -222,9 +228,8 @@ public class PostService {
         if (post == null || username == null || username.isBlank()) {
             return null;
         }
-        return accountRepository.findByUsername(username)
-                .flatMap(account -> postVoteRepository.findByPostAndAccount(post, account))
-                .map(vote -> vote.isUpvote() ? "up" : "down")
+        return postVoteRepository.findVoteTypeByPostIdAndAccountUsername(post.getId(), username)
+                .map(voteType -> voteType == PostVote.UPVOTE ? "up" : "down")
                 .orElse("none");
     }
 
@@ -379,104 +384,6 @@ public class PostService {
     }
 
     @Transactional
-    public com.example.springreddit.dto.VoteResponse voteOnPost(UUID postId, String currentUsername, String voteType) {
-        if (postId == null) {
-            LOGGER.warn("Vote failed: post ID is null");
-            throw new IllegalArgumentException("Post ID cannot be null");
-        }
-        if (currentUsername == null || currentUsername.isBlank()) {
-            LOGGER.warn("Vote failed: missing authenticated username");
-            throw new UnauthorizedException("Authentication is required");
-        }
-        if (voteType == null || (!voteType.equals("up") && !voteType.equals("down") && !voteType.equals("none"))) {
-            LOGGER.warn("Vote failed: invalid voteType '{}'", voteType);
-            throw new IllegalArgumentException("Vote type must be 'up', 'down', or 'none'");
-        }
-
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> {
-                    LOGGER.warn(
-                            "Vote failed: post not found with ID: {}", postId);
-                    return new ResourceNotFoundException("Post not found: " + postId);
-                });
-
-        Account account = accountRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> {
-                    LOGGER.warn(
-                            "Vote failed: account not found with username: {}", currentUsername);
-                    return new UnauthorizedException("User not found");
-                });
-
-        Optional<PostVote> existingVoteOpt = postVoteRepository.findByPostAndAccount(post, account);
-        short newVoteType;
-        boolean voteChanged = false;
-
-        switch (voteType) {
-            case "up":
-                newVoteType = PostVote.UPVOTE;
-                break;
-            case "down":
-                newVoteType = PostVote.DOWNVOTE;
-                break;
-            case "none":
-                if (existingVoteOpt.isPresent()) {
-                    PostVote existingVote = existingVoteOpt.get();
-                    postVoteRepository.delete(existingVote);
-                    LOGGER.info(
-                            "Vote removed for post ID: {} by user: {}", postId, currentUsername);
-                    return new com.example.springreddit.dto.VoteResponse(
-                            countUpvotes(post),
-                            countDownvotes(post),
-                            countUpvotes(post) - countDownvotes(post),
-                            "none"
-                    );
-                }
-                return new com.example.springreddit.dto.VoteResponse(
-                        countUpvotes(post),
-                        countDownvotes(post),
-                        countUpvotes(post) - countDownvotes(post),
-                        "none"
-                );
-            default:
-                throw new IllegalArgumentException("Invalid vote type: " + voteType);
-        }
-
-        if (existingVoteOpt.isPresent()) {
-            PostVote existingVote = existingVoteOpt.get();
-            if (existingVote.getVoteType() == newVoteType) {
-                LOGGER.info(
-                        "Vote unchanged for post ID: {} by user: {}", postId, currentUsername);
-                return new com.example.springreddit.dto.VoteResponse(
-                        countUpvotes(post),
-                        countDownvotes(post),
-                        countUpvotes(post) - countDownvotes(post),
-                        newVoteType == PostVote.UPVOTE ? "up" : "down"
-                );
-            }
-            existingVote.setVoteType(newVoteType);
-            postVoteRepository.save(existingVote);
-            voteChanged = true;
-        } else {
-            PostVote newVote = new PostVote(account, post, newVoteType);
-            postVoteRepository.save(newVote);
-            voteChanged = true;
-        }
-
-        if (voteChanged) {
-            LOGGER.info(
-                    "Vote {} for post ID: {} by user: {}", newVoteType == PostVote.UPVOTE ? "upvoted" : "downvoted", postId, currentUsername);
-        }
-
-        String userVoteStr = newVoteType == PostVote.UPVOTE ? "up" : "down";
-        return new com.example.springreddit.dto.VoteResponse(
-                countUpvotes(post),
-                countDownvotes(post),
-                countUpvotes(post) - countDownvotes(post),
-                userVoteStr
-        );
-    }
-
-    @Transactional
     public Post applyFilterToPost(UUID postId, String filter, String currentUsername) throws IOException {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
@@ -560,19 +467,57 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    public List<PostDto.PostResponse> toPostResponses(List<Post> posts, String currentUsername) {
+        if (posts == null || posts.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> postIds = posts.stream().map(Post::getId).toList();
+        Map<UUID, long[]> voteCounts = loadPostVoteCounts(postIds);
+        Map<UUID, Long> commentCounts = loadCommentCounts(postIds);
+        Map<UUID, String> userVotes = loadUserVotes(postIds, currentUsername);
+
+        return posts.stream()
+                .map(post -> {
+                    long[] counts = voteCounts.getOrDefault(post.getId(), new long[]{0L, 0L});
+                    long upvotes = counts[0];
+                    long downvotes = counts[1];
+                    long commentCount = commentCounts.getOrDefault(post.getId(), 0L);
+                    String userVote = userVotes.get(post.getId());
+                    return buildPostResponse(post, upvotes, downvotes, commentCount, userVote);
+                })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public PostDto.PostResponse toPostResponse(Post post, String userVote) {
+        long upvotes = 0L;
+        long downvotes = 0L;
+        for (Object[] row : postVoteRepository.countGroupedByPostId(post.getId())) {
+            short type = ((Number) row[0]).shortValue();
+            long count = ((Number) row[1]).longValue();
+            if (type == PostVote.UPVOTE) {
+                upvotes = count;
+            } else if (type == PostVote.DOWNVOTE) {
+                downvotes = count;
+            }
+        }
+        long commentCount = commentRepository.countByPost_Id(post.getId());
+        return buildPostResponse(post, upvotes, downvotes, commentCount, userVote);
+    }
+
+    private PostDto.PostResponse buildPostResponse(
+            Post post, long upvotes, long downvotes, long commentCount, String userVote) {
         String authorName = (post.getAuthor() != null) ? post.getAuthor().getUsername() : "unknown";
         String title = post.getTitle();
         String content = post.getContent();
 
-        if(post.isDeleted()){
+        if (post.isDeleted()) {
             authorName = "[deleted]";
             title = "[deleted]";
             content = "[deleted]";
         }
         String subredditName = (post.getSubreddit() != null) ? post.getSubreddit().getName() : "unknown";
-        long commentCount = commentRepository.countByPost_Id(post.getId());
-        long score = countUpvotes(post) - countDownvotes(post);
 
         return new PostDto.PostResponse(
                 post.getId(),
@@ -582,13 +527,61 @@ public class PostService {
                 post.getFilter(),
                 authorName,
                 subredditName,
-                countUpvotes(post),
-                countDownvotes(post),
-                score,
+                upvotes,
+                downvotes,
+                upvotes - downvotes,
                 commentCount,
                 userVote,
                 post.getCreatedAt() != null ? post.getCreatedAt().toString() : null,
                 post.getUpdatedAt() != null ? post.getUpdatedAt().toString() : null
         );
+    }
+
+    private Map<UUID, long[]> loadPostVoteCounts(Collection<UUID> postIds) {
+        Map<UUID, long[]> counts = new HashMap<>();
+        for (Object[] row : postVoteRepository.countGroupedByPostIds(postIds)) {
+            UUID postId = (UUID) row[0];
+            short voteType = ((Number) row[1]).shortValue();
+            long count = ((Number) row[2]).longValue();
+            long[] bucket = counts.computeIfAbsent(postId, id -> new long[]{0L, 0L});
+            if (voteType == PostVote.UPVOTE) {
+                bucket[0] = count;
+            } else if (voteType == PostVote.DOWNVOTE) {
+                bucket[1] = count;
+            }
+        }
+        return counts;
+    }
+
+    private Map<UUID, Long> loadCommentCounts(Collection<UUID> postIds) {
+        Map<UUID, Long> counts = new HashMap<>();
+        for (Object[] row : commentRepository.countGroupedByPostIds(postIds)) {
+            counts.put((UUID) row[0], ((Number) row[1]).longValue());
+        }
+        return counts;
+    }
+
+    private Map<UUID, String> loadUserVotes(Collection<UUID> postIds, String currentUsername) {
+        Map<UUID, String> userVotes = new HashMap<>();
+        if (currentUsername == null || currentUsername.isBlank()) {
+            return userVotes;
+        }
+
+        Optional<Account> account = accountRepository.findByUsername(currentUsername);
+        if (account.isEmpty()) {
+            return userVotes;
+        }
+
+        for (Object[] row : postVoteRepository.findVoteTypesByPostIdsAndAccountId(
+                postIds, account.get().getId())) {
+            UUID postId = (UUID) row[0];
+            short voteType = ((Number) row[1]).shortValue();
+            userVotes.put(postId, voteType == PostVote.UPVOTE ? "up" : "down");
+        }
+
+        for (UUID postId : postIds) {
+            userVotes.putIfAbsent(postId, "none");
+        }
+        return userVotes;
     }
 }

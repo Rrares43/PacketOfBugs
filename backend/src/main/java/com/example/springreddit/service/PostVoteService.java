@@ -1,9 +1,11 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.dto.VoteResponse;
+import com.example.springreddit.exception.ResourceNotFoundException;
+import com.example.springreddit.exception.UnauthorizedException;
 import com.example.springreddit.logging.CustomLogger;
-import com.example.springreddit.model.Account;
-import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
+import com.example.springreddit.repository.AccountRepository;
 import com.example.springreddit.repository.PostRepository;
 import com.example.springreddit.repository.PostVoteRepository;
 import org.springframework.stereotype.Service;
@@ -17,83 +19,93 @@ public class PostVoteService {
 
     private final PostVoteRepository postVoteRepository;
     private final PostRepository postRepository;
+    private final AccountRepository accountRepository;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
-    public PostVoteService(PostVoteRepository postVoteRepository, PostRepository postRepository) {
+    public PostVoteService(PostVoteRepository postVoteRepository,
+                           PostRepository postRepository,
+                           AccountRepository accountRepository) {
         this.postVoteRepository = postVoteRepository;
         this.postRepository = postRepository;
+        this.accountRepository = accountRepository;
     }
 
     @Transactional
-    public String vote(UUID postId, Account currentAccount, boolean isUpvote, int choice) {
-        validateVoteRequest(postId, currentAccount, choice);
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> {
-                    LOGGER.warn("Vote failed: post not found with ID: {}", postId);
-                    return new IllegalArgumentException("Post with ID " + postId + " does not exist.");
-                });
-
-        Optional<PostVote> existingVoteOpt = postVoteRepository.findByPostAndAccount(post, currentAccount);
-        String voteTypeStr = isUpvote ? "upvote" : "downvote";
-
-        if (choice == 1) {
-            if (existingVoteOpt.isPresent()) {
-                PostVote existingVote = existingVoteOpt.get();
-                if (existingVote.isUpvote() == isUpvote) {
-                    LOGGER.info("Vote failed: duplicate vote for post ID: {} by account ID: {}", postId, currentAccount.getId());
-                    return "You have already voted! You cannot " + voteTypeStr + " twice.";
-                }
-                existingVote.setUpvote(isUpvote);
-                postVoteRepository.save(existingVote);
-                LOGGER.info("Vote changed to {} for post ID: {} by account ID: {}", voteTypeStr, postId, currentAccount.getId());
-                return "Vote changed to " + voteTypeStr + " successfully.";
-            }
-            postVoteRepository.save(new PostVote(isUpvote, post, currentAccount));
-            LOGGER.info("{} added for post ID: {} by account ID: {}", isUpvote ? "Upvote" : "Downvote", postId, currentAccount.getId());
-            return voteTypeStr.substring(0, 1).toUpperCase() + voteTypeStr.substring(1) + " added successfully.";
-        }
-
-        if (choice == 2) {
-            if (existingVoteOpt.isEmpty()) {
-                LOGGER.info("Vote removal failed: no existing vote found for post ID: {} by account ID: {}", postId, currentAccount.getId());
-                return "Error: You have not voted on this post, so you cannot remove a vote";
-            }
-            PostVote existingVote = existingVoteOpt.get();
-            if (existingVote.isUpvote() != isUpvote) {
-                LOGGER.info("Vote removal failed: vote type mismatch for post ID: {} by account ID: {}", postId, currentAccount.getId());
-                return "Error: You are trying to remove an " + voteTypeStr + ", but you cast the opposite vote";
-            }
-            postVoteRepository.delete(existingVote);
-            LOGGER.info("{} removed for post ID: {} by account ID: {}", isUpvote ? "Upvote" : "Downvote", postId, currentAccount.getId());
-            return voteTypeStr.substring(0, 1).toUpperCase() + voteTypeStr.substring(1) + " removed successfully";
-        }
-
-        return "Invalid choice";
-    }
-
-    public long countUpvotes(UUID postId) {
-        return postVoteRepository.countByPost_IdAndVoteType(postId, PostVote.UPVOTE);
-    }
-
-    public long countDownvotes(UUID postId) {
-        return postVoteRepository.countByPost_IdAndVoteType(postId, PostVote.DOWNVOTE);
-    }
-
-    public int currentVote(UUID postId, Long accountId) {
-        return postVoteRepository.findByPost_IdAndAccount_Id(postId, accountId)
-                .map(vote -> (int) vote.getVoteType())
-                .orElse(0);
-    }
-
-    private void validateVoteRequest(UUID postId, Account account, int choice) {
+    public VoteResponse voteOnPost(UUID postId, String currentUsername, String voteType) {
         if (postId == null) {
+            LOGGER.warn("Vote failed: post ID is null");
             throw new IllegalArgumentException("Post ID cannot be null");
         }
-        if (account == null) {
-            throw new IllegalArgumentException("Account cannot be null");
+        if (currentUsername == null || currentUsername.isBlank()) {
+            LOGGER.warn("Vote failed: missing authenticated username");
+            throw new UnauthorizedException("Authentication is required");
         }
-        if (choice != 1 && choice != 2) {
-            throw new IllegalArgumentException("Choice must be 1 or 2");
+        if (voteType == null || (!voteType.equals("up") && !voteType.equals("down") && !voteType.equals("none"))) {
+            LOGGER.warn("Vote failed: invalid voteType '{}'", voteType);
+            throw new IllegalArgumentException("Vote type must be 'up', 'down', or 'none'");
         }
+
+        Long accountId = accountRepository.findIdByUsername(currentUsername)
+                .orElseThrow(() -> {
+                    LOGGER.warn(
+                            "Vote failed: account not found with username: {}", currentUsername);
+                    return new UnauthorizedException("User not found");
+                });
+
+        Optional<Short> existingVoteType =
+                postVoteRepository.findVoteTypeByPostIdAndAccountId(postId, accountId);
+
+        switch (voteType) {
+            case "none" -> {
+                if (existingVoteType.isEmpty() && !postRepository.existsById(postId)) {
+                    LOGGER.warn("Vote failed: post not found with ID: {}", postId);
+                    throw new ResourceNotFoundException("Post not found: " + postId);
+                }
+                if (existingVoteType.isPresent()) {
+                    postVoteRepository.deleteByPostIdAndAccountId(postId, accountId);
+                    LOGGER.info("Vote removed for post ID: {} by user: {}", postId, currentUsername);
+                }
+                return buildVoteResponse(postId, "none");
+            }
+            case "up", "down" -> {
+                short newVoteType = "up".equals(voteType) ? PostVote.UPVOTE : PostVote.DOWNVOTE;
+                if (existingVoteType.isEmpty()) {
+                    if (!postRepository.existsById(postId)) {
+                        LOGGER.warn("Vote failed: post not found with ID: {}", postId);
+                        throw new ResourceNotFoundException("Post not found: " + postId);
+                    }
+                    postVoteRepository.insertVote(accountId, postId, newVoteType);
+                    LOGGER.info(
+                            "Vote {} for post ID: {} by user: {}",
+                            voteType.equals("up") ? "upvoted" : "downvoted",
+                            postId,
+                            currentUsername);
+                } else if (existingVoteType.get() != newVoteType) {
+                    postVoteRepository.updateVoteType(postId, accountId, newVoteType);
+                    LOGGER.info(
+                            "Vote {} for post ID: {} by user: {}",
+                            voteType.equals("up") ? "upvoted" : "downvoted",
+                            postId,
+                            currentUsername);
+                }
+                return buildVoteResponse(postId, voteType);
+            }
+            default -> throw new IllegalArgumentException("Invalid vote type: " + voteType);
+        }
+    }
+
+    private VoteResponse buildVoteResponse(UUID postId, String userVote) {
+        long upvotes = 0L;
+        long downvotes = 0L;
+        for (Object[] row : postVoteRepository.countGroupedByPostId(postId)) {
+            short type = ((Number) row[0]).shortValue();
+            long count = ((Number) row[1]).longValue();
+            if (type == PostVote.UPVOTE) {
+                upvotes = count;
+            } else if (type == PostVote.DOWNVOTE) {
+                downvotes = count;
+            }
+        }
+        return new VoteResponse(upvotes, downvotes, upvotes - downvotes, userVote);
     }
 }
