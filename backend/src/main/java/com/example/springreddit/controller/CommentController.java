@@ -5,6 +5,7 @@ import com.example.springreddit.dto.CreateCommentRequest;
 import com.example.springreddit.dto.DeleteCommentResponse;
 import com.example.springreddit.dto.UpdateCommentRequest;
 import com.example.springreddit.dto.VoteRequest;
+import com.example.springreddit.dto.VoteResponse;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.service.CommentService;
 import com.example.springreddit.dto.ApiResponse;
@@ -68,7 +69,7 @@ public class CommentController {
     }
 
     @PutMapping(value = "/comments/{id}/vote", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ApiResponse<CommentResponse>> vote(
+    public ResponseEntity<ApiResponse<VoteResponse>> vote(
             @PathVariable UUID id,
             @Valid @RequestBody VoteRequest request) {
         LOGGER.info("Vote request received for comment ID: {}", id);

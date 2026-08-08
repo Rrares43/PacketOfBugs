@@ -6,7 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "comment_votes")
+@Table(name = "comment_votes", indexes = {
+        @Index(name = "idx_comment_votes_comment_account", columnList = "comment_id, account_id")
+})
 @IdClass(CommentVoteId.class)
 @Getter
 @Setter

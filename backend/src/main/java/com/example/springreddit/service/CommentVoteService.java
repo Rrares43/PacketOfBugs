@@ -38,7 +38,8 @@ public class CommentVoteService {
             throw new IllegalArgumentException("Deleted comments cannot be voted on");
         }
 
-        Optional<CommentVote> existingVoteOpt = commentVoteRepository.findByCommentAndAccount(comment, account);
+        Optional<CommentVote> existingVoteOpt =
+                commentVoteRepository.findByComment_IdAndAccount_Id(commentId, account.getId());
         String voteType = isUpvote ? "Upvote" : "Downvote";
 
         if (choice == 1) {
