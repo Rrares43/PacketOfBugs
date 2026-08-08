@@ -74,6 +74,7 @@ public class CommentServiceImpl implements CommentService {
         }
 
         Comment saved = commentRepository.save(comment);
+        voteRepository.save(new CommentVote(saved, author, CommentVote.UPVOTE));
         LOGGER.info("Comment created with ID: {} on post: {} by: {}",
                 saved.getId(), postId, author.getUsername());
         return toResponse(saved, author);
