@@ -547,7 +547,16 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostDto.PostResponse toPostResponse(Post post) {
-        return toPostResponse(post, null);
+        return toPostResponse(post, (Account) null);
+    }
+
+    @Transactional(readOnly = true)
+    public PostDto.PostResponse toPostResponse(Post post, Account currentUser) {
+        String userVote = currentUser == null ? null : postVoteRepository
+                .findByPostAndAccount(post, currentUser)
+                .map(vote -> vote.isUpvote() ? "up" : "down")
+                .orElse("none");
+        return toPostResponse(post, userVote);
     }
 
     @Transactional(readOnly = true)
