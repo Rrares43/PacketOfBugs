@@ -20,8 +20,6 @@ public interface PostVoteRepository extends JpaRepository<PostVote, PostVoteId> 
 
     Optional<PostVote> findByPostAndAccount(Post post, Account account);
 
-    Optional<PostVote> findByPost_IdAndAccount_Id(UUID postId, Long accountId);
-
     @Query("""
             SELECT v.voteType
             FROM PostVote v
@@ -41,8 +39,6 @@ public interface PostVoteRepository extends JpaRepository<PostVote, PostVoteId> 
             @Param("username") String username);
 
     long countByPostAndVoteType(Post post, short voteType);
-
-    long countByPost_IdAndVoteType(UUID postId, short voteType);
 
     @Query("""
             SELECT v.voteType, COUNT(v)
@@ -99,5 +95,4 @@ public interface PostVoteRepository extends JpaRepository<PostVote, PostVoteId> 
             @Param("postId") UUID postId,
             @Param("accountId") Long accountId);
 
-    void deleteByPost_IdAndAccount_Id(UUID postId, Long accountId);
 }

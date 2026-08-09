@@ -37,7 +37,7 @@ public class Account {
     @Column(name = "display_name", length = 50)
     private String displayName;
 
-    @Column(name = "avatar_url", length = 255)
+    @Column(name = "avatar_url")
     private String avatarUrl;
 
     @CreationTimestamp

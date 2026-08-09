@@ -16,7 +16,6 @@ import com.example.springreddit.repository.PostRepository;
 import com.example.springreddit.repository.PostVoteRepository;
 import com.example.springreddit.repository.SubredditRepository;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,7 +27,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,36 +60,6 @@ public class PostService {
         this.accountRepository = accountRepository;
         this.postVoteRepository = postVoteRepository;
         this.commentRepository = commentRepository;
-    }
-
-    @Transactional
-    public Post createPost(String title, String content, Long authorId, String subredditName) {
-        if (authorId == null) {
-            LOGGER.warn("Create post failed: author ID is null");
-            throw new IllegalArgumentException("Author ID cannot be null");
-        }
-        if (subredditName == null || subredditName.isBlank()) {
-            LOGGER.warn("Create post failed: subreddit name is blank");
-            throw new IllegalArgumentException("Subreddit name cannot be blank");
-        }
-        validatePost(title, content);
-        Account author = accountRepository.findById(authorId)
-                .orElseThrow(() -> {
-                    LOGGER.warn("Create post failed: author not found with ID: {}", authorId);
-                    return new IllegalArgumentException("Author not found");
-                });
-
-        String name = normalizeSubredditName(subredditName);
-        Subreddit subreddit = subredditRepository.findByName(name)
-                .orElseThrow(() -> {
-                    LOGGER.warn("Create post failed: subreddit not found: {}", name);
-                    return new IllegalArgumentException("Subreddit not found");
-                });
-
-        Post post = new Post(title, content, author, subreddit);
-        Post savedPost = postRepository.save(post);
-        LOGGER.info("Post created successfully with ID: {} in subreddit: {} by author ID: {}", savedPost.getId(), name, authorId);
-        return savedPost;
     }
 
     @Transactional
@@ -151,35 +119,6 @@ public class PostService {
     }
 
     @Transactional
-    public Post editPost(UUID postId, String newTitle, String newContent, Long accountId) {
-        if (postId == null) {
-            LOGGER.warn("Edit post failed: post ID is null");
-            throw new IllegalArgumentException("Post ID cannot be null");
-        }
-        if (accountId == null) {
-            LOGGER.warn("Edit post failed: account ID is null");
-            throw new IllegalArgumentException("Account ID cannot be null");
-        }
-        validatePost(newTitle, newContent);
-        Post post = getPostById(postId);
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> {
-                    LOGGER.warn("Edit post failed: account not found with ID: {}", accountId);
-                    return new IllegalArgumentException("Account not found");
-                });
-
-        if (post.getAuthor() == null || !post.getAuthor().getId().equals(account.getId())) {
-            LOGGER.warn("Edit post failed: unauthorized access to post ID: {} by account ID: {}", postId, accountId);
-            throw new SecurityException("Only the post owner can edit it");
-        }
-
-        post.editPostContent(newTitle, newContent);
-        postRepository.save(post);
-        LOGGER.info("Post edited successfully with ID: {} by account ID: {}", postId, accountId);
-        return post;
-    }
-
-    @Transactional
     public Post updatePost(UUID id, UpdatePostRequest request, String currentUsername) {
         if (id == null) {
             LOGGER.warn("Update post failed: post ID is null");
@@ -234,35 +173,6 @@ public class PostService {
     }
 
     @Transactional
-    public void deletePost(UUID postId, Long accountId) {
-        if (postId == null) {
-            LOGGER.warn("Delete post failed: post ID is null");
-            throw new IllegalArgumentException("Post ID cannot be null");
-        }
-        if (accountId == null) {
-            LOGGER.warn("Delete post failed: account ID is null");
-            throw new IllegalArgumentException("Account ID cannot be null");
-        }
-        Post post = getPostById(postId);
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> {
-                    LOGGER.warn("Delete post failed: account not found with ID: {}", accountId);
-                    return new IllegalArgumentException("Account not found");
-                });
-
-        if (post.getAuthor() == null || !post.getAuthor().getId().equals(account.getId())) {
-            LOGGER.warn("Delete post failed: unauthorized access to post ID: {} by account ID: {}", postId, accountId);
-            throw new SecurityException("Only the post owner can delete it");
-        }
-
-        if(!post.isDeleted()){
-            post.softDelete();
-            postRepository.save(post);
-        }
-        LOGGER.info("Post deleted successfully with ID: {} by account ID: {}", postId, accountId);
-    }
-
-    @Transactional
     public void deletePost(UUID id, String currentUsername) {
         if (id == null) {
             LOGGER.warn("Delete post failed: post ID is null");
@@ -294,31 +204,11 @@ public class PostService {
                 "Post deleted successfully with ID: {} by author: {}", id, currentUsername);
     }
 
-    public long countUpvotes(Post post) {
-        if (post == null) {
-            throw new IllegalArgumentException("Post cannot be null");
-        }
-        return postVoteRepository.countByPostAndVoteType(post, PostVote.UPVOTE);
-    }
-
-    public long countDownvotes(Post post) {
-        if (post == null) {
-            throw new IllegalArgumentException("Post cannot be null");
-        }
-        return postVoteRepository.countByPostAndVoteType(post, PostVote.DOWNVOTE);
-    }
-
     private String normalizeSubredditName(String subredditName) {
         if (subredditName == null) {
             return null;
         }
         return subredditName.startsWith("r/") ? subredditName : "r/" + subredditName;
-    }
-
-    private void validatePost(String title, String content) {
-        if (title == null || title.isBlank()) throw new IllegalArgumentException("Title cannot be blank");
-        if (title.length() > 150) throw new IllegalArgumentException("Title must not exceed 150 characters");
-        if (content == null || content.isBlank()) throw new IllegalArgumentException("Content cannot be blank");
     }
 
     private void validatePostTitle(String title) {
@@ -450,20 +340,6 @@ public class PostService {
         post.setUpdatedAt(Instant.now());
 
         return postRepository.save(post);
-    }
-
-    @Transactional(readOnly = true)
-    public PostDto.PostResponse toPostResponse(Post post) {
-        return toPostResponse(post, (Account) null);
-    }
-
-    @Transactional(readOnly = true)
-    public PostDto.PostResponse toPostResponse(Post post, Account currentUser) {
-        String userVote = currentUser == null ? null : postVoteRepository
-                .findByPostAndAccount(post, currentUser)
-                .map(vote -> vote.isUpvote() ? "up" : "down")
-                .orElse("none");
-        return toPostResponse(post, userVote);
     }
 
     @Transactional(readOnly = true)

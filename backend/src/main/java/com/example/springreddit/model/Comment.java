@@ -94,10 +94,6 @@ public class Comment {
         reply.setParentComment(this);
     }
 
-    public boolean belongsToPost(UUID postId) {
-        return post != null && Objects.equals(post.getId(), postId);
-    }
-
     public boolean isAuthoredBy(Account account) {
         return author != null && account != null && Objects.equals(author.getId(), account.getId());
     }
