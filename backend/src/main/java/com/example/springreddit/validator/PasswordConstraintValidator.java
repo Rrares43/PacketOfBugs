@@ -1,6 +1,5 @@
 package com.example.springreddit.validator;
 
-import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 

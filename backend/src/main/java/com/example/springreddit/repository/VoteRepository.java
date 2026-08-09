@@ -19,8 +19,6 @@ public interface VoteRepository extends JpaRepository<CommentVote, CommentVoteId
 
     long countByComment_IdAndVoteType(UUID commentId, short voteType);
 
-    void deleteByComment_IdAndAccount_Id(UUID commentId, Long accountId);
-
     @Query("""
             SELECT v.voteType, COUNT(v)
             FROM CommentVote v

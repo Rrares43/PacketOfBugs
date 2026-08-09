@@ -38,5 +38,4 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             """)
     Optional<Post> findByIdWithAuthorAndSubreddit(@Param("id") UUID id);
 
-    List<Post> findBySubreddit_Name(String name);
 }

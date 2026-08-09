@@ -34,8 +34,6 @@ public interface CommentRepository extends JpaRepository<Comment, UUID> {
             """)
     List<Comment> findAllByPostIdWithDetails(@Param("postId") UUID postId);
 
-    List<Comment> findByPost_IdAndParentCommentIsNullOrderByCreatedAtAscIdAsc(UUID postId);
-
     Optional<Comment> findByIdAndPost_Id(UUID id, UUID postId);
 
     long countByPost_Id(UUID postId);
