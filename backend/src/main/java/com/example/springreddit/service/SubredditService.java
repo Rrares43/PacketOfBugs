@@ -60,6 +60,7 @@ public class SubredditService {
         subreddit.setDescription(request.description());
         subreddit.setIconURL(request.iconUrl());
         subreddit.setCreator(creator);
+        subreddit.setMemberCount(1);
 
         Subreddit savedSubreddit = subredditRepository.save(subreddit);
         LOGGER.info("Subreddit created successfully with ID: {} and name: {} by user: {}", savedSubreddit.getId(), request.name(), currentUsername);
