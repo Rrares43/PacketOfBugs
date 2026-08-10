@@ -14,6 +14,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Service responsible for validating image filters and communicating with an external
+ * microservice to apply specific visual filters on uploaded images.
+ */
 @Service
 @RequiredArgsConstructor
 public class ImageEditService {
@@ -26,6 +30,12 @@ public class ImageEditService {
     @Value("${filter.api.url}")
     private String url;
 
+    /**
+     * Validates whether a given filter ID exists in the database.
+     *
+     * @param filterId the identifier of the filter to validate
+     * @return the same filter ID if it exists, or null if the ID is null or not found
+     */
     public Integer getValidFilterId(Integer filterId) {
         if (filterId == null) {
             return null;
@@ -38,7 +48,15 @@ public class ImageEditService {
         return null;
     }
 
-    public void edit(String downloadUrl, String uploadUrl, Integer filterId) throws IOException {
+    /**
+     * Sends a request to the external image processing API to apply a filter on an image
+     * located at a pre-signed download URL and upload the processed result to a pre-signed upload URL.
+     *
+     * @param downloadUrl the pre-signed S3 URL to download the original image
+     * @param uploadUrl   the pre-signed S3 URL to upload the edited image
+     * @param filterId    the identifier of the filter to be applied
+     */
+    public void edit(String downloadUrl, String uploadUrl, Integer filterId) {
 
         LOGGER.info("Attempting to edit image with filterId: {}", filterId);
 

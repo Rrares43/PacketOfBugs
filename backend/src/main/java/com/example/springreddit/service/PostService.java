@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,7 +54,7 @@ public class PostService {
 
     @Transactional
     public Post createPost(String title, String content, String authorUsername, String subredditName,
-                          MultipartFile image, Integer filter) throws IOException {
+                          MultipartFile image, Integer filter) {
         validatePostTitle(title);
         validateContent(content);
         validateAuthor(authorUsername);
