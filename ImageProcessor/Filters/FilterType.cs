@@ -5,8 +5,7 @@
         None = 0,
         Grayscale = 1,
         Sepia = 2,
-        Invert =3,
-        Neon=4
+        Invert = 3
 
     }
 }

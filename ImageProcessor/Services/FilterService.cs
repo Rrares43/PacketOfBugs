@@ -99,31 +99,6 @@ namespace ImageProcessor.Service
             }
         }
 
-        private void ApplyNeon(byte[] pixels)
-        {
-            
-                for (int i = 0; i < pixels.Length; i += 4)
-                {
-                    float r = pixels[i];
-                    float g = pixels[i + 1];
-                    float b = pixels[i + 2];
-
-                float lum = (0.299f * r + 0.587f * g + 0.114f * b) / 255f;
-                float smoothLum = lum * lum * (3.0f - 2.0f * lum);
-
-                float finalR = 10 + smoothLum * (255 - 10);
-                float finalG = 150 * (1.0f - smoothLum) + 20 * smoothLum;
-                float finalB = 230 * (1.0f - smoothLum) + 220 * smoothLum;
-
-                float intensity = Math.Min(1.0f, lum * 2.0f);
-
-                pixels[i] = (byte)Math.Clamp(finalR * intensity, 0, 255);
-                pixels[i + 1] = (byte)Math.Clamp(finalG * intensity, 0, 255);
-                pixels[i + 2] = (byte)Math.Clamp(finalB * intensity, 0, 255);
-            }
-            
-        }
-
         private void ApplyFilter(byte[] pixels, FilterType type)
         {
             switch (type)
@@ -139,10 +114,6 @@ namespace ImageProcessor.Service
                 case FilterType.Sepia:
                     ApplySepia(pixels);
                     break;
-
-                case FilterType.Neon:
-                    ApplyNeon(pixels);
-                    break;  
                    
             }
         }

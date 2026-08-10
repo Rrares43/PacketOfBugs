@@ -9,8 +9,7 @@ namespace ImageProcessor.Services
             new FilterDetails { Id = (int)FilterType.None, Name = "none", Label = "No Filter" },
             new FilterDetails { Id = (int)FilterType.Grayscale, Name = "grayscale", Label = "Black and White" },
             new FilterDetails {Id = (int)FilterType.Invert, Name = "invert", Label = "Invert colors"},
-            new FilterDetails {Id=(int)FilterType.Sepia, Name="sepia", Label="Warm Brown Style" },
-            new FilterDetails {Id=(int)FilterType.Neon, Name="neon", Label="Neon/Cyberpunk Style"}
+            new FilterDetails {Id=(int)FilterType.Sepia, Name="sepia", Label="Warm Brown Style" }
         };
 
         public List<FilterDetails> GetFilters()
