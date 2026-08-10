@@ -47,18 +47,20 @@ public class PostService {
     private final PostVoteRepository postVoteRepository;
     private final CommentRepository commentRepository;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
+    private final ImageUploadService imageUploadService;
 
 
     public PostService(PostRepository postRepository,
                        SubredditRepository subredditRepository,
                        AccountRepository accountRepository,
                        PostVoteRepository postVoteRepository,
-                       CommentRepository commentRepository) {
+                       CommentRepository commentRepository, ImageUploadService imageUploadService) {
         this.postRepository = postRepository;
         this.subredditRepository = subredditRepository;
         this.accountRepository = accountRepository;
         this.postVoteRepository = postVoteRepository;
         this.commentRepository = commentRepository;
+        this.imageUploadService = imageUploadService;
     }
 
     @Transactional
@@ -113,7 +115,7 @@ public class PostService {
 
         String imageUrl = null;
         if (image != null && !image.isEmpty()) {
-            imageUrl = handleImageUpload(image);
+            imageUrl = imageUploadService.upload(image, filter);
         }
 
         Post post = new Post(title, content, author, subreddit, imageUrl, filter);
