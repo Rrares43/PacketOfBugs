@@ -7,7 +7,7 @@
 bin/
 obj/
 TestResults/
-Publish/
+publish*
 out/
 
 *.env
