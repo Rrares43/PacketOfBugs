@@ -4,8 +4,8 @@
     {
         None = 0,
         Grayscale = 1,
-        Invert = 2,
-        Sepia=3,
+        Sepia = 2,
+        Invert =3,
         Neon=4
 
     }

@@ -1,5 +1,7 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.model.Filter;
+import com.example.springreddit.repository.FilterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -16,26 +18,37 @@ public class ImageEditService {
 
     private final RestClient restClient = RestClient.create();
 
-    private static final List<String> FILTERS = List.of("Grayscale","Invert","Sepia","Neon");
+    private final FilterRepository filterRepository;
 
     @Value("${filter.api.url}")
     private String url;
 
     public Integer getValidFilterId(Integer filterId) {
-        if (filterId == null || filterId < 1 || filterId > FILTERS.size()) {
+        if (filterId == null) {
             return null;
         }
-        return filterId;
+
+        if (filterRepository.existsById(filterId.longValue())) {
+            return filterId;
+        }
+
+        return null;
     }
 
     public void edit(String downloadUrl, String uploadUrl, Integer filterId) throws IOException {
 
-        String filterName = FILTERS.get(filterId - 1);
+        Filter filter = filterRepository.findById(filterId.longValue())
+                .orElseThrow(() -> new IllegalArgumentException("Filter with id = " + filterId + " not found"));
+
+        // don't send the request to edit service
+        if ("none".equalsIgnoreCase(filter.getName())) {
+            return;
+        }
 
         Map<String, String> payload = Map.of(
                 "downloadUrl", downloadUrl,
                 "uploadUrl", uploadUrl,
-                "filter", filterName
+                "filter", filter.getName()
         );
 
         restClient.post()
