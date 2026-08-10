@@ -6,33 +6,30 @@ import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.model.Subreddit;
-import com.example.springreddit.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.springreddit.repository.AccountRepository;
+import com.example.springreddit.repository.SubredditRepository;
+import com.example.springreddit.repository.SubredditSummary;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class SubredditService {
 
-    @Autowired
-    private SubredditRepository subredditRepository;
-
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private PostVoteRepository postVoteRepository;
-
-    @Autowired
-    private CommentRepository commentRepository;
+    private final SubredditRepository subredditRepository;
+    private final AccountRepository accountRepository;
+    private final PostService postService;
 
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
+    public SubredditService(SubredditRepository subredditRepository,
+                            AccountRepository accountRepository,
+                            PostService postService) {
+        this.subredditRepository = subredditRepository;
+        this.accountRepository = accountRepository;
+        this.postService = postService;
+    }
     public Subreddit createSubreddit(SubredditDto.CreateSubredditRequest request) {
         if (request == null) {
             LOGGER.warn("Create subreddit failed: request is null");
@@ -63,6 +60,7 @@ public class SubredditService {
         subreddit.setDescription(request.description());
         subreddit.setIconURL(request.iconUrl());
         subreddit.setCreator(creator);
+        subreddit.setMemberCount(1);
 
         Subreddit savedSubreddit = subredditRepository.save(subreddit);
         LOGGER.info("Subreddit created successfully with ID: {} and name: {} by user: {}", savedSubreddit.getId(), request.name(), currentUsername);
@@ -89,12 +87,12 @@ public class SubredditService {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Subreddit name cannot be blank");
         }
-        Subreddit subreddit = subredditRepository.findByName(name)
-                .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
-        
-        return subreddit.getPosts().stream()
-                .map(this::mapPostToResponse)
-                .collect(Collectors.toList());
+        if (!subredditRepository.existsByName(name)) {
+            throw new IllegalArgumentException("Subreddit not found");
+        }
+
+        List<Post> posts = postService.getPostsBySubreddit(name);
+        return postService.toPostResponses(posts, null);
     }
 
     public Subreddit editSubreddit(String name, SubredditDto.EditSubredditRequest request) {
@@ -185,31 +183,5 @@ public class SubredditService {
 
         subredditRepository.deleteByName(name);
         LOGGER.info("Subreddit deleted successfully with name: {} by user: {}", name, currentUsername);
-    }
-
-
-    private PostDto.PostResponse mapPostToResponse(Post post) {
-        String userVote = null;
-        // Calculate upvotes and downvotes from votes list
-        long upvotes = postVoteRepository.countByPost_IdAndVoteType(post.getId(), (short) 1);
-        long downvotes = postVoteRepository.countByPost_IdAndVoteType(post.getId(), (short) -1);
-        long commentCount = commentRepository.countByPost_Id(post.getId());
-        
-        return new PostDto.PostResponse(
-                post.getId(),
-                post.getTitle(),
-                post.getContent(),
-                post.getImageUrl(),
-                post.getFilter(),
-                post.getAuthor().getUsername(),
-                post.getSubreddit().getName(),
-                upvotes,
-                downvotes,
-                upvotes - downvotes,
-                commentCount,
-                userVote,
-                post.getCreatedAt().toString(),
-                post.getUpdatedAt() != null ? post.getUpdatedAt().toString() : null
-        );
     }
 }

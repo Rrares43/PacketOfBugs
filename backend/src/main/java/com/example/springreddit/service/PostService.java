@@ -16,7 +16,6 @@ import com.example.springreddit.repository.PostRepository;
 import com.example.springreddit.repository.PostVoteRepository;
 import com.example.springreddit.repository.SubredditRepository;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,13 +27,15 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -61,36 +62,6 @@ public class PostService {
         this.postVoteRepository = postVoteRepository;
         this.commentRepository = commentRepository;
         this.imageUploadService = imageUploadService;
-    }
-
-    @Transactional
-    public Post createPost(String title, String content, Long authorId, String subredditName) {
-        if (authorId == null) {
-            LOGGER.warn("Create post failed: author ID is null");
-            throw new IllegalArgumentException("Author ID cannot be null");
-        }
-        if (subredditName == null || subredditName.isBlank()) {
-            LOGGER.warn("Create post failed: subreddit name is blank");
-            throw new IllegalArgumentException("Subreddit name cannot be blank");
-        }
-        validatePost(title, content);
-        Account author = accountRepository.findById(authorId)
-                .orElseThrow(() -> {
-                    LOGGER.warn("Create post failed: author not found with ID: {}", authorId);
-                    return new IllegalArgumentException("Author not found");
-                });
-
-        String name = normalizeSubredditName(subredditName);
-        Subreddit subreddit = subredditRepository.findByName(name)
-                .orElseThrow(() -> {
-                    LOGGER.warn("Create post failed: subreddit not found: {}", name);
-                    return new IllegalArgumentException("Subreddit not found");
-                });
-
-        Post post = new Post(title, content, author, subreddit);
-        Post savedPost = postRepository.save(post);
-        LOGGER.info("Post created successfully with ID: {} in subreddit: {} by author ID: {}", savedPost.getId(), name, authorId);
-        return savedPost;
     }
 
     @Transactional
@@ -127,52 +98,26 @@ public class PostService {
         return savedPost;
     }
 
+    @Transactional(readOnly = true)
     public Post getPostById(UUID postId) {
         if (postId == null) {
             throw new IllegalArgumentException("Post ID cannot be null");
         }
-        return postRepository.findById(postId)
+        return postRepository.findByIdWithAuthorAndSubreddit(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found"));
     }
 
+    @Transactional(readOnly = true)
     public List<Post> getAllPosts() {
-        return postRepository.findAll();
+        return postRepository.findAllWithAuthorAndSubreddit();
     }
 
+    @Transactional(readOnly = true)
     public List<Post> getPostsBySubreddit(String subredditName) {
         if (subredditName == null || subredditName.isBlank()) {
             throw new IllegalArgumentException("Subreddit name cannot be blank");
         }
-        return postRepository.findBySubreddit_Name(normalizeSubredditName(subredditName));
-    }
-
-    @Transactional
-    public Post editPost(UUID postId, String newTitle, String newContent, Long accountId) {
-        if (postId == null) {
-            LOGGER.warn("Edit post failed: post ID is null");
-            throw new IllegalArgumentException("Post ID cannot be null");
-        }
-        if (accountId == null) {
-            LOGGER.warn("Edit post failed: account ID is null");
-            throw new IllegalArgumentException("Account ID cannot be null");
-        }
-        validatePost(newTitle, newContent);
-        Post post = getPostById(postId);
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> {
-                    LOGGER.warn("Edit post failed: account not found with ID: {}", accountId);
-                    return new IllegalArgumentException("Account not found");
-                });
-
-        if (post.getAuthor() == null || !post.getAuthor().getId().equals(account.getId())) {
-            LOGGER.warn("Edit post failed: unauthorized access to post ID: {} by account ID: {}", postId, accountId);
-            throw new SecurityException("Only the post owner can edit it");
-        }
-
-        post.editPostContent(newTitle, newContent);
-        postRepository.save(post);
-        LOGGER.info("Post edited successfully with ID: {} by account ID: {}", postId, accountId);
-        return post;
+        return postRepository.findBySubredditNameWithAuthorAndSubreddit(normalizeSubredditName(subredditName));
     }
 
     @Transactional
@@ -224,39 +169,9 @@ public class PostService {
         if (post == null || username == null || username.isBlank()) {
             return null;
         }
-        return accountRepository.findByUsername(username)
-                .flatMap(account -> postVoteRepository.findByPostAndAccount(post, account))
-                .map(vote -> vote.isUpvote() ? "up" : "down")
+        return postVoteRepository.findVoteTypeByPostIdAndAccountUsername(post.getId(), username)
+                .map(voteType -> voteType == PostVote.UPVOTE ? "up" : "down")
                 .orElse("none");
-    }
-
-    @Transactional
-    public void deletePost(UUID postId, Long accountId) {
-        if (postId == null) {
-            LOGGER.warn("Delete post failed: post ID is null");
-            throw new IllegalArgumentException("Post ID cannot be null");
-        }
-        if (accountId == null) {
-            LOGGER.warn("Delete post failed: account ID is null");
-            throw new IllegalArgumentException("Account ID cannot be null");
-        }
-        Post post = getPostById(postId);
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> {
-                    LOGGER.warn("Delete post failed: account not found with ID: {}", accountId);
-                    return new IllegalArgumentException("Account not found");
-                });
-
-        if (post.getAuthor() == null || !post.getAuthor().getId().equals(account.getId())) {
-            LOGGER.warn("Delete post failed: unauthorized access to post ID: {} by account ID: {}", postId, accountId);
-            throw new SecurityException("Only the post owner can delete it");
-        }
-
-        if(!post.isDeleted()){
-            post.softDelete();
-            postRepository.save(post);
-        }
-        LOGGER.info("Post deleted successfully with ID: {} by account ID: {}", postId, accountId);
     }
 
     @Transactional
@@ -291,31 +206,11 @@ public class PostService {
                 "Post deleted successfully with ID: {} by author: {}", id, currentUsername);
     }
 
-    public long countUpvotes(Post post) {
-        if (post == null) {
-            throw new IllegalArgumentException("Post cannot be null");
-        }
-        return postVoteRepository.countByPostAndVoteType(post, PostVote.UPVOTE);
-    }
-
-    public long countDownvotes(Post post) {
-        if (post == null) {
-            throw new IllegalArgumentException("Post cannot be null");
-        }
-        return postVoteRepository.countByPostAndVoteType(post, PostVote.DOWNVOTE);
-    }
-
     private String normalizeSubredditName(String subredditName) {
         if (subredditName == null) {
             return null;
         }
         return subredditName.startsWith("r/") ? subredditName : "r/" + subredditName;
-    }
-
-    private void validatePost(String title, String content) {
-        if (title == null || title.isBlank()) throw new IllegalArgumentException("Title cannot be blank");
-        if (title.length() > 150) throw new IllegalArgumentException("Title must not exceed 150 characters");
-        if (content == null || content.isBlank()) throw new IllegalArgumentException("Content cannot be blank");
     }
 
     private void validatePostTitle(String title) {
@@ -378,104 +273,6 @@ public class PostService {
         
         LOGGER.info("Image uploaded successfully: {}", uniqueFilename);
         return "/uploads/" + uniqueFilename;
-    }
-
-    @Transactional
-    public com.example.springreddit.dto.VoteResponse voteOnPost(UUID postId, String currentUsername, String voteType) {
-        if (postId == null) {
-            LOGGER.warn("Vote failed: post ID is null");
-            throw new IllegalArgumentException("Post ID cannot be null");
-        }
-        if (currentUsername == null || currentUsername.isBlank()) {
-            LOGGER.warn("Vote failed: missing authenticated username");
-            throw new UnauthorizedException("Authentication is required");
-        }
-        if (voteType == null || (!voteType.equals("up") && !voteType.equals("down") && !voteType.equals("none"))) {
-            LOGGER.warn("Vote failed: invalid voteType '{}'", voteType);
-            throw new IllegalArgumentException("Vote type must be 'up', 'down', or 'none'");
-        }
-
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> {
-                    LOGGER.warn(
-                            "Vote failed: post not found with ID: {}", postId);
-                    return new ResourceNotFoundException("Post not found: " + postId);
-                });
-
-        Account account = accountRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> {
-                    LOGGER.warn(
-                            "Vote failed: account not found with username: {}", currentUsername);
-                    return new UnauthorizedException("User not found");
-                });
-
-        Optional<PostVote> existingVoteOpt = postVoteRepository.findByPostAndAccount(post, account);
-        short newVoteType;
-        boolean voteChanged = false;
-
-        switch (voteType) {
-            case "up":
-                newVoteType = PostVote.UPVOTE;
-                break;
-            case "down":
-                newVoteType = PostVote.DOWNVOTE;
-                break;
-            case "none":
-                if (existingVoteOpt.isPresent()) {
-                    PostVote existingVote = existingVoteOpt.get();
-                    postVoteRepository.delete(existingVote);
-                    LOGGER.info(
-                            "Vote removed for post ID: {} by user: {}", postId, currentUsername);
-                    return new com.example.springreddit.dto.VoteResponse(
-                            countUpvotes(post),
-                            countDownvotes(post),
-                            countUpvotes(post) - countDownvotes(post),
-                            "none"
-                    );
-                }
-                return new com.example.springreddit.dto.VoteResponse(
-                        countUpvotes(post),
-                        countDownvotes(post),
-                        countUpvotes(post) - countDownvotes(post),
-                        "none"
-                );
-            default:
-                throw new IllegalArgumentException("Invalid vote type: " + voteType);
-        }
-
-        if (existingVoteOpt.isPresent()) {
-            PostVote existingVote = existingVoteOpt.get();
-            if (existingVote.getVoteType() == newVoteType) {
-                LOGGER.info(
-                        "Vote unchanged for post ID: {} by user: {}", postId, currentUsername);
-                return new com.example.springreddit.dto.VoteResponse(
-                        countUpvotes(post),
-                        countDownvotes(post),
-                        countUpvotes(post) - countDownvotes(post),
-                        newVoteType == PostVote.UPVOTE ? "up" : "down"
-                );
-            }
-            existingVote.setVoteType(newVoteType);
-            postVoteRepository.save(existingVote);
-            voteChanged = true;
-        } else {
-            PostVote newVote = new PostVote(account, post, newVoteType);
-            postVoteRepository.save(newVote);
-            voteChanged = true;
-        }
-
-        if (voteChanged) {
-            LOGGER.info(
-                    "Vote {} for post ID: {} by user: {}", newVoteType == PostVote.UPVOTE ? "upvoted" : "downvoted", postId, currentUsername);
-        }
-
-        String userVoteStr = newVoteType == PostVote.UPVOTE ? "up" : "down";
-        return new com.example.springreddit.dto.VoteResponse(
-                countUpvotes(post),
-                countDownvotes(post),
-                countUpvotes(post) - countDownvotes(post),
-                userVoteStr
-        );
     }
 
     @Transactional
@@ -548,24 +345,57 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostDto.PostResponse toPostResponse(Post post) {
-        return toPostResponse(post, null);
+    public List<PostDto.PostResponse> toPostResponses(List<Post> posts, String currentUsername) {
+        if (posts == null || posts.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> postIds = posts.stream().map(Post::getId).toList();
+        Map<UUID, long[]> voteCounts = loadPostVoteCounts(postIds);
+        Map<UUID, Long> commentCounts = loadCommentCounts(postIds);
+        Map<UUID, String> userVotes = loadUserVotes(postIds, currentUsername);
+
+        return posts.stream()
+                .map(post -> {
+                    long[] counts = voteCounts.getOrDefault(post.getId(), new long[]{0L, 0L});
+                    long upvotes = counts[0];
+                    long downvotes = counts[1];
+                    long commentCount = commentCounts.getOrDefault(post.getId(), 0L);
+                    String userVote = userVotes.get(post.getId());
+                    return buildPostResponse(post, upvotes, downvotes, commentCount, userVote);
+                })
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public PostDto.PostResponse toPostResponse(Post post, String userVote) {
+        long upvotes = 0L;
+        long downvotes = 0L;
+        for (Object[] row : postVoteRepository.countGroupedByPostId(post.getId())) {
+            short type = ((Number) row[0]).shortValue();
+            long count = ((Number) row[1]).longValue();
+            if (type == PostVote.UPVOTE) {
+                upvotes = count;
+            } else if (type == PostVote.DOWNVOTE) {
+                downvotes = count;
+            }
+        }
+        long commentCount = commentRepository.countByPost_Id(post.getId());
+        return buildPostResponse(post, upvotes, downvotes, commentCount, userVote);
+    }
+
+    private PostDto.PostResponse buildPostResponse(
+            Post post, long upvotes, long downvotes, long commentCount, String userVote) {
         String authorName = (post.getAuthor() != null) ? post.getAuthor().getUsername() : "unknown";
         String title = post.getTitle();
         String content = post.getContent();
 
-        if(post.isDeleted()){
+        if (post.isDeleted()) {
             authorName = "[deleted]";
             title = "[deleted]";
             content = "[deleted]";
         }
         String subredditName = (post.getSubreddit() != null) ? post.getSubreddit().getName() : "unknown";
-        long commentCount = commentRepository.countByPost_Id(post.getId());
-        long score = countUpvotes(post) - countDownvotes(post);
 
         return new PostDto.PostResponse(
                 post.getId(),
@@ -575,13 +405,61 @@ public class PostService {
                 post.getFilter(),
                 authorName,
                 subredditName,
-                countUpvotes(post),
-                countDownvotes(post),
-                score,
+                upvotes,
+                downvotes,
+                upvotes - downvotes,
                 commentCount,
                 userVote,
                 post.getCreatedAt() != null ? post.getCreatedAt().toString() : null,
                 post.getUpdatedAt() != null ? post.getUpdatedAt().toString() : null
         );
+    }
+
+    private Map<UUID, long[]> loadPostVoteCounts(Collection<UUID> postIds) {
+        Map<UUID, long[]> counts = new HashMap<>();
+        for (Object[] row : postVoteRepository.countGroupedByPostIds(postIds)) {
+            UUID postId = (UUID) row[0];
+            short voteType = ((Number) row[1]).shortValue();
+            long count = ((Number) row[2]).longValue();
+            long[] bucket = counts.computeIfAbsent(postId, id -> new long[]{0L, 0L});
+            if (voteType == PostVote.UPVOTE) {
+                bucket[0] = count;
+            } else if (voteType == PostVote.DOWNVOTE) {
+                bucket[1] = count;
+            }
+        }
+        return counts;
+    }
+
+    private Map<UUID, Long> loadCommentCounts(Collection<UUID> postIds) {
+        Map<UUID, Long> counts = new HashMap<>();
+        for (Object[] row : commentRepository.countGroupedByPostIds(postIds)) {
+            counts.put((UUID) row[0], ((Number) row[1]).longValue());
+        }
+        return counts;
+    }
+
+    private Map<UUID, String> loadUserVotes(Collection<UUID> postIds, String currentUsername) {
+        Map<UUID, String> userVotes = new HashMap<>();
+        if (currentUsername == null || currentUsername.isBlank()) {
+            return userVotes;
+        }
+
+        Optional<Account> account = accountRepository.findByUsername(currentUsername);
+        if (account.isEmpty()) {
+            return userVotes;
+        }
+
+        for (Object[] row : postVoteRepository.findVoteTypesByPostIdsAndAccountId(
+                postIds, account.get().getId())) {
+            UUID postId = (UUID) row[0];
+            short voteType = ((Number) row[1]).shortValue();
+            userVotes.put(postId, voteType == PostVote.UPVOTE ? "up" : "down");
+        }
+
+        for (UUID postId : postIds) {
+            userVotes.putIfAbsent(postId, "none");
+        }
+        return userVotes;
     }
 }

@@ -1,10 +1,12 @@
 package com.example.springreddit.controller;
 
+import com.example.springreddit.dto.ApiResponse;
 import com.example.springreddit.dto.FilterDto;
+import com.example.springreddit.logging.CustomLogger;
+import com.example.springreddit.service.FilterService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
@@ -14,19 +16,14 @@ import java.util.Map;
 
 @RestController
 public class FilterController {
+    @Autowired
+    private FilterService filterService;
+    private final CustomLogger LOGGER = CustomLogger.getInstance();
 
     @GetMapping("/filters")
-    public ResponseEntity<Map<String, Object>> getFilters(){
-        List<FilterDto> filters = Arrays.asList(
-                new FilterDto(0L, "none", "Fără filtru"),
-                new FilterDto(1L, "grayscale", "Alb-negru"),
-                new FilterDto(2L, "sepia", "Sepia"),
-                new FilterDto(3L, "invert", "Invertit")
-        );
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("data", filters);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse<List<FilterDto>>> getFilters(){
+        LOGGER.info("GET /filters request received");
+        List<FilterDto> filters = filterService.getAllFilters();
+        return ResponseEntity.ok(ApiResponse.success(filters));
     }
 }

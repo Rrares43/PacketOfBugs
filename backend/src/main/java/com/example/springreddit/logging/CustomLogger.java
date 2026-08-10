@@ -1,5 +1,8 @@
 package com.example.springreddit.logging;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -9,6 +12,7 @@ public final class CustomLogger {
     private static final int MAX_ENTRIES = 50;
     private static final DateTimeFormatter TIMESTAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final CustomLogger INSTANCE = new CustomLogger();
+    private static final Logger SLF4J_LOGGER = LoggerFactory.getLogger("ApplicationLog");
 
     private final List<String> logs = new ArrayList<>();
 
@@ -62,6 +66,12 @@ public final class CustomLogger {
         logs.add("[" + LocalDateTime.now().format(TIMESTAMP) + "] [" + level + "] " + message);
         if (logs.size() > MAX_ENTRIES) {
             logs.remove(0);
+        }
+
+        switch (level) {
+            case "WARN" -> SLF4J_LOGGER.warn(message);
+            case "ERROR" -> SLF4J_LOGGER.error(message);
+            default -> SLF4J_LOGGER.info(message);
         }
     }
 

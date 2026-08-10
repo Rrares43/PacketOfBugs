@@ -194,14 +194,6 @@ public class AccountService {
         return !accountRepository.existsByUsername(username);
     }
 
-    public Account getById(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Account ID cannot be null");
-        }
-        return accountRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
-    }
-
     @Transactional
     public void changePassword(AccountDto.ChangePasswordRequest request) {
         if (request == null) {
