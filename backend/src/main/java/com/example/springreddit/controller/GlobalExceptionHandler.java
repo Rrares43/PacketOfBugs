@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.List;
 import java.util.UUID;
@@ -199,6 +200,17 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                 ApiResponse.error("Access denied", "FORBIDDEN", path)
+        );
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaxSizeException(
+            MaxUploadSizeExceededException exception, WebRequest request) {
+        String path = path(request);
+        LOGGER.warn("Max upload size exceeded on {}: {}", path, exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(
+                ApiResponse.error("File too large", "PAYLOAD_TOO_LARGE", path)
         );
     }
 

@@ -1,14 +1,12 @@
 package com.example.springreddit.service;
 
 import com.example.springreddit.dto.FilterDto;
-import com.example.springreddit.model.Filter;
 import com.example.springreddit.repository.FilterRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.stream;
 
 @Service
 public class FilterService {
