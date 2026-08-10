@@ -18,7 +18,7 @@ public class FilterService {
     }
 
     public List<FilterDto> getAllFilters() {
-        return filterRepository.findAll().stream()
+        return filterRepository.findAllByOrderByIdAsc().stream()
                 .map(filter -> new FilterDto(filter.getId(), filter.getName(), filter.getLabel()))
                 .collect(Collectors.toList());
     }
