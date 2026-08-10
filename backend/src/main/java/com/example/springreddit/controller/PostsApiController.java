@@ -128,22 +128,7 @@ public class PostsApiController {
         LOGGER.info("PUT /posts/{}/vote request successful", id);
         return ResponseEntity.ok(ApiResponse.success(voteResponse));
     }
-
-    @PutMapping("/{id}/apply-filter")
-    public ResponseEntity<ApiResponse<PostDto.PostResponse>> applyFilter(
-            @PathVariable UUID id,
-            @RequestParam String filter) throws IOException {
-        String currentUsername = requireAuthenticatedUsername();
-        LOGGER.info("PUT /posts/{}/apply-filter request received from user: {}", id, currentUsername);
-
-        Post post = postService.applyFilterToPost(id, filter, currentUsername);
-        String userVote = postService.resolveUserVote(post, currentUsername);
-        PostDto.PostResponse postResponse = postService.toPostResponse(post, userVote);
-
-        LOGGER.info("PUT /posts/{}/apply-filter request successful", id);
-        return ResponseEntity.ok(ApiResponse.success(postResponse));
-    }
-
+    
     private String currentUsernameOrNull() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null

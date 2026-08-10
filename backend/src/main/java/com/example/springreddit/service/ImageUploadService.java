@@ -1,5 +1,6 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.logging.CustomLogger;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,10 +21,15 @@ import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Service responsible for uploading images to AWS S3, generating pre-signed URLs,
+ * and triggering asynchronous image filtering.
+ */
 @Service
 @RequiredArgsConstructor
 public class ImageUploadService {
 
+    private static final CustomLogger LOGGER = CustomLogger.getInstance();
     private final S3Client s3Client;
     private final ImageEditService imageEditService;
     private final S3Presigner s3Presigner;
@@ -35,7 +41,17 @@ public class ImageUploadService {
     private String region;
 
 
+    /**
+     * Uploads an image file to AWS S3 and optionally triggers an asynchronous editing task
+     * if a valid filter ID is provided.
+     *
+     * @param file     the multipart image file to upload
+     * @param filterId the optional filter ID to apply to the image
+     * @return the public URL of the uploaded image
+     */
     public String upload(MultipartFile file, Integer filterId) {
+        LOGGER.info("Starting image upload process. Original filename: {}, size: {} bytes",
+                file.getOriginalFilename(), file.getSize());
 
         Integer validFilterId = imageEditService.getValidFilterId(filterId);
 
@@ -46,6 +62,7 @@ public class ImageUploadService {
 
             uploadStream(file.getInputStream(), file.getSize(), key, file.getContentType());
             String finalUrl = buildPublicUrl(key);
+            LOGGER.info("Image successfully uploaded to S3 with key: {}", key);
 
             if (validFilterId == null) {
                 return finalUrl;
@@ -56,22 +73,32 @@ public class ImageUploadService {
 
             CompletableFuture.runAsync(() -> {
                 try {
-
                     imageEditService.edit(downloadUrl, uploadUrl, validFilterId);
                 } catch (Exception e) {
-
-
+                    LOGGER.error("Async image editing failed for key {}: {}", key, e.getMessage(), e);
                 }
             });
 
             return finalUrl;
 
         } catch (IOException e) {
-            throw new RuntimeException("test");
+            LOGGER.error("IO error during file upload processing for key {}: {}", key, e.getMessage(), e);
+            throw new RuntimeException("Failed to read upload file stream.", e);
+        } catch (S3Exception e) {
+            LOGGER.error("AWS S3 error during upload for key {}: {}", key, e.awsErrorDetails().errorMessage(), e);
+            throw new RuntimeException("Failed to upload image to cloud storage.", e);
         }
 
     }
 
+    /**
+     * Uploads an input stream to AWS S3 using the provided content type and key.
+     *
+     * @param inputStream   the input stream of the file
+     * @param contentLength the size of the content in bytes
+     * @param key           the destination S3 object key
+     * @param contentType   the MIME type of the file
+     */
     private void uploadStream(InputStream inputStream, long contentLength, String key, String contentType) {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
@@ -79,13 +106,16 @@ public class ImageUploadService {
                 .contentType(contentType)
                 .build();
 
-        try {
-            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentLength));
-        } catch (S3Exception ignored) {
+        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentLength));
 
-        }
     }
 
+    /**
+     * Generates a pre-signed download URL for a specific S3 object.
+     *
+     * @param key the S3 object key
+     * @return the pre-signed download URL as a String
+     */
     private String generateDownloadUrl(String key) {
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)
@@ -100,6 +130,12 @@ public class ImageUploadService {
         return s3Presigner.presignGetObject(presignRequest).url().toString();
     }
 
+    /**
+     * Generates a pre-signed upload URL for a specific S3 object.
+     *
+     * @param key the S3 object key
+     * @return the pre-signed upload URL as a String
+     */
     private String generateUploadUrl(String key) {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
@@ -114,10 +150,22 @@ public class ImageUploadService {
         return s3Presigner.presignPutObject(presignRequest).url().toString();
     }
 
+    /**
+     * Builds the public HTTP URL for an S3 object based on the bucket and region configuration.
+     *
+     * @param key the S3 object key
+     * @return the public URL string
+     */
     private String buildPublicUrl(String key) {
         return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
     }
 
+    /**
+     * Extracts and validates the file extension from the uploaded multipart file.
+     *
+     * @param file the multipart file
+     * @return the file extension including the dot (e.g., ".jpg")
+     */
     private static @NonNull String getExtension(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File is empty.");
@@ -130,7 +178,7 @@ public class ImageUploadService {
         }
 
         String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename != null ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
-        return extension;
+
+        return originalFilename != null ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
     }
 }
