@@ -1,5 +1,6 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.logging.CustomLogger;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class ImageUploadService {
 
+    private static final CustomLogger LOGGER = CustomLogger.getInstance();
     private final S3Client s3Client;
     private final ImageEditService imageEditService;
     private final S3Presigner s3Presigner;
@@ -36,6 +38,8 @@ public class ImageUploadService {
 
 
     public String upload(MultipartFile file, Integer filterId) {
+        LOGGER.info("Starting image upload process. Original filename: {}, size: {} bytes",
+                file.getOriginalFilename(), file.getSize());
 
         Integer validFilterId = imageEditService.getValidFilterId(filterId);
 
@@ -46,6 +50,7 @@ public class ImageUploadService {
 
             uploadStream(file.getInputStream(), file.getSize(), key, file.getContentType());
             String finalUrl = buildPublicUrl(key);
+            LOGGER.info("Image successfully uploaded to S3 with key: {}", key);
 
             if (validFilterId == null) {
                 return finalUrl;
@@ -56,18 +61,20 @@ public class ImageUploadService {
 
             CompletableFuture.runAsync(() -> {
                 try {
-
                     imageEditService.edit(downloadUrl, uploadUrl, validFilterId);
                 } catch (Exception e) {
-
-
+                    LOGGER.error("Async image editing failed for key {}: {}", key, e.getMessage(), e);
                 }
             });
 
             return finalUrl;
 
         } catch (IOException e) {
-            throw new RuntimeException("test");
+            LOGGER.error("IO error during file upload processing for key {}: {}", key, e.getMessage(), e);
+            throw new RuntimeException("Failed to read upload file stream.", e);
+        } catch (S3Exception e) {
+            LOGGER.error("AWS S3 error during upload for key {}: {}", key, e.awsErrorDetails().errorMessage(), e);
+            throw new RuntimeException("Failed to upload image to cloud storage.", e);
         }
 
     }
@@ -79,11 +86,8 @@ public class ImageUploadService {
                 .contentType(contentType)
                 .build();
 
-        try {
-            s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentLength));
-        } catch (S3Exception ignored) {
+        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, contentLength));
 
-        }
     }
 
     private String generateDownloadUrl(String key) {
