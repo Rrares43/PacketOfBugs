@@ -38,19 +38,23 @@ public class PostService {
     private final CommentRepository commentRepository;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
     private final ImageUploadService imageUploadService;
+    private final FastContentFilterService contentFilterService;
 
 
     public PostService(PostRepository postRepository,
                        SubredditRepository subredditRepository,
                        AccountRepository accountRepository,
                        PostVoteRepository postVoteRepository,
-                       CommentRepository commentRepository, ImageUploadService imageUploadService) {
+                       CommentRepository commentRepository,
+                       ImageUploadService imageUploadService,
+                       FastContentFilterService contentFilterService) {
         this.postRepository = postRepository;
         this.subredditRepository = subredditRepository;
         this.accountRepository = accountRepository;
         this.postVoteRepository = postVoteRepository;
         this.commentRepository = commentRepository;
         this.imageUploadService = imageUploadService;
+        this.contentFilterService = contentFilterService;
     }
 
     @Transactional
@@ -59,8 +63,8 @@ public class PostService {
         validatePostTitle(title);
         validateContent(content);
 
-        String formattedTitle = TextFormatterUtil.formatText(title);
-        String formattedContent = TextFormatterUtil.formatText(content);
+        String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(title));
+        String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(content));
 
         validateAuthor(authorUsername);
         validateSubreddit(subredditName);
@@ -143,13 +147,13 @@ public class PostService {
 
         if (request.getTitle() != null) {
             validatePostTitle(request.getTitle());
-            post.setTitle(request.getTitle().trim());
+            post.setTitle(contentFilterService.sanitize(request.getTitle().trim()));
         }
         if (request.getContent() != null) {
             validateContent(request.getContent());
 
-            String formattedContent = TextFormatterUtil.formatText(request.getContent());
-            String formattedTitle = TextFormatterUtil.formatText(request.getTitle());
+            String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(request.getContent()));
+            String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(request.getTitle()));
 
             post.setContent(formattedContent);
             post.setTitle(formattedTitle);
