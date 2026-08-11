@@ -105,7 +105,7 @@ public class PostService {
         if (subredditName == null || subredditName.isBlank()) {
             throw new IllegalArgumentException("Subreddit name cannot be blank");
         }
-        return postRepository.findBySubredditNameWithAuthorAndSubreddit(normalizeSubredditName(subredditName));
+        return postRepository.findBySubredditNameWithAuthorAndSubreddit((subredditName));
     }
 
     @Transactional

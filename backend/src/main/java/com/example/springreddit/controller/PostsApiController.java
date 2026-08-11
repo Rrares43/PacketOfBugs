@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(value = "/posts", produces = MediaType.APPLICATION_JSON_VALUE)
+//@RequestMapping(value = "/posts", produces = MediaType.APPLICATION_JSON_VALUE)
 public class PostsApiController {
 
     private final PostService postService;
@@ -37,7 +37,7 @@ public class PostsApiController {
         this.postVoteService = postVoteService;
     }
 
-    @GetMapping
+    @GetMapping("/posts")
     public ResponseEntity<ApiResponse<List<PostDto.PostResponse>>> getPosts(
             @RequestParam(required = false) String subreddit) {
         LOGGER.info("GET /posts request received with subreddit filter: {}", subreddit);
@@ -53,7 +53,21 @@ public class PostsApiController {
         return ResponseEntity.ok(ApiResponse.success(postResponses));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/subreddits/{name}/posts")
+    public ResponseEntity<ApiResponse<List<PostDto.PostResponse>>> getSubredditPosts(
+            @PathVariable String name) {
+        LOGGER.info("GET /subreddits/{}/posts request received.", name);
+
+        List<Post> posts = postService.getPostsBySubreddit(name);
+
+        String currentUsername = currentUsernameOrNull();
+        List<PostDto.PostResponse> postResponses = postService.toPostResponses(posts, currentUsername);
+
+        LOGGER.info("GET /subreddits/{}/posts request successful, returned {} posts", name, postResponses.size());
+        return ResponseEntity.ok(ApiResponse.success(postResponses));
+    }
+
+    @GetMapping("/posts/{id}")
     public ResponseEntity<ApiResponse<PostDto.PostResponse>> getPostById(@PathVariable UUID id) {
         LOGGER.info("GET /posts/{} request received", id);
 
@@ -68,7 +82,7 @@ public class PostsApiController {
         return ResponseEntity.ok(ApiResponse.success(postResponse));
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PostDto.PostResponse>> createPost(
             @RequestParam String title,
             @RequestParam(required = false) String content,
@@ -88,7 +102,7 @@ public class PostsApiController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(postResponse));
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/posts/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<PostDto.PostResponse>> updatePost(
             @PathVariable UUID id,
             @Valid @RequestBody UpdatePostRequest request) {
@@ -103,7 +117,7 @@ public class PostsApiController {
         return ResponseEntity.ok(ApiResponse.success(postResponse));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/posts/{id}")
     public ResponseEntity<ApiResponse<String>> deletePost(@PathVariable UUID id) {
         String currentUsername = requireAuthenticatedUsername();
         LOGGER.info("DELETE /posts/{} request received from user: {}", id, currentUsername);
@@ -114,7 +128,7 @@ public class PostsApiController {
         return ResponseEntity.ok(ApiResponse.success("Postarea a fost stearsa cu succes"));
     }
 
-    @PutMapping("/{id}/vote")
+    @PutMapping("/posts/{id}/vote")
     public ResponseEntity<ApiResponse<VoteResponse>> voteOnPost(
             @PathVariable UUID id,
             @Valid @RequestBody VoteRequest request) {
