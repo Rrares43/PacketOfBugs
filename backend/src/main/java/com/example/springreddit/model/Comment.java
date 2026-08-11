@@ -49,9 +49,9 @@ public class Comment {
     @BatchSize(size = 25)
     private List<Comment> replies = new ArrayList<>();
 
-    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @BatchSize(size = 25)
-    private List<CommentVote> votes = new ArrayList<>();
+//    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+//    @BatchSize(size = 25)
+//    private List<CommentVote> votes = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

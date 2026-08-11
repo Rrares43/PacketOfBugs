@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,12 +43,8 @@ public class Subreddit {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "creator_id", nullable = false)
-    @org.hibernate.annotations.OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
+    @OnDelete(action = org.hibernate.annotations.OnDeleteAction.CASCADE)
     private Account creator;
-
-    @OneToMany(mappedBy = "subreddit", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @BatchSize(size = 25)
-    private List<Post> posts = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -59,7 +56,4 @@ public class Subreddit {
         this.creator = creator;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
 }

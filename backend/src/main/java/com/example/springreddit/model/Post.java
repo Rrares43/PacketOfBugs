@@ -42,10 +42,6 @@ public class Post {
     @BatchSize(size = 25)
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @BatchSize(size = 25)
-    private List<PostVote> votes = new ArrayList<>();
-
     @Column(name = "image_url")
     private String imageUrl;
 

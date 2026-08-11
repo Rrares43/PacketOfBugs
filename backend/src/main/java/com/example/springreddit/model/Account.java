@@ -49,23 +49,7 @@ public class Account {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-
-    @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    @BatchSize(size = 25)
-    private List<Post> posts = new ArrayList<>();
-
-    @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    @BatchSize(size = 25)
-    private List<Comment> comments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "account", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    @BatchSize(size = 25)
-    private List<PostVote> postVotes = new ArrayList<>();
-
-    @OneToMany(mappedBy = "account", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    @BatchSize(size = 25)
-    private List<CommentVote> commentVotes = new ArrayList<>();
-
+    
     public Account(String username, String email, String password) {
         this.username = username;
         this.email = email;
