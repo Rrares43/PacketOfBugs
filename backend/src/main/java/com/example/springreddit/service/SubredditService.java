@@ -83,18 +83,6 @@ public class SubredditService {
                 .orElseThrow(() -> new IllegalArgumentException("Subreddit not found"));
     }
 
-    public List<PostDto.PostResponse> getPostsBySubredditName(String name) {
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Subreddit name cannot be blank");
-        }
-        if (!subredditRepository.existsByName(name)) {
-            throw new IllegalArgumentException("Subreddit not found");
-        }
-
-        List<Post> posts = postService.getPostsBySubreddit(name);
-        return postService.toPostResponses(posts, null);
-    }
-
     public Subreddit editSubreddit(String name, SubredditDto.EditSubredditRequest request) {
         if (name == null) {
             LOGGER.warn("Edit subreddit failed: subreddit name is null");
