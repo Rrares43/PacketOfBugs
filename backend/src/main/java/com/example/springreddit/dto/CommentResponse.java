@@ -1,9 +1,11 @@
 package com.example.springreddit.dto;
 
+import lombok.Builder;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Builder(toBuilder = true)
 public record CommentResponse(
         UUID id,
         UUID postId,
