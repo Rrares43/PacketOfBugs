@@ -41,15 +41,18 @@ public class CommentServiceImpl implements CommentService {
     private final VoteRepository voteRepository;
     private final PostRepository postRepository;
     private final AccountRepository accountRepository;
+    private final FastContentFilterService contentFilterService;
 
     public CommentServiceImpl(CommentRepository commentRepository,
                               VoteRepository voteRepository,
                               PostRepository postRepository,
-                              AccountRepository accountRepository) {
+                              AccountRepository accountRepository,
+                              FastContentFilterService contentFilterService) {
         this.commentRepository = commentRepository;
         this.voteRepository = voteRepository;
         this.postRepository = postRepository;
         this.accountRepository = accountRepository;
+        this.contentFilterService = contentFilterService;
     }
 
     @Override
@@ -67,7 +70,8 @@ public class CommentServiceImpl implements CommentService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
 
-        String formattedContent = TextFormatterUtil.formatText(request.content().trim());
+        String formattedContent = contentFilterService.sanitize(
+                TextFormatterUtil.formatText(request.content().trim()));
 
         Comment comment = new Comment(formattedContent, author, post);
         if (request.parentId() == null) {
@@ -104,7 +108,8 @@ public class CommentServiceImpl implements CommentService {
             throw new AccessDeniedException("Only the comment author can update it");
         }
 
-        String formattedContent = TextFormatterUtil.formatText(request.content().trim());
+        String formattedContent = contentFilterService.sanitize(
+                TextFormatterUtil.formatText(request.content().trim()));
 
         comment.editContent(formattedContent);
         Comment saved = commentRepository.save(comment);
