@@ -61,15 +61,7 @@ public class SubredditController {
         Subreddit subreddit = subredditService.getSubredditByName(name);
         return ResponseEntity.ok(ApiResponse.success(subredditMapper.mapToResponse(subreddit)));
     }
-
-    @GetMapping("/{name}/posts")
-    public ResponseEntity<ApiResponse<List<PostDto.PostResponse>>> getPostsBySubreddit(
-            @PathVariable String name) {
-        LOGGER.info("Get posts for subreddit request received for subreddit name: {}", name);
-        List<PostDto.PostResponse> posts = subredditService.getPostsBySubredditName(name);
-        return ResponseEntity.ok(ApiResponse.success(posts));
-    }
-
+    
     @PutMapping(value = "/{name}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<SubredditDto.SubredditResponse>> editSubreddit(
             @PathVariable String name,
