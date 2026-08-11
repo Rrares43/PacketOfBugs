@@ -19,7 +19,7 @@ public class JwtTokenProvider {
     @Value("${jwt.secret:yourSuperSecretKeyHereThatIsAtLeast256BitsLong1234567890}")
     private String secretKey;
 
-    @Value("${jwt.expiration:86400000}")
+    @Value("${jwt.expiration:2592000000}")
     private long jwtExpiration;
 
     public String generateToken(UserDetails userDetails) {
