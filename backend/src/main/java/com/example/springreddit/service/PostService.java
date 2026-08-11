@@ -273,11 +273,13 @@ public class PostService {
         String authorName = (post.getAuthor() != null) ? post.getAuthor().getUsername() : "unknown";
         String title = post.getTitle();
         String content = post.getContent();
+        String imageUrl = post.getImageUrl();
 
         if (post.isDeleted()) {
             authorName = "[deleted]";
             title = "[deleted]";
             content = "[deleted]";
+            imageUrl = null;
         }
         String subredditName = (post.getSubreddit() != null) ? post.getSubreddit().getName() : "unknown";
 
@@ -285,7 +287,7 @@ public class PostService {
                 post.getId(),
                 title,
                 content,
-                post.getImageUrl(),
+                imageUrl,
                 post.getFilter(),
                 authorName,
                 subredditName,
