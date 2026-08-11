@@ -3,6 +3,7 @@ package com.example.springreddit.controller;
 import com.example.springreddit.config.JwtTokenProvider;
 import com.example.springreddit.dto.AccountDto;
 import com.example.springreddit.dto.ApiResponse;
+import com.example.springreddit.dto.DeleteAccountResponse;
 import com.example.springreddit.exception.UnauthorizedException;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.mapper.AccountMapper;
@@ -17,12 +18,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -78,6 +74,16 @@ public class AuthenticationController {
 
         LOGGER.info("PUT /auth/me request successful for username: {}", username);
         return ResponseEntity.ok(ApiResponse.success(userProfile));
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<DeleteAccountResponse>> deleteUser(
+            @Valid @RequestBody AccountDto.DeleteAccountRequest request) {
+
+        String username = requireAuthenticatedUsername();
+        accountService.deleteAccount(username, request.getPassword());
+
+        return ResponseEntity.ok(ApiResponse.success(new DeleteAccountResponse(true, "Account deleted successfully")));
     }
 
     @PutMapping("/me/password")

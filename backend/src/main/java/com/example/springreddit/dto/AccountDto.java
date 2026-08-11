@@ -56,6 +56,13 @@ public class AccountDto {
     }
 
     @Data
+    public static class DeleteAccountRequest {
+
+        @NotBlank(message = "Password cannot be blank")
+        private String password;
+    }
+
+    @Data
     public static class UserInfo {
         private String username;
         private String email;

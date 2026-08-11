@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,6 +17,8 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+// this handles the soft delete
+@SQLDelete(sql = "UPDATE accounts SET deleted = true WHERE id = ?")
 public class Account {
 
     @Id
@@ -40,23 +43,26 @@ public class Account {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
+    @Column(name = "deleted", nullable = false, columnDefinition = "boolean default false")
+    private boolean deleted;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @BatchSize(size = 25)
     private List<Post> posts = new ArrayList<>();
 
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @BatchSize(size = 25)
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "account", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @BatchSize(size = 25)
     private List<PostVote> postVotes = new ArrayList<>();
 
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "account", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     @BatchSize(size = 25)
     private List<CommentVote> commentVotes = new ArrayList<>();
 

@@ -290,12 +290,23 @@ public class CommentServiceImpl implements CommentService {
             long downvotes,
             String userVote,
             List<CommentResponse> replies) {
+
+        String content = comment.isDeleted() ? "[deleted]" : comment.getContent();
+
+        String authorName = "unknown";
+
+        if (comment.isDeleted()) {
+            authorName = "[deleted]";
+        } else if (comment.getAuthor() != null) {
+            authorName = comment.getAuthor().isDeleted() ? "[deleted]" : comment.getAuthor().getUsername();
+        }
+
         return new CommentResponse(
                 comment.getId(),
                 comment.getPost().getId(),
                 comment.getParentComment() == null ? null : comment.getParentComment().getId(),
-                comment.isDeleted() ? "[deleted]" : comment.getContent(),
-                comment.isDeleted() ? "[deleted]" : comment.getAuthor().getUsername(),
+                content,
+                authorName,
                 upvotes,
                 downvotes,
                 upvotes - downvotes,

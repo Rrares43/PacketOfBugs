@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 public class AccountService {
 
@@ -40,34 +42,6 @@ public class AccountService {
         Account saved = accountRepository.save(newAccount);
         LOGGER.info("Account registered successfully for username: {}", request.getUsername());
         return saved;
-    }
-
-    public Account authenticateUser(AccountDto.LoginRequest request) {
-        if (request == null) {
-            LOGGER.warn("Authentication attempt with null request");
-            throw new IllegalArgumentException("Request cannot be null");
-        }
-        if (request.getUsername() == null || request.getUsername().isBlank()) {
-            LOGGER.warn("Authentication attempt with blank username");
-            throw new IllegalArgumentException("Username cannot be blank");
-        }
-        if (request.getPassword() == null || request.getPassword().isBlank()) {
-            LOGGER.warn("Authentication attempt with blank password for username: {}", request.getUsername());
-            throw new IllegalArgumentException("Password cannot be blank");
-        }
-        Account account = accountRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> {
-                    LOGGER.warn("Authentication failed: user not found for username: {}", request.getUsername());
-                    return new IllegalArgumentException("Invalid credentials");
-                });
-
-        // Use passwordEncoder to verify password
-        if (!passwordEncoder.matches(request.getPassword(), account.getPassword())) {
-            LOGGER.warn("Authentication failed: invalid password for username: {}", request.getUsername());
-            throw new IllegalArgumentException("Invalid credentials");
-        }
-        LOGGER.info("User authenticated successfully: {}", request.getUsername());
-        return account;
     }
 
     public Account getByUsername(String username) {
@@ -187,49 +161,8 @@ public class AccountService {
                 "Password changed successfully for username: {}", username);
     }
 
-    public boolean isUsernameAvailable(String username) {
-        if (username == null || username.isBlank()) {
-            return false;
-        }
-        return !accountRepository.existsByUsername(username);
-    }
-
     @Transactional
-    public void changePassword(AccountDto.ChangePasswordRequest request) {
-        if (request == null) {
-            LOGGER.warn("Change password attempt with null request");
-            throw new IllegalArgumentException("Request cannot be null");
-        }
-        if (request.getUsername() == null || request.getUsername().isBlank()) {
-            LOGGER.warn("Change password attempt with blank username");
-            throw new IllegalArgumentException("Username cannot be blank");
-        }
-        if (request.getEmail() == null || request.getEmail().isBlank()) {
-            LOGGER.warn("Change password attempt with blank email for username: {}", request.getUsername());
-            throw new IllegalArgumentException("Email cannot be blank");
-        }
-        if (request.getNewPassword() == null || request.getNewPassword().isBlank()) {
-            LOGGER.warn("Change password attempt with blank new password for username: {}", request.getUsername());
-            throw new IllegalArgumentException("New password cannot be blank");
-        }
-        Account account = accountRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> {
-                    LOGGER.warn("Change password failed: account not found for username: {}", request.getUsername());
-                    return new IllegalArgumentException("Account not found");
-                });
-
-        if (!request.getEmail().equals(account.getEmail())) {
-            LOGGER.warn("Change password failed: incorrect email for username: {}", request.getUsername());
-            throw new IllegalArgumentException("Incorrect email address");
-        }
-
-        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        accountRepository.save(account);
-        LOGGER.info("Password changed successfully for username: {}", request.getUsername());
-    }
-
-    @Transactional
-    public void deleteAccount(String username) {
+    public void deleteAccount(String username, String password) {
         if (username == null || username.isBlank()) {
             LOGGER.warn("Delete account attempt with blank username");
             throw new IllegalArgumentException("Username cannot be blank");
@@ -238,6 +171,15 @@ public class AccountService {
             LOGGER.warn("Delete account failed: account not found for username: {}", username);
             throw new IllegalArgumentException("Account not found");
         }
+
+        Optional<Account> account = accountRepository.findByUsername(username);
+
+        if (!passwordEncoder.matches(password, account.get().getPassword())) {
+            LOGGER.warn("Delete account failed: invalid password for username: {}", username);
+            throw new IllegalArgumentException("Invalid password");
+        }
+
+
         accountRepository.deleteByUsername(username);
         LOGGER.info("Account deleted successfully for username: {}", username);
     }
