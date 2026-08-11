@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,6 +17,8 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+// this handles the soft delete
+@SQLDelete(sql = "UPDATE accounts SET deleted = true WHERE id = ?")
 public class Account {
 
     @Id
@@ -39,6 +42,9 @@ public class Account {
 
     @Column(name = "avatar_url")
     private String avatarUrl;
+
+    @Column(name = "deleted", nullable = false, columnDefinition = "boolean default false")
+    private boolean deleted;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

@@ -270,17 +270,28 @@ public class PostService {
 
     private PostDto.PostResponse buildPostResponse(
             Post post, long upvotes, long downvotes, long commentCount, String userVote) {
-        String authorName = (post.getAuthor() != null) ? post.getAuthor().getUsername() : "unknown";
+
         String title = post.getTitle();
         String content = post.getContent();
         String imageUrl = post.getImageUrl();
+        String authorName = "unknown";
+
+
+        if (post.getAuthor() != null) {
+            if (post.getAuthor().isDeleted()) {
+                authorName = "[deleted]";
+            } else {
+                authorName = post.getAuthor().getUsername();
+            }
+        }
 
         if (post.isDeleted()) {
-            authorName = "[deleted]";
             title = "[deleted]";
             content = "[deleted]";
             imageUrl = null;
+            authorName = "[deleted]";
         }
+
         String subredditName = (post.getSubreddit() != null) ? post.getSubreddit().getName() : "unknown";
 
         return new PostDto.PostResponse(

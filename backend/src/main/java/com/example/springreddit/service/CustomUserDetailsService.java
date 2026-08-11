@@ -3,6 +3,7 @@ package com.example.springreddit.service;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.repository.AccountRepository;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,6 +27,11 @@ public class CustomUserDetailsService implements UserDetailsService {
                             "User not found with username: {}", username);
                     return new UsernameNotFoundException("User not found with username: " + username);
                 });
+
+        if (account.isDeleted()) {
+            LOGGER.warn("Login attempt on a deleted account: {}", username);
+            throw new DisabledException("This account is deleted.");
+        }
         
         LOGGER.info(
                 "User found with username: {}", username);

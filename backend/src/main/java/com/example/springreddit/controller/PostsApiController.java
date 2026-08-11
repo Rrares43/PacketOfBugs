@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-//@RequestMapping(value = "/posts", produces = MediaType.APPLICATION_JSON_VALUE)
 public class PostsApiController {
 
     private final PostService postService;
