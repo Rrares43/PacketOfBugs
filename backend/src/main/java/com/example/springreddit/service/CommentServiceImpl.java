@@ -15,6 +15,7 @@ import com.example.springreddit.repository.AccountRepository;
 import com.example.springreddit.repository.CommentRepository;
 import com.example.springreddit.repository.PostRepository;
 import com.example.springreddit.repository.VoteRepository;
+import com.example.springreddit.util.TextFormatterUtil;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
@@ -66,7 +67,9 @@ public class CommentServiceImpl implements CommentService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
 
-        Comment comment = new Comment(request.content().trim(), author, post);
+        String formattedContent = TextFormatterUtil.formatText(request.content().trim());
+
+        Comment comment = new Comment(formattedContent, author, post);
         if (request.parentId() == null) {
             post.addComment(comment);
         } else {
@@ -91,6 +94,7 @@ public class CommentServiceImpl implements CommentService {
     public CommentResponse updateComment(UUID commentId, UpdateCommentRequest request) {
         Account currentAccount = requireCurrentAccount();
         Comment comment = findComment(commentId);
+
         if (comment.isDeleted()) {
             throw new IllegalArgumentException("Cannot update a deleted comment");
         }
@@ -100,7 +104,9 @@ public class CommentServiceImpl implements CommentService {
             throw new AccessDeniedException("Only the comment author can update it");
         }
 
-        comment.editContent(request.content().trim());
+        String formattedContent = TextFormatterUtil.formatText(request.content().trim());
+
+        comment.editContent(formattedContent);
         Comment saved = commentRepository.save(comment);
         LOGGER.info("Comment updated with ID: {}", saved.getId());
         return toResponse(saved, currentAccount);

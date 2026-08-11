@@ -15,6 +15,7 @@ import com.example.springreddit.repository.CommentRepository;
 import com.example.springreddit.repository.PostRepository;
 import com.example.springreddit.repository.PostVoteRepository;
 import com.example.springreddit.repository.SubredditRepository;
+import com.example.springreddit.util.TextFormatterUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -57,6 +58,10 @@ public class PostService {
                           MultipartFile image, Integer filter) {
         validatePostTitle(title);
         validateContent(content);
+
+        String formattedTitle = TextFormatterUtil.formatText(title);
+        String formattedContent = TextFormatterUtil.formatText(content);
+
         validateAuthor(authorUsername);
         validateSubreddit(subredditName);
         
@@ -77,7 +82,7 @@ public class PostService {
             imageUrl = imageUploadService.upload(image, filter);
         }
 
-        Post post = new Post(title, content, author, subreddit, imageUrl, filter);
+        Post post = new Post(formattedTitle, formattedContent, author, subreddit, imageUrl, filter);
         Post savedPost = postRepository.save(post);
         
         PostVote upvote = new PostVote(author, savedPost, PostVote.UPVOTE);
@@ -142,7 +147,12 @@ public class PostService {
         }
         if (request.getContent() != null) {
             validateContent(request.getContent());
-            post.setContent(request.getContent());
+
+            String formattedContent = TextFormatterUtil.formatText(request.getContent());
+            String formattedTitle = TextFormatterUtil.formatText(request.getTitle());
+
+            post.setContent(formattedContent);
+            post.setTitle(formattedTitle);
         }
 
         post.setUpdatedAt(Instant.now());
