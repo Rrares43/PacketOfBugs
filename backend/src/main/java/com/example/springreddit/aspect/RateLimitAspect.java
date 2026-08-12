@@ -35,7 +35,7 @@ public class RateLimitAspect {
      * - {@code maximumSize(10_000)}: Caps the cache size to prevent OutOfMemory errors during high traffic
      */
     private final Cache<String, Bucket> cache = Caffeine.newBuilder()
-            .expireAfterAccess(Duration.ofMinutes(2))
+            .expireAfterAccess(Duration.ofHours(1))
             .maximumSize(10_000)
             .build();
 
