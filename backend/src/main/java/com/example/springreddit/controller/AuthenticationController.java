@@ -4,19 +4,16 @@ import com.example.springreddit.config.JwtTokenProvider;
 import com.example.springreddit.dto.AccountDto;
 import com.example.springreddit.dto.ApiResponse;
 import com.example.springreddit.dto.DeleteAccountResponse;
-import com.example.springreddit.exception.UnauthorizedException;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.mapper.AccountMapper;
 import com.example.springreddit.model.Account;
 import com.example.springreddit.model.CustomUserDetails;
 import com.example.springreddit.service.AccountService;
+import com.example.springreddit.service.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,10 +22,10 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthenticationController {
 
-    private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final AccountService accountService;
     private final AccountMapper accountMapper;
+    private final AuthenticationService authenticationService;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
     @PostMapping("/login")
@@ -36,12 +33,7 @@ public class AuthenticationController {
             @Valid @RequestBody AccountDto.LoginRequest loginRequest) {
         LOGGER.info("Login attempt for username: {}", loginRequest.getUsername());
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
+        Authentication authentication = authenticationService.getAuthentication(loginRequest);
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String jwt = jwtTokenProvider.generateToken(userDetails);
@@ -55,7 +47,7 @@ public class AuthenticationController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<AccountDto.UserProfile>> getCurrentUser() {
-        String username = requireAuthenticatedUsername();
+        String username = authenticationService.requireAuthenticatedUsername();
         LOGGER.info("GET /auth/me request received for username: {}", username);
 
         AccountDto.UserProfile userProfile = accountService.getCurrentUserProfile(username);
@@ -67,7 +59,7 @@ public class AuthenticationController {
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<AccountDto.UserProfile>> updateCurrentUser(
             @Valid @RequestBody AccountDto.UpdateUserProfileRequest request) {
-        String username = requireAuthenticatedUsername();
+        String username = authenticationService.requireAuthenticatedUsername();
         LOGGER.info("PUT /auth/me request received for username: {} with request: {}", username, request);
 
         AccountDto.UserProfile userProfile = accountService.updateUserProfile(username, request);
@@ -80,7 +72,7 @@ public class AuthenticationController {
     public ResponseEntity<ApiResponse<DeleteAccountResponse>> deleteUser(
             @Valid @RequestBody AccountDto.DeleteAccountRequest request) {
 
-        String username = requireAuthenticatedUsername();
+        String username = authenticationService.requireAuthenticatedUsername();
         accountService.deleteAccount(username, request.getPassword());
 
         return ResponseEntity.ok(ApiResponse.success(new DeleteAccountResponse(true, "Account deleted successfully")));
@@ -89,7 +81,7 @@ public class AuthenticationController {
     @PutMapping("/me/password")
     public ResponseEntity<ApiResponse<String>> changePassword(
             @Valid @RequestBody AccountDto.UpdatePasswordRequest request) {
-        String username = requireAuthenticatedUsername();
+        String username = authenticationService.requireAuthenticatedUsername();
         LOGGER.info("PUT /auth/me/password request received for username: {}", username);
 
         accountService.changePassword(username, request);
@@ -111,15 +103,5 @@ public class AuthenticationController {
 
         LOGGER.info("Registration successful for username: {}", account.getUsername());
         return ResponseEntity.ok(ApiResponse.success(authResponse));
-    }
-
-    private String requireAuthenticatedUsername() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || "anonymousUser".equals(authentication.getPrincipal())) {
-            throw new UnauthorizedException("User not authenticated");
-        }
-        return authentication.getName();
     }
 }
