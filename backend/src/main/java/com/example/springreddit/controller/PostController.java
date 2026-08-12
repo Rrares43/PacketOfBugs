@@ -25,7 +25,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-public class PostsApiController {
+public class PostController {
 
     private final PostService postService;
     private final PostVoteService postVoteService;
