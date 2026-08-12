@@ -3,6 +3,7 @@ package com.example.springreddit.aspect;
 import com.example.springreddit.annotation.RateLimit;
 import com.example.springreddit.exception.RateLimitExceededException;
 import com.example.springreddit.logging.CustomLogger;
+import com.example.springreddit.service.AuthenticationService;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
@@ -40,9 +41,12 @@ public class RateLimitAspect {
             .build();
 
     private final HttpServletRequest request;
+    private final AuthenticationService authenticationService;
 
-    public RateLimitAspect(HttpServletRequest request) {
+    // Injectează-l prin constructor
+    public RateLimitAspect(HttpServletRequest request, AuthenticationService authenticationService) {
         this.request = request;
+        this.authenticationService = authenticationService;
     }
 
     /**
@@ -58,17 +62,22 @@ public class RateLimitAspect {
     @Around("@annotation(rateLimitAnnotation)")
     public Object enforceRateLimit(ProceedingJoinPoint joinPoint, RateLimit rateLimitAnnotation) throws Throwable {
 
-        // extract client IP address
-        String ip = request.getRemoteAddr();
         // extract the name of the method being accessed (e.g., "login")
         String methodName = joinPoint.getSignature().getName();
-        // create a unique identifier for this specific user hitting this specific endpoint
-        String key = ip + ":" + methodName;
+
+        String identifier = authenticationService.currentUsernameOrNull();
+
+        // if the user is not logged in the identifier is the IP address
+        if (identifier == null || identifier.isBlank()) {
+            identifier = request.getRemoteAddr();
+        }
+
+        String key = identifier + ":" + methodName;
 
         Bucket bucket = cache.get(key, k -> createNewBucket(rateLimitAnnotation));
 
         if (!bucket.tryConsume(1)) {
-            LOGGER.warn("Too many request from {} on method {}", ip, methodName);
+            LOGGER.warn("Too many request on {}", key);
             throw new RateLimitExceededException("Too many requests. Please try again later.");
         }
 
