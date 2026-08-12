@@ -14,7 +14,7 @@ WORKDIR /app
 
 COPY --from=build /app/publish .
 
-EXPOSE 5157
-ENV ASPNETCORE_URLS=http://+:5157
+EXPOSE 5000
+ENV ASPNETCORE_URLS=http://+:5000
 
 ENTRYPOINT ["dotnet", "ImageProcessor.dll"]

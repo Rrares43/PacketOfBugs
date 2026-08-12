@@ -1,5 +1,6 @@
 package com.example.springreddit.controller;
 
+import com.example.springreddit.annotation.RateLimit;
 import com.example.springreddit.dto.CommentResponse;
 import com.example.springreddit.dto.CreateCommentRequest;
 import com.example.springreddit.dto.DeleteCommentResponse;
@@ -44,6 +45,7 @@ public class CommentController {
         return ResponseEntity.ok(ApiResponse.success(commentService.getComment(id)));
     }
 
+    @RateLimit(requests = 25)
     @PostMapping(value = "/posts/{postId}/comments", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<CommentResponse>> createComment(
             @PathVariable UUID postId,
@@ -53,6 +55,7 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(comment));
     }
 
+    @RateLimit(requests = 25)
     @PutMapping(value = "/comments/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<CommentResponse>> updateComment(
             @PathVariable UUID id,
