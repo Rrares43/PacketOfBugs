@@ -16,9 +16,13 @@ services:
       SPRING_CONFIG_NAME: application
       AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      FILTER_API_URL: http://image-edit-service:5000/api/filter
     depends_on:
       db:
         condition: service_healthy
+      image-edit-service:
+        condition: service_started
+
   image-edit-service:
     build:
       context: ./imageProcessor
