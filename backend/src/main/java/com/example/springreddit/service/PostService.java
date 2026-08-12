@@ -117,6 +117,13 @@ public class PostService {
         return postRepository.findBySubredditNameWithAuthorAndSubreddit((subredditName));
     }
 
+    @Transactional(readOnly = true)
+    public List<Post> getAllPostsOrBySubreddit(String subredditName) {
+        return (subredditName != null && !subredditName.isBlank())
+                ? this.getPostsBySubreddit(subredditName)
+                : this.getAllPosts();
+    }
+
     @Transactional
     public Post updatePost(UUID id, UpdatePostRequest request, String currentUsername) {
         if (id == null) {

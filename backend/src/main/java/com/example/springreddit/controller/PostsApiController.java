@@ -36,9 +36,7 @@ public class PostsApiController {
             @RequestParam(required = false) String subreddit) {
         LOGGER.info("GET /posts request received with subreddit filter: {}", subreddit);
 
-        List<Post> posts = (subreddit != null && !subreddit.isBlank())
-                ? postService.getPostsBySubreddit(subreddit)
-                : postService.getAllPosts();
+        List<Post> posts = postService.getAllPostsOrBySubreddit(subreddit);
 
         String currentUsername = authenticationService.currentUsernameOrNull();
         List<PostDto.PostResponse> postResponses = postService.toPostResponses(posts, currentUsername);
@@ -67,9 +65,7 @@ public class PostsApiController {
 
         Post post = postService.getPostById(id);
         String currentUsername = authenticationService.currentUsernameOrNull();
-        String userVote = currentUsername != null
-                ? postService.resolveUserVote(post, currentUsername)
-                : null;
+        String userVote = postService.resolveUserVote(post, currentUsername);
         PostDto.PostResponse postResponse = postService.toPostResponse(post, userVote);
 
         LOGGER.info("GET /posts/{} request successful", id);
