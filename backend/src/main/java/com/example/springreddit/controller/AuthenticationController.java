@@ -13,8 +13,6 @@ import com.example.springreddit.service.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthenticationController {
 
-    private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final AccountService accountService;
     private final AccountMapper accountMapper;
@@ -36,12 +33,7 @@ public class AuthenticationController {
             @Valid @RequestBody AccountDto.LoginRequest loginRequest) {
         LOGGER.info("Login attempt for username: {}", loginRequest.getUsername());
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
+        Authentication authentication = authenticationService.getAuthentication(loginRequest);
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String jwt = jwtTokenProvider.generateToken(userDetails);
