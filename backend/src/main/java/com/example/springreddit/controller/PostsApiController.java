@@ -6,18 +6,16 @@ import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.UpdatePostRequest;
 import com.example.springreddit.dto.VoteRequest;
 import com.example.springreddit.dto.VoteResponse;
-import com.example.springreddit.exception.UnauthorizedException;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Post;
+import com.example.springreddit.service.AuthenticationService;
 import com.example.springreddit.service.PostService;
 import com.example.springreddit.service.PostVoteService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,27 +24,22 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@RequiredArgsConstructor
 public class PostsApiController {
 
     private final PostService postService;
     private final PostVoteService postVoteService;
+    private final AuthenticationService authenticationService;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
-
-    public PostsApiController(PostService postService, PostVoteService postVoteService) {
-        this.postService = postService;
-        this.postVoteService = postVoteService;
-    }
 
     @GetMapping("/posts")
     public ResponseEntity<ApiResponse<List<PostDto.PostResponse>>> getPosts(
             @RequestParam(required = false) String subreddit) {
         LOGGER.info("GET /posts request received with subreddit filter: {}", subreddit);
 
-        List<Post> posts = (subreddit != null && !subreddit.isBlank())
-                ? postService.getPostsBySubreddit(subreddit)
-                : postService.getAllPosts();
+        List<Post> posts = postService.getAllPostsOrBySubreddit(subreddit);
 
-        String currentUsername = currentUsernameOrNull();
+        String currentUsername = authenticationService.currentUsernameOrNull();
         List<PostDto.PostResponse> postResponses = postService.toPostResponses(posts, currentUsername);
 
         LOGGER.info("GET /posts request successful, returned {} posts", postResponses.size());
@@ -60,7 +53,7 @@ public class PostsApiController {
 
         List<Post> posts = postService.getPostsBySubreddit(name);
 
-        String currentUsername = currentUsernameOrNull();
+        String currentUsername = authenticationService.currentUsernameOrNull();
         List<PostDto.PostResponse> postResponses = postService.toPostResponses(posts, currentUsername);
 
         LOGGER.info("GET /subreddits/{}/posts request successful, returned {} posts", name, postResponses.size());
@@ -72,10 +65,8 @@ public class PostsApiController {
         LOGGER.info("GET /posts/{} request received", id);
 
         Post post = postService.getPostById(id);
-        String currentUsername = currentUsernameOrNull();
-        String userVote = currentUsername != null
-                ? postService.resolveUserVote(post, currentUsername)
-                : null;
+        String currentUsername = authenticationService.currentUsernameOrNull();
+        String userVote = postService.resolveUserVote(post, currentUsername);
         PostDto.PostResponse postResponse = postService.toPostResponse(post, userVote);
 
         LOGGER.info("GET /posts/{} request successful", id);
@@ -90,7 +81,7 @@ public class PostsApiController {
             @RequestParam String subreddit,
             @RequestParam(required = false) MultipartFile image,
             @RequestParam(required = false) Integer filter) throws IOException {
-        String authorUsername = requireAuthenticatedUsername();
+        String authorUsername = authenticationService.requireAuthenticatedUsername();
 
         LOGGER.info(
                 "POST /posts request received - title: {}, author: {}, subreddit: {}",
@@ -107,7 +98,7 @@ public class PostsApiController {
     public ResponseEntity<ApiResponse<PostDto.PostResponse>> updatePost(
             @PathVariable UUID id,
             @Valid @RequestBody UpdatePostRequest request) {
-        String currentUsername = requireAuthenticatedUsername();
+        String currentUsername = authenticationService.requireAuthenticatedUsername();
         LOGGER.info("PUT /posts/{} request received from user: {}", id, currentUsername);
 
         Post post = postService.updatePost(id, request, currentUsername);
@@ -120,7 +111,7 @@ public class PostsApiController {
 
     @DeleteMapping("/posts/{id}")
     public ResponseEntity<ApiResponse<String>> deletePost(@PathVariable UUID id) {
-        String currentUsername = requireAuthenticatedUsername();
+        String currentUsername = authenticationService.requireAuthenticatedUsername();
         LOGGER.info("DELETE /posts/{} request received from user: {}", id, currentUsername);
 
         postService.deletePost(id, currentUsername);
@@ -133,7 +124,7 @@ public class PostsApiController {
     public ResponseEntity<ApiResponse<VoteResponse>> voteOnPost(
             @PathVariable UUID id,
             @Valid @RequestBody VoteRequest request) {
-        String currentUsername = requireAuthenticatedUsername();
+        String currentUsername = authenticationService.requireAuthenticatedUsername();
         LOGGER.info(
                 "PUT /posts/{}/vote request received from user: {} with voteType: {}",
                 id, currentUsername, request.voteType());
@@ -142,24 +133,5 @@ public class PostsApiController {
 
         LOGGER.info("PUT /posts/{}/vote request successful", id);
         return ResponseEntity.ok(ApiResponse.success(voteResponse));
-    }
-    
-    private String currentUsernameOrNull() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || authentication instanceof AnonymousAuthenticationToken
-                || "anonymousUser".equals(authentication.getPrincipal())) {
-            return null;
-        }
-        return authentication.getName();
-    }
-
-    private String requireAuthenticatedUsername() {
-        String username = currentUsernameOrNull();
-        if (username == null) {
-            throw new UnauthorizedException("User not authenticated");
-        }
-        return username;
     }
 }
