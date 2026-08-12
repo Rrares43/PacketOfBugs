@@ -35,7 +35,7 @@ public class AuthenticationController {
     private final AccountMapper accountMapper;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
-    @RateLimit(requests = 5, duration = 20, unit = TimeUnit.SECONDS)
+    @RateLimit
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AccountDto.AuthResponse>> login(
             @Valid @RequestBody AccountDto.LoginRequest loginRequest, TimeZone timeZone) {
