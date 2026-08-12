@@ -1,5 +1,6 @@
 package com.example.springreddit.controller;
 
+import com.example.springreddit.annotation.RateLimit;
 import com.example.springreddit.dto.ApiResponse;
 import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.UpdatePostRequest;
@@ -24,7 +25,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-public class PostsApiController {
+public class PostController {
 
     private final PostService postService;
     private final PostVoteService postVoteService;
@@ -72,6 +73,7 @@ public class PostsApiController {
         return ResponseEntity.ok(ApiResponse.success(postResponse));
     }
 
+    @RateLimit(requests = 15)
     @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PostDto.PostResponse>> createPost(
             @RequestParam String title,
