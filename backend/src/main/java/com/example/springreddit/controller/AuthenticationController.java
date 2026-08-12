@@ -1,5 +1,6 @@
 package com.example.springreddit.controller;
 
+import com.example.springreddit.annotation.RateLimit;
 import com.example.springreddit.config.JwtTokenProvider;
 import com.example.springreddit.dto.AccountDto;
 import com.example.springreddit.dto.ApiResponse;
@@ -20,6 +21,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -31,9 +35,10 @@ public class AuthenticationController {
     private final AccountMapper accountMapper;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
+    @RateLimit(requests = 5, duration = 20, unit = TimeUnit.SECONDS)
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AccountDto.AuthResponse>> login(
-            @Valid @RequestBody AccountDto.LoginRequest loginRequest) {
+            @Valid @RequestBody AccountDto.LoginRequest loginRequest, TimeZone timeZone) {
         LOGGER.info("Login attempt for username: {}", loginRequest.getUsername());
 
         Authentication authentication = authenticationManager.authenticate(

@@ -10,7 +10,6 @@ import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.service.PostService;
 import com.example.springreddit.service.PostVoteService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
