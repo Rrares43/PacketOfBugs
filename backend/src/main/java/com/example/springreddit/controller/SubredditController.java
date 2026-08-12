@@ -1,7 +1,7 @@
 package com.example.springreddit.controller;
 
+import com.example.springreddit.annotation.RateLimit;
 import com.example.springreddit.dto.ApiResponse;
-import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.SubredditDto;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.mapper.SubredditMapper;
@@ -27,6 +27,7 @@ public class SubredditController {
     private final SubredditMapper subredditMapper;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
+    @RateLimit(requests = 15)
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<SubredditDto.SubredditResponse>> createNewSubreddit(
             @Valid @RequestBody SubredditDto.CreateSubredditRequest request) {
@@ -63,7 +64,8 @@ public class SubredditController {
         Subreddit subreddit = subredditService.getSubredditByName(name);
         return ResponseEntity.ok(ApiResponse.success(subredditMapper.mapToResponse(subreddit)));
     }
-    
+
+    @RateLimit(requests = 15)
     @PutMapping(value = "/{name}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<SubredditDto.SubredditResponse>> editSubreddit(
             @PathVariable String name,

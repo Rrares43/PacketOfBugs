@@ -103,6 +103,7 @@ public class AuthenticationController {
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
     }
 
+    @RateLimit()
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AccountDto.AuthResponse>> register(
             @Valid @RequestBody AccountDto.RegistrationRequest registrationRequest) {

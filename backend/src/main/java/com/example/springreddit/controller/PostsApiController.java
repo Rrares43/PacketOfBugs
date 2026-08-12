@@ -1,5 +1,6 @@
 package com.example.springreddit.controller;
 
+import com.example.springreddit.annotation.RateLimit;
 import com.example.springreddit.dto.ApiResponse;
 import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.UpdatePostRequest;
@@ -81,6 +82,7 @@ public class PostsApiController {
         return ResponseEntity.ok(ApiResponse.success(postResponse));
     }
 
+    @RateLimit(requests = 15)
     @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<PostDto.PostResponse>> createPost(
             @RequestParam String title,
