@@ -38,7 +38,7 @@ public class PostService {
     private final CommentRepository commentRepository;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
     private final ImageUploadService imageUploadService;
-    private final FastContentFilterService contentFilterService;
+    private final GeminiCensorService geminiCensorService;
 
 
     public PostService(PostRepository postRepository,
@@ -47,14 +47,14 @@ public class PostService {
                        PostVoteRepository postVoteRepository,
                        CommentRepository commentRepository,
                        ImageUploadService imageUploadService,
-                       FastContentFilterService contentFilterService) {
+                       GeminiCensorService geminiCensorService) {
         this.postRepository = postRepository;
         this.subredditRepository = subredditRepository;
         this.accountRepository = accountRepository;
         this.postVoteRepository = postVoteRepository;
         this.commentRepository = commentRepository;
         this.imageUploadService = imageUploadService;
-        this.contentFilterService = contentFilterService;
+        this.geminiCensorService = geminiCensorService;
     }
 
     @Transactional
@@ -63,8 +63,8 @@ public class PostService {
         validatePostTitle(title);
         validateContent(content);
 
-        String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(title));
-        String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(content));
+        String formattedTitle = geminiCensorService.censor(TextFormatterUtil.formatText(title));
+        String formattedContent = geminiCensorService.censor(TextFormatterUtil.formatText(content));
 
         validateAuthor(authorUsername);
         validateSubreddit(subredditName);
@@ -155,13 +155,13 @@ public class PostService {
 
         if (request.getTitle() != null) {
             validatePostTitle(request.getTitle());
-            post.setTitle(contentFilterService.sanitize(request.getTitle().trim()));
+            post.setTitle(geminiCensorService.censor(request.getTitle().trim()));
         }
         if (request.getContent() != null) {
             validateContent(request.getContent());
 
-            String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(request.getContent()));
-            String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(request.getTitle()));
+            String formattedContent = geminiCensorService.censor(TextFormatterUtil.formatText(request.getContent()));
+            String formattedTitle = geminiCensorService.censor(TextFormatterUtil.formatText(request.getTitle()));
 
             post.setContent(formattedContent);
             post.setTitle(formattedTitle);
