@@ -91,6 +91,7 @@ public class PostService {
         
         PostVote upvote = new PostVote(author, savedPost, PostVote.UPVOTE);
         postVoteRepository.save(upvote);
+        subreddit.setPostCount(subreddit.getPostCount() + 1);
         LOGGER.info("Post created successfully with ID: {} in subreddit: {} by author: {}", savedPost.getId(), subredditName, authorUsername);
         return savedPost;
     }

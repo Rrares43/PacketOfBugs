@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,6 +41,7 @@ public class SubredditController {
         List<SubredditDto.SubredditResponse> subreddits = subredditService.getAllSubredditSummaries()
                 .stream()
                 .map(subredditMapper::mapSummaryToResponse)
+                .sorted(Comparator.comparing(SubredditDto.SubredditResponse::getPostCount, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(new SubredditDto.SubredditListResponse(true, subreddits, subreddits.size()));
     }
