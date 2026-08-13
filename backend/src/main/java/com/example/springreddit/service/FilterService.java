@@ -15,6 +15,9 @@ import java.util.stream.Collectors;
 @Service
 public class FilterService {
 
+    private static final String HOT_EMOJI = " 🔥";
+    private static final double HOT_THRESHOLD_MULTIPLIER = 1.4;
+
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
     private final FilterRepository filterRepository;
@@ -26,23 +29,31 @@ public class FilterService {
 
         List<Filter> filters = filterRepository.findAllByOrderByIdAsc();
 
-        int maxUses = filters.stream()
+        if (filters.isEmpty()) {
+            return List.of();
+        }
+
+        double average = filters.stream()
                 .mapToInt(Filter::getUsageCount)
-                .max()
-                .orElse(0);
+                .average()
+                .orElse(0.0);
+
+        double hotThreshold = average * HOT_THRESHOLD_MULTIPLIER;
 
         return filters.stream()
-                .map(filter -> {
-                    int count = filter.getUsageCount();
-                    String labelWithPopularity = filter.getLabel();
-
-                    if (count > 0 && count == maxUses) {
-                        labelWithPopularity += " 🔥";
-                    }
-
-                    return new FilterDto(filter.getId(), filter.getName(), labelWithPopularity);
-                })
+                .map(filter -> mapToFilterDtoWithPopularity(filter, hotThreshold))
                 .collect(Collectors.toList());
+    }
+
+    private FilterDto mapToFilterDtoWithPopularity(Filter filter, double hotThreshold) {
+        int count = filter.getUsageCount();
+        String labelWithPopularity = filter.getLabel();
+
+        if (count > 0 && count >= hotThreshold) {
+            labelWithPopularity += HOT_EMOJI;
+        }
+
+        return new FilterDto(filter.getId(), filter.getName(), labelWithPopularity);
     }
 
     @Scheduled(cron = "0 0 0 * * ?")
