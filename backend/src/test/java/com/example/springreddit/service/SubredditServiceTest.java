@@ -79,17 +79,6 @@ public class SubredditServiceTest {
     }
 
     @Test
-    public void testGetAllSubredditSummaries() {
-        Subreddit mockSubreddit = new Subreddit();
-        mockSubreddit.setName("test_sub");
-        mockSubreddit.setDisplayName("Test Sub");
-        mockSubreddit.setDescription("Sub for testing");
-
-        List<Subreddit> mockList = new ArrayList<>();
-        mockList.add(mockSubreddit);
-    }
-
-    @Test
     public void testGetSubredditByCreatorUsername() {
         Account mockAccount = new Account();
         mockAccount.setUsername("test_user");
