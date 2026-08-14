@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -56,6 +57,7 @@ public class ImageEditService {
      * @param uploadUrl   the pre-signed S3 URL to upload the edited image
      * @param filterId    the identifier of the filter to be applied
      */
+    @Transactional
     public void edit(String downloadUrl, String uploadUrl, Integer filterId) {
 
         LOGGER.info("Attempting to edit image with filterId: {}", filterId);
@@ -85,6 +87,7 @@ public class ImageEditService {
                     .retrieve()
                     .toBodilessEntity();
 
+            filterRepository.incrementUsageCount(Long.valueOf(filterId));
             LOGGER.info("Image edit request successfully sent for filter: {}", filter.getName());
         } catch (RestClientException e) {
             LOGGER.error("Failed to communicate with image editing service for filterId {}: {}", filterId, e.getMessage(), e);

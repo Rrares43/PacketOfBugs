@@ -71,13 +71,11 @@ public class ImageUploadService {
             String downloadUrl = generateDownloadUrl(key);
             String uploadUrl = generateUploadUrl(key);
 
-            CompletableFuture.runAsync(() -> {
-                try {
-                    imageEditService.edit(downloadUrl, uploadUrl, validFilterId);
-                } catch (Exception e) {
-                    LOGGER.error("Async image editing failed for key {}: {}", key, e.getMessage(), e);
-                }
-            });
+            try {
+                imageEditService.edit(downloadUrl, uploadUrl, validFilterId);
+            } catch (Exception e) {
+                LOGGER.error("Async image editing failed for key {}: {}", key, e.getMessage(), e);
+            }
 
             return finalUrl;
 
