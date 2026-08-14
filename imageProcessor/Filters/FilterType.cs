@@ -5,7 +5,9 @@
         None = 0,
         Grayscale = 1,
         Sepia = 2,
-        Invert = 3
+        Invert = 3,
+        Sketch = 4,
+        Pixel = 5
 
     }
 }

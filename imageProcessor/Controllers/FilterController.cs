@@ -1,6 +1,5 @@
 ﻿using ImageProcessor.Filters;
 using ImageProcessor.Models;
-using ImageProcessor.Service;
 using ImageProcessor.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,12 +9,10 @@ namespace ImageProcessor.Controllers
     public class FilterController : ControllerBase
     {
         private readonly FilterService _filterService;
-        private readonly FilterListService _filterListService;
 
-        public FilterController(FilterService filterService, FilterListService filterListService    )
+        public FilterController(FilterService filterService)
         {
             _filterService = filterService;
-            _filterListService = filterListService;
         }
 
         [HttpPost("/api/filter")]
@@ -44,19 +41,6 @@ namespace ImageProcessor.Controllers
             }
         }
 
-        [HttpGet("/filters")]
-        public IActionResult GetFilters()
-        {
-            try
-            {
-                var filters = _filterListService.GetFilters();
-                return Ok(new { success = true, data = filters });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
 
     }
 }

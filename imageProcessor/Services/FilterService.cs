@@ -1,15 +1,14 @@
 ﻿using ImageProcessor.Filters;
 using ImageProcessor.Models;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.PixelFormats;
-using System.Diagnostics.CodeAnalysis;
+using SixLabors.ImageSharp.Processing;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 
-namespace ImageProcessor.Service
-{
+using Image = SixLabors.ImageSharp.Image;
 
+namespace ImageProcessor.Services
+{
     public class FilterService
     {
         private readonly HttpClient _httpClient;
@@ -25,97 +24,95 @@ namespace ImageProcessor.Service
             {
                 throw new ArgumentException($"Filter {request.Filter} is not implemented.");
             }
- 
+
             using var networkStream = await _httpClient.GetStreamAsync(request.DownloadUrl);
 
             using var memStream = new MemoryStream();
             await networkStream.CopyToAsync(memStream);
-       
             memStream.Position = 0;
 
             var originalFormat = await Image.DetectFormatAsync(memStream);
-
             memStream.Position = 0;
 
-            using var image = await Image.LoadAsync<Rgba32>(memStream);
-            var pixelData = new byte[image.Width * image.Height * 4];
-            image.CopyPixelDataTo(pixelData);
+            using var image = await Image.LoadAsync(memStream);
 
-            ApplyFilter(pixelData, filterType);
+            var stopwatch = Stopwatch.StartNew();
 
-            using var finalImage = Image.LoadPixelData<Rgba32>(pixelData, image.Width, image.Height);
+            ApplyFilter(image, filterType);
+
+            Console.WriteLine($"[Performanță] Filtrul {filterType} aplicat în: {stopwatch.ElapsedMilliseconds} ms");
+
             using var outStream = new MemoryStream();
-
-            await finalImage.SaveAsync(outStream, originalFormat);
+            await image.SaveAsync(outStream, originalFormat);
 
             byte[] processedBytes = outStream.ToArray();
-
             using var content = new ByteArrayContent(processedBytes);
-
             content.Headers.ContentType = new MediaTypeHeaderValue(originalFormat.DefaultMimeType);
 
             var response = await _httpClient.PutAsync(request.UploadUrl, content);
-
             response.EnsureSuccessStatusCode();
         }
 
-        private void ApplyGrayscale(byte[] pixels)
+        private void ApplyFilter(Image image, FilterType type)
         {
-            for (int i = 0; i < pixels.Length; i += 4)
+            image.Mutate(x =>
             {
-                byte gray = (byte)((pixels[i] * 0.299) + (pixels[i + 1] * 0.587) + (pixels[i + 2] * 0.114));
-                pixels[i] = gray;
-                pixels[i + 1] = gray;
-                pixels[i + 2] = gray;
-            }
+                switch (type)
+                {
+                    case FilterType.Grayscale:
+                        x.Grayscale();
+                        break;
+
+                    case FilterType.Invert:
+                        x.Invert();
+                        break;
+
+                    case FilterType.Sepia:
+                        x.Sepia();
+                        break;
+
+                    case FilterType.Sketch:
+
+                        image.Mutate(x => x
+                            .Grayscale()
+                            .GaussianSharpen(2.5f)
+                            .Contrast(2.0f)
+                            .DetectEdges()
+                            .Invert()
+                            );
+                        break;
+
+                    case FilterType.Pixel:
+                        int origWidth = image.Width;
+                        int origHeight = image.Height;
+
+                     
+                        int scaleFactor = 24;
+
+                        int gridWidth = Math.Max(8, origWidth / scaleFactor);
+                        int gridHeight = Math.Max(8, origHeight / scaleFactor);
+
+                        image.Mutate(x => x
+                            .Resize(new ResizeOptions
+                            {
+                                Size = new Size(gridWidth, gridHeight),
+                                Sampler = KnownResamplers.NearestNeighbor
+                            })
+                            .Resize(new ResizeOptions
+                            {
+                                Size = new Size(origWidth, origHeight),
+                                Sampler = KnownResamplers.NearestNeighbor
+                            })
+                            .Saturate(1.7f)
+                            .Contrast(1.4f));
+                        break;
+
+
+
+                }
+            });
         }
 
-        private void ApplyInvert(byte[] pixels)
-        {
-            for (int i = 0; i < pixels.Length; i += 4)
-            {
-                pixels[i] = (byte)(255 - pixels[i]);
-                pixels[i + 1] = (byte)(255 - pixels[i + 1]);
-                pixels[i + 2] = (byte)(255 - pixels[i + 2]);
-            }
-        }
-
-        private void ApplySepia(byte[]pixels)
-        {
-            for (int i = 0; i < pixels.Length; i += 4)
-            {
-                byte r = pixels[i];
-                byte g = pixels[i + 1];
-                byte b = pixels[i + 2];
-
-               
-                int newR = (int)(0.393 * r + 0.769 * g + 0.189 * b);
-                int newG = (int)(0.349 * r + 0.686 * g + 0.168 * b);
-                int newB = (int)(0.272 * r + 0.534 * g + 0.131 * b);
-
-                pixels[i] = (byte)Math.Min(255, newR); 
-                pixels[i + 1] = (byte)Math.Min(255, newG); 
-                pixels[i + 2] = (byte)Math.Min(255, newB); 
-            }
-        }
-
-        private void ApplyFilter(byte[] pixels, FilterType type)
-        {
-            switch (type)
-            {
-                case FilterType.Grayscale:
-                    ApplyGrayscale(pixels);
-                    break;
-
-                case FilterType.Invert:
-                    ApplyInvert(pixels);
-                    break;
-
-                case FilterType.Sepia:
-                    ApplySepia(pixels);
-                    break;
-                   
-            }
-        }
+       
     }
 }
