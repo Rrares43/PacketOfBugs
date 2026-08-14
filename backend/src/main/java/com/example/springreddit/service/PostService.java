@@ -39,6 +39,7 @@ public class PostService {
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
     private final ImageUploadService imageUploadService;
     private final FastContentFilterService contentFilterService;
+    private final AiService aiService;
 
 
     public PostService(PostRepository postRepository,
@@ -47,7 +48,7 @@ public class PostService {
                        PostVoteRepository postVoteRepository,
                        CommentRepository commentRepository,
                        ImageUploadService imageUploadService,
-                       FastContentFilterService contentFilterService) {
+                       FastContentFilterService contentFilterService, AiService aiService) {
         this.postRepository = postRepository;
         this.subredditRepository = subredditRepository;
         this.accountRepository = accountRepository;
@@ -55,6 +56,7 @@ public class PostService {
         this.commentRepository = commentRepository;
         this.imageUploadService = imageUploadService;
         this.contentFilterService = contentFilterService;
+        this.aiService = aiService;
     }
 
     @Transactional
@@ -65,6 +67,12 @@ public class PostService {
 
         String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(title));
         String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(content));
+
+        String aiSummary = aiService.generateSummary(title, content);
+
+        if(formattedContent != null && formattedContent.isBlank() && formattedContent.length() > 100){
+            formattedContent = "/b{AI Summary}: " + aiSummary + "]} \n\n" + formattedContent;
+        }
 
         validateAuthor(authorUsername);
         validateSubreddit(subredditName);
