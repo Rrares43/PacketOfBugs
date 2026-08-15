@@ -32,8 +32,9 @@ public class AccountDeleter {
         }
 
         String username = sessionService.getCurrentUsername();
+        String password = stringReader.readString("Enter password to confirm deletion: ");
         try {
-            HttpResponse<String> response = RedditApiClient.deleteAccountRaw(username);
+            HttpResponse<String> response = RedditApiClient.deleteAccountRaw(password);
             int status = response.statusCode();
 
             if (RedditApiClient.isSuccess(status)) {

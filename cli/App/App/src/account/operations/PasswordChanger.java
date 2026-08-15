@@ -27,10 +27,7 @@ public class PasswordChanger {
         }
 
         String username = sessionService.getCurrentUsername();
-        String email = stringReader.readString("Enter email: ");
-        if (!EmailVerification.verify(email)) {
-            return;
-        }
+        String currentPassword = stringReader.readString("Enter current password: ");
         String newPassword;
         while (true) {
             output.write("Password must be at least 8 characters long and contain at least one number, one uppercase letter, one lowercase letter, and one special character.");
@@ -46,7 +43,7 @@ public class PasswordChanger {
         }
 
         try {
-            HttpResponse<String> response = RedditApiClient.changePasswordRaw(username, email, newPassword);
+            HttpResponse<String> response = RedditApiClient.changePasswordRaw(currentPassword, newPassword);
             int status = response.statusCode();
 
             if (RedditApiClient.isSuccess(status)) {

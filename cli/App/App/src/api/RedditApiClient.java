@@ -62,7 +62,7 @@ public final class RedditApiClient {
     public static boolean isReachable() {
         /*
         try {
-            HttpResponse<String> response = send("GET", "/api/subreddits", null);
+            HttpResponse<String> response = send("GET", "/subreddits", null);
             return response.statusCode() >= 200 && response.statusCode() < 500;
         } catch (Exception e) {
             return false;
@@ -81,12 +81,12 @@ public final class RedditApiClient {
     }
 
     public static HttpResponse<String> getAccountRaw(String username) {
-        return send("GET", "/api/accounts/" + encode(username), null);
+        return send("GET", "/auth/me", null);
     }
 
     public static boolean isUsernameAvailable(String username) {
         try {
-            HttpResponse<String> response = send("GET", "/api/accounts/available/" + encode(username), "");
+            HttpResponse<String> response = send("GET", "/accounts/available/" + encode(username), "");
             if (response.statusCode() != 200) {
                 return false;
             }
@@ -101,7 +101,7 @@ public final class RedditApiClient {
         JsonObject body = new JsonObject();
         body.addProperty("username", username);
         body.addProperty("password", password);
-        return send("POST", "/api/auth/login", body.toString());
+        return send("POST", "/auth/login", body.toString());
     }
 
     public static HttpResponse<String> registerAccountRaw(String username, String email, String password) {
@@ -109,19 +109,20 @@ public final class RedditApiClient {
         body.addProperty("username", username);
         body.addProperty("email", email);
         body.addProperty("password", password);
-        return send("POST", "/api/accounts/register", body.toString());
+        return send("POST", "/auth/register", body.toString());
     }
 
-    public static HttpResponse<String> changePasswordRaw(String username, String email, String newPassword) {
+    public static HttpResponse<String> changePasswordRaw(String currentPassword, String newPassword) {
         JsonObject body = new JsonObject();
-        body.addProperty("username", username);
-        body.addProperty("email", email);
+        body.addProperty("currentPassword", currentPassword);
         body.addProperty("newPassword", newPassword);
-        return send("PUT", "/api/accounts/password", body.toString());
+        return send("PUT", "/auth/me/password", body.toString());
     }
 
-    public static HttpResponse<String> deleteAccountRaw(String username) {
-        return send("DELETE", "/api/accounts/" + encode(username), null);
+    public static HttpResponse<String> deleteAccountRaw(String password) {
+        JsonObject body = new JsonObject();
+        body.addProperty("password", password);
+        return send("DELETE", "/auth/me", body.toString());
     }
 
     public static boolean isSuccess(int statusCode) {
@@ -139,7 +140,7 @@ public final class RedditApiClient {
     }
 
     public static JsonArray getAllSubreddits() {
-        HttpResponse<String> response = send("GET", "/api/subreddits", null);
+        HttpResponse<String> response = send("GET", "/subreddits", null);
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonArray("data");
     }
@@ -154,11 +155,11 @@ public final class RedditApiClient {
 
     public static HttpResponse<String> getSubredditRaw(String name) {
         String pathName = SubredditNames.stripPrefix(name);
-        return send("GET", "/api/subreddits/" + encode(pathName), null);
+        return send("GET", "/subreddits/" + encode(pathName), null);
     }
 
     public static JsonArray getSubredditsByCreator(String username) {
-        HttpResponse<String> response = send("GET", "/api/subreddits/by-creator/" + encode(username), null);
+        HttpResponse<String> response = send("GET", "/subreddits/by-creator/" + encode(username), null);
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonArray();
     }
@@ -169,7 +170,7 @@ public final class RedditApiClient {
         body.addProperty("displayName", name);
         body.addProperty("description", description);
         body.addProperty("creatorId", creatorId);
-        HttpResponse<String> response = send("POST", "/api/subreddits", body.toString());
+        HttpResponse<String> response = send("POST", "/subreddits", body.toString());
         requireSuccess(response, 201, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonObject("data");
     }
@@ -182,7 +183,7 @@ public final class RedditApiClient {
         body.addProperty("accountId", accountId);
 
         String pathName = SubredditNames.stripPrefix(name);
-        HttpResponse<String> response = send("PUT", "/api/subreddits/" + encode(pathName), body.toString());
+        HttpResponse<String> response = send("PUT", "/subreddits/" + encode(pathName), body.toString());
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonObject("data");
     }
@@ -191,18 +192,18 @@ public final class RedditApiClient {
         JsonObject body = new JsonObject();
         body.addProperty("accountId", accountId);
         String pathName = SubredditNames.stripPrefix(name);
-        HttpResponse<String> response = send("DELETE", "/api/subreddits/" + encode(pathName), body.toString());
+        HttpResponse<String> response = send("DELETE", "/subreddits/" + encode(pathName), body.toString());
         requireSuccess(response, 200);
     }
 
     public static JsonArray getAllPosts() {
-        HttpResponse<String> response = send("GET", "/api/posts", null);
+        HttpResponse<String> response = send("GET", "/posts", null);
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonArray();
     }
 
     public static Optional<JsonObject> getPost(long id) {
-        HttpResponse<String> response = send("GET", "/api/posts/" + id, null);
+        HttpResponse<String> response = send("GET", "/posts/" + id, null);
         if (response.statusCode() == 200) {
             return Optional.of(JsonParser.parseString(response.body()).getAsJsonObject());
         }
@@ -211,7 +212,7 @@ public final class RedditApiClient {
 
     public static JsonArray getPostsBySubreddit(String subredditName) {
         String pathName = SubredditNames.stripPrefix(subredditName);
-        HttpResponse<String> response = send("GET", "/api/posts/subreddit/" + encode(pathName), null);
+        HttpResponse<String> response = send("GET", "/posts/subreddit/" + encode(pathName), null);
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject().getAsJsonArray("data");
     }
@@ -222,7 +223,7 @@ public final class RedditApiClient {
         body.addProperty("content", content);
         body.addProperty("authorId", authorId);
         body.addProperty("subredditName", SubredditNames.normalize(subredditName));
-        HttpResponse<String> response = send("POST", "/api/posts", body.toString());
+        HttpResponse<String> response = send("POST", "/posts", body.toString());
         requireSuccess(response, 201, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
@@ -232,7 +233,7 @@ public final class RedditApiClient {
         body.addProperty("title", title);
         body.addProperty("content", content);
         body.addProperty("accountId", accountId);
-        HttpResponse<String> response = send("PUT", "/api/posts/" + id, body.toString());
+        HttpResponse<String> response = send("PUT", "/posts/" + id, body.toString());
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
@@ -240,7 +241,7 @@ public final class RedditApiClient {
     public static void deletePost(long id, long accountId) {
         JsonObject body = new JsonObject();
         body.addProperty("accountId", accountId);
-        HttpResponse<String> response = send("DELETE", "/api/posts/" + id, body.toString());
+        HttpResponse<String> response = send("DELETE", "/posts/" + id, body.toString());
         requireSuccess(response, 200);
     }
 
@@ -249,14 +250,14 @@ public final class RedditApiClient {
         body.addProperty("accountId", accountId);
         body.addProperty("upvote", upvote);
         body.addProperty("choice", choice);
-        HttpResponse<String> response = send("POST", "/api/posts/" + postId + "/votes", body.toString());
+        HttpResponse<String> response = send("POST", "/posts/" + postId + "/votes", body.toString());
         requireSuccess(response, 200);
         JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
         return json.has("message") ? json.get("message").getAsString() : response.body();
     }
 
     public static JsonArray getComments(long postId) {
-        HttpResponse<String> response = send("GET", "/api/posts/" + postId + "/comments", null);
+        HttpResponse<String> response = send("GET", "/posts/" + postId + "/comments", null);
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonArray();
     }
@@ -265,7 +266,7 @@ public final class RedditApiClient {
         JsonObject body = new JsonObject();
         body.addProperty("content", content);
         body.addProperty("authorId", authorId);
-        HttpResponse<String> response = send("POST", "/api/posts/" + postId + "/comments", body.toString());
+        HttpResponse<String> response = send("POST", "/posts/" + postId + "/comments", body.toString());
         requireSuccess(response, 201, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
@@ -275,7 +276,7 @@ public final class RedditApiClient {
         body.addProperty("content", content);
         body.addProperty("authorId", authorId);
         HttpResponse<String> response = send("POST",
-                "/api/posts/" + postId + "/comments/" + parentCommentId + "/replies",
+                "/posts/" + postId + "/comments/" + parentCommentId + "/replies",
                 body.toString());
         requireSuccess(response, 201, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject();
@@ -286,7 +287,7 @@ public final class RedditApiClient {
         body.addProperty("content", content);
         body.addProperty("accountId", accountId);
         HttpResponse<String> response = send("PUT",
-                "/api/posts/" + postId + "/comments/" + commentId,
+                "/posts/" + postId + "/comments/" + commentId,
                 body.toString());
         requireSuccess(response, 200);
         return JsonParser.parseString(response.body()).getAsJsonObject();
@@ -296,7 +297,7 @@ public final class RedditApiClient {
         JsonObject body = new JsonObject();
         body.addProperty("accountId", accountId);
         HttpResponse<String> response = send("DELETE",
-                "/api/posts/" + postId + "/comments/" + commentId,
+                "/posts/" + postId + "/comments/" + commentId,
                 body.toString());
         requireSuccess(response, 200);
     }
@@ -307,7 +308,7 @@ public final class RedditApiClient {
         body.addProperty("upvote", upvote);
         body.addProperty("choice", choice);
         HttpResponse<String> response = send("POST",
-                "/api/posts/" + postId + "/comments/" + commentId + "/votes",
+                "/posts/" + postId + "/comments/" + commentId + "/votes",
                 body.toString());
         requireSuccess(response, 200);
         JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
@@ -361,7 +362,7 @@ public final class RedditApiClient {
     }
 
     public static JsonArray getLogs() {
-        HttpResponse<String> response = send("GET", "/api/logs", null);
+        HttpResponse<String> response = send("GET", "/logs", null);
         requireSuccess(response, 200);
         JsonElement parsed = JsonParser.parseString(response.body());
         if (parsed.isJsonArray()) {
