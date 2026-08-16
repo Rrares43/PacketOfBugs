@@ -30,6 +30,11 @@ cli/  (java.exe)  ──┐
 *   "Reply" system to create discussion threads (nested comments / comment trees).
 *   Delete and vote on comments by delegating complex recursive search operations to the backend.
 
+### 🛡️ Content Moderation
+*   **FastContentFilterService:** Automatic content sanitization that replaces forbidden words with asterisks.
+*   Supports multi-language blacklist (English and Romanian profanity).
+*   Case-insensitive word filtering using regex patterns with word boundaries.
+
 ## 🛠️ Technologies Used
 *   **Java 26**
 *   **Spring Boot** (Spring Web, Spring Data JPA, Hibernate)
