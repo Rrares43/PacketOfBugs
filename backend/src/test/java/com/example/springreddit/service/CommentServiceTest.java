@@ -19,6 +19,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +29,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+/**
+ * Contains a set of unit tests for each method in CommentService.
+ */
 @ExtendWith(MockitoExtension.class)
 public class CommentServiceTest {
     @InjectMocks
@@ -50,6 +55,10 @@ public class CommentServiceTest {
         SecurityContextHolder.clearContext();
     }
 
+    /**
+     * Get an existing comment by ID.
+     * Expected result: returns the CommentResponse with fields corresponding to mockComment
+     */
     @Test
     public void testGetComment() {
         Account mockAccount = new Account();
@@ -81,6 +90,10 @@ public class CommentServiceTest {
         assertEquals("test_user", response.author());
     }
 
+    /**
+     * Create a valid comment without a parent comment.
+     * Expected result: returns the CommentResponse with fields corresponding to mockComment with no errors.
+     */
     @Test
     public void testCreateComment_parentIsNull() {
         SecurityContextHolder.setContext(securityContext);
@@ -126,6 +139,10 @@ public class CommentServiceTest {
         assertEquals("test_user", createdComment.author());
     }
 
+    /**
+     * Create a valid comment with a parent comment.
+     * Expected result: returns the CommentResponse with fields corresponding to mockComment with no errors.
+     */
     @Test
     public void testCreateComment_parentIsNotNull() {
         SecurityContextHolder.setContext(securityContext);
@@ -178,6 +195,10 @@ public class CommentServiceTest {
         assertEquals("test_user", createdComment.author());
     }
 
+    /**
+     * Update an existing comment.
+     * Expected result: returns the CommentResponse with fields corresponding to mockRequest with no errors.
+     */
     @Test
     public void testUpdateComment() {
         SecurityContextHolder.setContext(securityContext);
@@ -220,6 +241,10 @@ public class CommentServiceTest {
         assertEquals("test_user", updatedComment.author());
     }
 
+    /**
+     * Update an existing comment.
+     * Expected result: comment deleted with no errors.
+     */
     @Test
     public void testDeleteComment() {
         SecurityContextHolder.setContext(securityContext);
@@ -254,6 +279,10 @@ public class CommentServiceTest {
         assertTrue(mockComment.isDeleted());
     }
 
+    /**
+     * Leave a vote on an existing comment.
+     * Expected result: returns the VoteResponse with fields corresponding to mockVote with no errors.
+     */
     @Test
     public void testVote() {
         SecurityContextHolder.setContext(securityContext);
@@ -297,5 +326,44 @@ public class CommentServiceTest {
 
         assertNotNull(response);
         assertEquals("up", response.userVote());
+    }
+
+    /**
+     * Get comments by post ID.
+     * Expected result: returns a list that contains the CommentResponse object with fields corresponding to mockComment with no errors.
+     */
+    @Test
+    public void testGetCommentsByPostId() {
+        Account mockAccount = new Account();
+        mockAccount.setUsername("test_user");
+        mockAccount.setPassword("test_password");
+        mockAccount.setEmail("test@email.com");
+
+        UUID postId = UUID.randomUUID();
+
+        Post mockPost = new Post();
+        mockPost.setId(postId);
+        mockPost.setTitle("Test post");
+        mockPost.setAuthor(mockAccount);
+
+        UUID commentId = UUID.randomUUID();
+
+        Comment mockComment = new Comment();
+        mockComment.setId(commentId);
+        mockComment.setContent("Test comment");
+        mockComment.setPost(mockPost);
+        mockComment.setParentComment(null);
+        mockComment.setAuthor(mockAccount);
+
+        List<Comment> mockList = new ArrayList<>();
+        mockList.add(mockComment);
+
+        when(postRepository.existsById(postId)).thenReturn(true);
+        when(commentRepository.findAllByPostIdWithDetails(postId)).thenReturn(mockList);
+
+        List<CommentResponse> responseList = commentService.getCommentsByPostId(postId);
+        CommentResponse response = responseList.get(0);
+
+        assertEquals("Test comment", response.content());
     }
 }

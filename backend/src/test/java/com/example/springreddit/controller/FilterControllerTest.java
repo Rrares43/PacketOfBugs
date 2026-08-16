@@ -20,6 +20,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Contains a unit test for the getFilters() method in FilterController.
+ */
 @WebMvcTest(FilterController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class FilterControllerTest {
@@ -34,6 +37,11 @@ public class FilterControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
+    /**
+     * Get all filters.
+     * Expected result: returns the mocked list of filters with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetFilters() throws Exception {
         FilterDto mockFilter = new FilterDto(1L, "test_filter", "Test filter");

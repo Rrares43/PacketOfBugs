@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 /**
  *  Handles operations with JWT authentication tokens
- * @author Denys Dobrynin
  */
 @Service
 @RequiredArgsConstructor

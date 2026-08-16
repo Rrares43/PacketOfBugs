@@ -19,6 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
+/**
+ * Contains a unit test for the voteOnPost() method in PostVoteService.
+ */
 @ExtendWith(MockitoExtension.class)
 public class PostVoteServiceTest {
     @InjectMocks
@@ -30,6 +33,10 @@ public class PostVoteServiceTest {
     @Mock
     private AccountRepository accountRepository;
 
+    /**
+     * Leave a vote on an existing post, existing vote is an upvote.
+     * Expected result: returns a VoteResponse, where new vote is "down" with no errors.
+     */
     @Test
     public void testVoteOnPost_ExistingVoteIsUp() {
         Account mockAccount = new Account();

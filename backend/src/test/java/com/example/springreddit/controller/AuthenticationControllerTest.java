@@ -27,6 +27,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Contains a set of unit tests for each method in AuthenticationController.
+ */
 @WebMvcTest(AuthenticationController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class AuthenticationControllerTest {
@@ -47,6 +50,11 @@ public class AuthenticationControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
+    /**
+     * Login into an existent account.
+     * Expected result: returns the mocked AuthResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testLogin() throws Exception {
         AccountDto.LoginRequest request = new AccountDto.LoginRequest();
@@ -86,6 +94,11 @@ public class AuthenticationControllerTest {
                 .andExpect(jsonPath("$.data.accessToken").value("mock_token"));
     }
 
+    /**
+     * Get the logged-in user profile from the security context.
+     * Expected result: returns the mocked UserProfile with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetCurrentUser() throws Exception {
         AccountDto.UserProfile mockUserProfile = new AccountDto.UserProfile();
@@ -100,6 +113,11 @@ public class AuthenticationControllerTest {
                 .andExpect(jsonPath("$.data.username").value("test_user"));
     }
 
+    /**
+     * Update the logged-in account.
+     * Expected result: returns the mocked UserProfile with no errors.
+     * @throws Exception
+     */
     @Test
     public void testUpdateCurrentUser() throws Exception {
         AccountDto.UpdateUserProfileRequest request = new AccountDto.UpdateUserProfileRequest();
@@ -123,6 +141,11 @@ public class AuthenticationControllerTest {
                 .andExpect(jsonPath("$.data.avatarUrl").value("avatarurl.com"));
     }
 
+    /**
+     * Delete the logged-in account.
+     * Expected result: accountService.deleteAccount() invoked once.
+     * @throws Exception
+     */
     @Test
     public void testDeleteUser() throws Exception {
         AccountDto.DeleteAccountRequest request = new AccountDto.DeleteAccountRequest();
@@ -140,6 +163,11 @@ public class AuthenticationControllerTest {
         verify(accountService, times(1)).deleteAccount("test_user", "test_password");
     }
 
+    /**
+     * Change the password for the logged-in account.
+     * Expected result: accountService.changePassword() invoked once.
+     * @throws Exception
+     */
     @Test
     public void testChangePassword() throws Exception {
         AccountDto.UpdatePasswordRequest request = new AccountDto.UpdatePasswordRequest();
@@ -158,6 +186,11 @@ public class AuthenticationControllerTest {
         verify(accountService, times(1)).changePassword("test_user", request);
     }
 
+    /**
+     * Register a valid account.
+     * Expected result: returns the mocked AuthResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testRegister() throws Exception {
         AccountDto.RegistrationRequest request = new AccountDto.RegistrationRequest();

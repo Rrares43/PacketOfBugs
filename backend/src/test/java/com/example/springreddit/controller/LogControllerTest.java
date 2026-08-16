@@ -19,6 +19,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Contains a unit test for the getLogs() method in LogController.
+ */
 @WebMvcTest(LogController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class LogControllerTest {
@@ -29,6 +32,11 @@ public class LogControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
+    /**
+     * Get all logs.
+     * Expected result: returns the mocked list of logs.
+     * @throws Exception
+     */
     @Test
     public void testGetLogs() throws Exception {
         List<String> mockList = new ArrayList<>();

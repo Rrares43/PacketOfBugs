@@ -18,6 +18,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+/**
+ * Contains a set of unit tests for each method in AccountService.
+ */
 @ExtendWith(MockitoExtension.class)
 public class AccountServiceTest {
     @InjectMocks
@@ -27,6 +30,10 @@ public class AccountServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    /**
+     * Register a valid account.
+     * Expected result: returns mockAccount, passwordEncoder.encode() and accountRepository.save() invoked with no errors.
+     */
     @Test
     public void testRegisterAccount() {
         AccountDto.RegistrationRequest mockRequest = new AccountDto.RegistrationRequest();
@@ -50,6 +57,10 @@ public class AccountServiceTest {
         verify(accountRepository).save(any(Account.class));
     }
 
+    /**
+     * Get an existing account by username.
+     * Expected result: returns mockAccount with no errors.
+     */
     @Test
     public void testGetByUsername() {
         Account mockAccount = new Account();
@@ -65,6 +76,10 @@ public class AccountServiceTest {
         assertEquals(mockAccount, retrievedAccount);
     }
 
+    /**
+     * Get current user profile.
+     * Expected result: returns the UserProfile with fields corresponding to mockAccount with no errors.
+     */
     @Test
     public void testGetCurrentUserProfile() {
         Account mockAccount = new Account();
@@ -85,6 +100,10 @@ public class AccountServiceTest {
         assertEquals("avatarurl.com", userProfile.getAvatarUrl());
     }
 
+    /**
+     * Update an existing user account.
+     * Expected result: mockAccount updated with no errors.
+     */
     @Test
     public void testUpdateUserProfile() {
         AccountDto.UpdateUserProfileRequest mockRequest = new AccountDto.UpdateUserProfileRequest();
@@ -108,6 +127,10 @@ public class AccountServiceTest {
         assertEquals("newavatarurl.com", userProfile.getAvatarUrl());
     }
 
+    /**
+     * Change the password for an existing account.
+     * Expected result: password changed for mockAccount with no errors.
+     */
     @Test
     public void testChangePassword() {
         AccountDto.UpdatePasswordRequest mockRequest = new AccountDto.UpdatePasswordRequest();
@@ -132,6 +155,10 @@ public class AccountServiceTest {
         verify(accountRepository).save(any(Account.class));
     }
 
+    /**
+     * Delete an existing account.
+     * Expected result: mockAccount deleted with no errors.
+     */
     @Test
     public void testDeleteAccount() {
         Account mockAccount = new Account();
@@ -141,18 +168,16 @@ public class AccountServiceTest {
         mockAccount.setEmail("test@email.com");
         mockAccount.setCreatedAt(LocalDateTime.now());
 
-        AtomicReference<Account> mockAccountReference = new AtomicReference<>(mockAccount);
-
         when(accountRepository.existsByUsername("test_user")).thenReturn(true);
         when(accountRepository.findByUsername("test_user")).thenReturn(Optional.of(mockAccount));
         doAnswer(invocation -> {
-                mockAccountReference.set(null);
+                mockAccount.setDeleted(true);
                 return null;
                 }).when(accountRepository).deleteByUsername("test_user");
         when(passwordEncoder.matches("test_password", mockAccount.getPassword())).thenReturn(true);
 
         accountService.deleteAccount("test_user", "test_password");
 
-        assertTrue(mockAccountReference.get() == null);
+        assertTrue(mockAccount.isDeleted());
     }
 }

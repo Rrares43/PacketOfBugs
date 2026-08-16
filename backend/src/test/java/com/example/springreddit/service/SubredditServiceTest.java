@@ -5,6 +5,7 @@ import com.example.springreddit.model.Account;
 import com.example.springreddit.model.Subreddit;
 import com.example.springreddit.repository.AccountRepository;
 import com.example.springreddit.repository.SubredditRepository;
+import com.example.springreddit.repository.SubredditSummary;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+/**
+ * Contains a set of unit tests for each method in SubredditService.
+ */
 @ExtendWith(MockitoExtension.class)
 public class SubredditServiceTest {
     @InjectMocks
@@ -44,6 +48,10 @@ public class SubredditServiceTest {
         SecurityContextHolder.clearContext();
     }
 
+    /**
+     * Create a valid subreddit.
+     * Expected result: returns mockSubreddit with no errors.
+     */
     @Test
     public void testCreateSubreddit() {
         SecurityContextHolder.setContext(securityContext);
@@ -78,8 +86,12 @@ public class SubredditServiceTest {
         assertEquals(mockSubreddit, createdSubreddit);
     }
 
+    /**
+     * Get subreddits by the creator's username.
+     * Expected result: returns a list that contains mockSubreddit with no errors.
+     */
     @Test
-    public void testGetSubredditByCreatorUsername() {
+    public void testGetSubredditsByCreatorUsername() {
         Account mockAccount = new Account();
         mockAccount.setUsername("test_user");
         mockAccount.setPassword("test_password");
@@ -100,6 +112,10 @@ public class SubredditServiceTest {
         assertEquals(mockList, retrievedList);
     }
 
+    /**
+     * Get an existing subreddit by name
+     * Expected result: returns mockSubreddit with no errors.
+     */
     @Test
     public void testGetSubredditByName() {
         Subreddit mockSubreddit = new Subreddit();
@@ -113,6 +129,10 @@ public class SubredditServiceTest {
         assertEquals(mockSubreddit, retrievedSubreddit);
     }
 
+    /**
+     * Edit an existing subreddit.
+     * Expected result: mockSubreddit updated with no errors.
+     */
     @Test
     public void testEditSubreddit() {
         SecurityContextHolder.setContext(securityContext);
@@ -147,6 +167,10 @@ public class SubredditServiceTest {
         assertEquals(mockSubreddit, editedSubreddit);
     }
 
+    /**
+     * Delete an existing subreddit.
+     * Expected result: mockSubreddit deleted with no errors.
+     */
     @Test
     public void testDeleteSubreddit() {
         SecurityContextHolder.setContext(securityContext);
@@ -180,5 +204,22 @@ public class SubredditServiceTest {
         subredditService.deleteSubreddit("test_sub");
 
         assertTrue(mockSubredditReference.get() == null);
+    }
+
+    /**
+     * Get all subreddit summaries.
+     * Expected result: returns a list that contains mockSummary with no errors.
+     */
+    @Test
+    public void testGetAllSubredditSummaries() {
+        SubredditSummary mockSummary = mock(SubredditSummary.class);
+        List<SubredditSummary> mockSummaryList = new ArrayList<>();
+        mockSummaryList.add(mockSummary);
+
+        when(subredditRepository.findAllSummaries()).thenReturn(mockSummaryList);
+
+        List<SubredditSummary> retrievedList = subredditService.getAllSubredditSummaries();
+
+        assertEquals(mockSummaryList, retrievedList);
     }
 }

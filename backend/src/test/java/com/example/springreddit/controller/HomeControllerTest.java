@@ -13,6 +13,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Contains a unit test for the home() method in HomeController
+ */
 @WebMvcTest(HomeController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class HomeControllerTest {
@@ -23,6 +26,11 @@ public class HomeControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
+    /**
+     * Get homepage message.
+     * Expected result: returns the homepage message with no errors.
+     * @throws Exception
+     */
     @Test
     public void testHome() throws Exception {
         mockMvc.perform(get("/"))

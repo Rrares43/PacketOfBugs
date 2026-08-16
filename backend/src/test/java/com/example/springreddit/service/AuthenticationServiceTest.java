@@ -17,6 +17,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
+/**
+ * Contains a set of unit tests for each method in AuthenticationService.
+ */
 @ExtendWith(MockitoExtension.class)
 public class AuthenticationServiceTest {
     @InjectMocks
@@ -32,6 +35,10 @@ public class AuthenticationServiceTest {
         SecurityContextHolder.clearContext();
     }
 
+    /**
+     * Get the authenticated credentials for the logging-in user.
+     * Expected result: returns an Authentication object equal to mockAuthentication with no errors.
+     */
     @Test
     public void testGetAuthentication() {
         SecurityContextHolder.setContext(securityContext);
@@ -54,6 +61,10 @@ public class AuthenticationServiceTest {
         assertEquals(mockAuthentication, newAuthentication);
     }
 
+    /**
+     * Get logged-in user's username from the securityContext.
+     * Expected result: returns the username with no errors.
+     */
     @Test
     public void testCurrentUsernameOrNull() {
         SecurityContextHolder.setContext(securityContext);
@@ -72,6 +83,10 @@ public class AuthenticationServiceTest {
         }
     }
 
+    /**
+     * Get logged-in user's username (not null) from the securityContext.
+     * Expected result: returns the username with no errors.
+     */
     @Test
     void requireAuthenticatedUsername_ReturnsUsername_WhenAuthenticated() {
         SecurityContextHolder.setContext(securityContext);
@@ -90,6 +105,10 @@ public class AuthenticationServiceTest {
         }
     }
 
+    /**
+     * Get logged-in user's username (null) from the securityContext.
+     * Expected result: throws an Unauthorized exception.
+     */
     @Test
     void requireAuthenticatedUsername_ThrowsException_WhenNotAuthenticated() {
         SecurityContextHolder.setContext(securityContext);

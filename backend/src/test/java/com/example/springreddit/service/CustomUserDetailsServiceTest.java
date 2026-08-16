@@ -15,6 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
+/**
+ * Contains a unit test for the loadUserByUsername() method in CustomUserDetailsService.
+ */
 @ExtendWith(MockitoExtension.class)
 public class CustomUserDetailsServiceTest {
     @InjectMocks
@@ -22,6 +25,10 @@ public class CustomUserDetailsServiceTest {
     @Mock
     private AccountRepository accountRepository;
 
+    /**
+     * Load user by username.
+     * Expected result: returns UserDetails with fields corresponding to mockAccount.
+     */
     @Test
     public void testLoadUserByUsername() {
         Account mockAccount = new Account();

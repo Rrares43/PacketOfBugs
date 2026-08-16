@@ -15,6 +15,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+/**
+ * Contains a unit test for the getAllFilters() method in FilterService.
+ */
 @ExtendWith(MockitoExtension.class)
 public class FilterServiceTest {
     @InjectMocks
@@ -22,6 +25,10 @@ public class FilterServiceTest {
     @Mock
     private FilterRepository filterRepository;
 
+    /**
+     * Get all filters.
+     * Expected result: returns a list with the FilterDto object corresponding to mockFilter
+     */
     @Test
     public void testGetAllFilters() {
         Filter mockFilter = new Filter(1L, "test_filter", "Test filter");

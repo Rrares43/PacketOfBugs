@@ -25,6 +25,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Contains a set of unit tests for each method in CommentController.
+ */
 @WebMvcTest(CommentController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class CommentControllerTest {
@@ -43,6 +46,11 @@ public class CommentControllerTest {
 
     private static final String DELETE_MESSAGE = "The comment was deleted successfully";
 
+    /**
+     * Get comment by ID.
+     * Expected result: returns the mocked CommentResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetComment() throws Exception {
         UUID postId = UUID.randomUUID();
@@ -70,6 +78,11 @@ public class CommentControllerTest {
                 .andExpect(jsonPath("$.data.content").value("test comment"));
     }
 
+    /**
+     * Create a valid comment.
+     * Expected result: returns the mocked CommentResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testCreateComment() throws Exception {
         UUID postId = UUID.randomUUID();
@@ -103,6 +116,11 @@ public class CommentControllerTest {
                 .andExpect(jsonPath("$.data.content").value("test comment"));
     }
 
+    /**
+     * Update an existing comment.
+     * Expected result: return the mocked CommentResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testUpdateComment() throws Exception {
         UUID commentId = UUID.randomUUID();
@@ -133,6 +151,11 @@ public class CommentControllerTest {
                 .andExpect(jsonPath("$.data.content").value("test comment"));
     }
 
+    /**
+     * Delete an existing comment.
+     * Expected result: commentService.deleteComment() invoked at least once.
+     * @throws Exception
+     */
     @Test
     public void testDeleteComment() throws Exception {
         UUID commentId = UUID.randomUUID();
@@ -145,6 +168,11 @@ public class CommentControllerTest {
         verify(commentService, times(1)).deleteComment(commentId);
     }
 
+    /**
+     * Leave a valid vote on a comment.
+     * Expected result: returns the mocked VoteResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testVote() throws Exception {
         UUID commentId = UUID.randomUUID();
@@ -167,6 +195,11 @@ public class CommentControllerTest {
                 .andExpect(jsonPath("$.data.userVote").value("up"));
     }
 
+    /**
+     * Get comments by a valid post ID.
+     * Expected result: returns the mocked list of CommentResponse objects with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetCommentsByPostId() throws Exception {
         UUID postId = UUID.randomUUID();

@@ -28,6 +28,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Contains a set of unit tests for each method in SubredditController.
+ */
 @WebMvcTest(SubredditController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class SubredditControllerTest {
@@ -46,6 +49,11 @@ public class SubredditControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
+    /**
+     * Create a valid subreddit.
+     * Expected result: returns the mocked SubredditResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testCreateNewSubreddit() throws Exception {
         SubredditDto.CreateSubredditRequest request = new SubredditDto.CreateSubredditRequest(
@@ -76,6 +84,11 @@ public class SubredditControllerTest {
                 .andExpect(jsonPath("$.data.name").value("test_sub"));
     }
 
+    /**
+     * Get all subreddits.
+     * Expected result: returns the list with the mocked SubredditResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetAllSubreddits() throws Exception {
         SubredditSummary mockSummary = mock(SubredditSummary.class);
@@ -94,6 +107,11 @@ public class SubredditControllerTest {
                 .andExpect(jsonPath("$.data[0].name").value("test_sub"));
     }
 
+    /**
+     * Get subreddits by the creator's username.
+     * Expected result: returns the list with the mocked SubredditResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetByCreator() throws Exception {
         Subreddit mockSubreddit = new Subreddit();
@@ -114,6 +132,11 @@ public class SubredditControllerTest {
                 .andExpect(jsonPath("$.data[0].name").value("test_sub"));
     }
 
+    /**
+     * Get subreddit by name.
+     * Expected result: returns the mocked SubredditResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetSubredditByName() throws Exception {
         Subreddit mockSubreddit = new Subreddit();
@@ -131,6 +154,11 @@ public class SubredditControllerTest {
                 .andExpect(jsonPath("$.data.name").value("test_sub"));
     }
 
+    /**
+     * Edit an existing subreddit.
+     * Expected result: returns the mocked SubredditResponse with no errors
+     * @throws Exception
+     */
     @Test
     public void testEditSubreddit() throws Exception {
         SubredditDto.EditSubredditRequest request = new SubredditDto.EditSubredditRequest(
@@ -160,6 +188,11 @@ public class SubredditControllerTest {
                 .andExpect(jsonPath("$.data.displayName").value("test sub"));
     }
 
+    /**
+     * Delete a subreddit with no posts.
+     * Expected result: subredditService.deleteSubreddit() invoked once.
+     * @throws Exception
+     */
     @Test
     public void testDeleteSubreddit() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete("/subreddits/{name}", "test_sub"))

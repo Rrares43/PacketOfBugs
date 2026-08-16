@@ -32,6 +32,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Contains a set of unit tests for each method in PostController.
+ */
 @WebMvcTest(PostController.class)
 @AutoConfigureMockMvc(addFilters = false)
 public class PostControllerTest {
@@ -52,6 +55,11 @@ public class PostControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
+    /**
+     * Get all posts.
+     * Expected result: returns the mocked list of PostResponse objects with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetPosts() throws Exception {
         UUID postId = UUID.randomUUID();
@@ -93,6 +101,11 @@ public class PostControllerTest {
                 .andExpect(jsonPath("$.data[0].title").value("test post"));
     }
 
+    /**
+     * Get posts by subreddit name.
+     * Expected result: returns the mocked list of PostResponse objects with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetSubredditPosts() throws Exception {
         UUID postId = UUID.randomUUID();
@@ -134,6 +147,11 @@ public class PostControllerTest {
                 .andExpect(jsonPath("$.data[0].title").value("test post"));
     }
 
+    /**
+     * Get post by ID.
+     * Expected result: returns the mocked PostResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testGetPostById() throws Exception {
         UUID postId = UUID.randomUUID();
@@ -170,6 +188,11 @@ public class PostControllerTest {
                 .andExpect(jsonPath("$.data.title").value("test post"));
     }
 
+    /**
+     * Create a valid post.
+     * Expected result: returns the mocked PostResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testCreatePost() throws Exception {
         UUID postId = UUID.randomUUID();
@@ -213,6 +236,11 @@ public class PostControllerTest {
                 .andExpect(jsonPath("$.data.title").value("test post"));
     }
 
+    /**
+     * Update an existing post.
+     * Expected result: return the mocked postResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testUpdatePost() throws Exception {
         UUID postId = UUID.randomUUID();
@@ -255,6 +283,11 @@ public class PostControllerTest {
                 .andExpect(jsonPath("$.data.title").value("test post"));
     }
 
+    /**
+     * Delete an existing post.
+     * Expected result: postService.deletePost() invoked once.
+     * @throws Exception
+     */
     @Test
     public void testDeletePost() throws Exception {
         UUID postId = UUID.randomUUID();
@@ -269,6 +302,11 @@ public class PostControllerTest {
         verify(postService, times(1)).deletePost(postId, "test_user");
     }
 
+    /**
+     * Leave a valid vote on a post.
+     * Expected result: returns the mocked VoteResponse with no errors.
+     * @throws Exception
+     */
     @Test
     public void testVoteOnPost() throws Exception {
         UUID postId = UUID.randomUUID();
