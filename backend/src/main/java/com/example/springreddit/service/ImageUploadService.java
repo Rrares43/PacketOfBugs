@@ -1,8 +1,8 @@
 package com.example.springreddit.service;
 
 import com.example.springreddit.logging.CustomLogger;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
