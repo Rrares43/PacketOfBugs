@@ -18,7 +18,7 @@ public class GeminiCensorService {
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
     private static final String GEMINI_URL =
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%s";
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=%s";
 
     private static final String PROMPT_TEMPLATE =
             "Censor all profane, vulgar, or offensive words in the following text by replacing each character of every profane word with an asterisk (*). "
