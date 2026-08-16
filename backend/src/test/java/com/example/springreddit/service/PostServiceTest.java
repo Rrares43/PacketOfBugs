@@ -1,0 +1,379 @@
+package com.example.springreddit.service;
+
+import com.example.springreddit.dto.PostDto;
+import com.example.springreddit.dto.UpdatePostRequest;
+import com.example.springreddit.model.Account;
+import com.example.springreddit.model.Post;
+import com.example.springreddit.model.PostVote;
+import com.example.springreddit.model.Subreddit;
+import com.example.springreddit.repository.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+/**
+ * Contains a set of unit tests for each method in PostService.
+ */
+@ExtendWith(MockitoExtension.class)
+public class PostServiceTest {
+    @InjectMocks
+    private PostService postService;
+    @Mock
+    private PostRepository postRepository;
+    @Mock
+    private SubredditRepository subredditRepository;
+    @Mock
+    private AccountRepository accountRepository;
+    @Mock
+    private PostVoteRepository postVoteRepository;
+    @Mock
+    private CommentRepository commentRepository;
+    @Mock
+    private FastContentFilterService contentFilterService;
+    @Mock
+    private ImageUploadService imageUploadService;
+
+    /**
+     * Create a valid post.
+     * Expected result: returns mockPost with no errors.
+     */
+    @Test
+    public void testCreatePost() {
+        Account mockAccount = new Account();
+        mockAccount.setUsername("test_user");
+        mockAccount.setPassword("test_password");
+        mockAccount.setEmail("test@email.com");
+
+        Subreddit mockSubreddit = new Subreddit();
+        mockSubreddit.setName("test_sub");
+        mockSubreddit.setDisplayName("Test Sub");
+        mockSubreddit.setDescription("Sub for testing");
+        mockSubreddit.setCreator(mockAccount);
+
+        Post mockPost = new Post();
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+        mockPost.setAuthor(mockAccount);
+        mockPost.setSubreddit(mockSubreddit);
+
+        when(accountRepository.findByUsername("test_user")).thenReturn(Optional.of(mockAccount));
+        when(subredditRepository.findByName("test_sub")).thenReturn(Optional.of(mockSubreddit));
+        when(postRepository.save(any(Post.class))).thenReturn(mockPost);
+
+        Post createdPost = postService.createPost(
+                "Test post",
+                "This post is for testing",
+                "test_user",
+                "test_sub",
+                null,
+                null
+        );
+
+        assertEquals(mockPost, createdPost);
+    }
+
+    /**
+     * Get post by ID.
+     * Expected result: returns mockPost with no errors.
+     */
+    @Test
+    public void testGetPostById() {
+        Post mockPost = new Post();
+        mockPost.setId(UUID.randomUUID());
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+
+        when(postRepository.findByIdWithAuthorAndSubreddit(mockPost.getId())).thenReturn(Optional.of(mockPost));
+
+        Post retrievedPost = postService.getPostById(mockPost.getId());
+
+        assertEquals(mockPost, retrievedPost);
+    }
+
+    /**
+     * Get all posts.
+     * Expected result: returns a list of Post objects that contains mockPost with no errors.
+     */
+    @Test
+    public void testGetAllPosts() {
+        Post mockPost = new Post();
+        mockPost.setId(UUID.randomUUID());
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+
+        List<Post> mockList = new ArrayList<>();
+        mockList.add(mockPost);
+
+        when(postRepository.findAllWithAuthorAndSubreddit()).thenReturn(mockList);
+
+        List<Post> retrievedList = postService.getAllPosts();
+
+        assertEquals(mockList, retrievedList);
+    }
+
+    /**
+     * Get posts by subreddit name.
+     * Expected result: returns a list that contains mockPost with no errors.
+     */
+    @Test
+    public void testGetPostsBySubreddit() {
+        Subreddit mockSubreddit = new Subreddit();
+        mockSubreddit.setName("test_sub");
+        mockSubreddit.setDisplayName("Test Sub");
+        mockSubreddit.setDescription("Sub for testing");
+
+        Post mockPost = new Post();
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+        mockPost.setSubreddit(mockSubreddit);
+
+        List<Post> mockList = new ArrayList<>();
+        mockList.add(mockPost);
+
+        when(postRepository.findBySubredditNameWithAuthorAndSubreddit("test_sub")).thenReturn(mockList);
+
+        List<Post> retrievedList = postService.getPostsBySubreddit("test_sub");
+
+        assertEquals(mockList, retrievedList);
+    }
+
+    /**
+     * Get all posts or by subreddit name.
+     * Expected result (subreddit name is given as an argument): returns a list that contains mockPost with no errors.
+     */
+    @Test
+    public void testGetAllPostsOrBySubreddit_SubredditNameIsNotNull() {
+        Subreddit mockSubreddit = new Subreddit();
+        mockSubreddit.setName("test_sub");
+        mockSubreddit.setDisplayName("Test Sub");
+        mockSubreddit.setDescription("Sub for testing");
+
+        Post mockPost = new Post();
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+        mockPost.setSubreddit(mockSubreddit);
+
+        Post mockPost2 = new Post();
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+
+        List<Post> mockList = new ArrayList<>();
+        mockList.add(mockPost);
+
+        when(postRepository.findBySubredditNameWithAuthorAndSubreddit("test_sub")).thenReturn(mockList);
+
+        List<Post> retrievedListBySubreddit = postService.getAllPostsOrBySubreddit("test_sub");
+
+        assertEquals(mockList, retrievedListBySubreddit);
+    }
+
+    /**
+     * Get all posts or by subreddit name.
+     * Expected result (subreddit name is null): returns a list that contains mockPost and mockPost2 with no errors.
+     */
+    @Test
+    public void testGetAllPostsOrBySubreddit_SubredditNameIsNull() {
+        Subreddit mockSubreddit = new Subreddit();
+        mockSubreddit.setName("test_sub");
+        mockSubreddit.setDisplayName("Test Sub");
+        mockSubreddit.setDescription("Sub for testing");
+
+        Post mockPost = new Post();
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+        mockPost.setSubreddit(mockSubreddit);
+
+        Post mockPost2 = new Post();
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+
+
+        List<Post> mockListAll = new ArrayList<>();
+        mockListAll.add(mockPost);
+        mockListAll.add(mockPost2);
+
+        when(postRepository.findAllWithAuthorAndSubreddit()).thenReturn(mockListAll);
+
+        List<Post> retrievedList = postService.getAllPostsOrBySubreddit(null);
+
+        assertEquals(mockListAll, retrievedList);
+    }
+
+    /**
+     * Update an existing post.
+     * Expected result: mockPost updated with no errors.
+     */
+    @Test
+    public void testUpdatePost() {
+        UpdatePostRequest mockRequest = new UpdatePostRequest();
+        mockRequest.setTitle("New title");
+        mockRequest.setContent("New content");
+
+        Account mockAccount = new Account();
+        mockAccount.setUsername("test_user");
+        mockAccount.setPassword("test_password");
+        mockAccount.setEmail("test@email.com");
+
+        Subreddit mockSubreddit = new Subreddit();
+        mockSubreddit.setName("test_sub");
+        mockSubreddit.setDisplayName("Test Sub");
+        mockSubreddit.setDescription("Sub for testing");
+        mockSubreddit.setCreator(mockAccount);
+
+        Post mockPost = new Post();
+        mockPost.setId(UUID.randomUUID());
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+        mockPost.setAuthor(mockAccount);
+        mockPost.setSubreddit(mockSubreddit);
+
+        when(postRepository.findById(mockPost.getId())).thenReturn(Optional.of(mockPost));
+        when(postRepository.save(any(Post.class))).thenReturn(mockPost);
+        when(contentFilterService.sanitize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Post editedPost = postService.updatePost(mockPost.getId(), mockRequest, "test_user");
+
+        assertEquals("New title", editedPost.getTitle());
+        assertEquals("New content", editedPost.getContent());
+    }
+
+    /**
+     * Resolve user vote for an existing post
+     * Expected result: returns the user vote as a string with no errors.
+     */
+    @Test
+    public void testResolveUserVote() {
+        Account mockAccount = new Account();
+        mockAccount.setUsername("test_user");
+        mockAccount.setPassword("test_password");
+        mockAccount.setEmail("test@email.com");
+
+        Post mockPost = new Post();
+        mockPost.setId(UUID.randomUUID());
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+        mockPost.setAuthor(mockAccount);
+
+        when(postVoteRepository.findVoteTypeByPostIdAndAccountUsername(mockPost.getId(), "test_user"))
+                .thenReturn(Optional.of(PostVote.UPVOTE));
+
+        String userVote = postService.resolveUserVote(mockPost, "test_user");
+
+        assertEquals("up", userVote);
+    }
+
+    /**
+     * Delete an existing post.
+     * Expected result: mockPost deleted with no errors.
+     */
+    @Test
+    public void testDeletePost() {
+        Account mockAccount = new Account();
+        mockAccount.setUsername("test_user");
+        mockAccount.setPassword("test_password");
+        mockAccount.setEmail("test@email.com");
+
+        Post mockPost = new Post();
+        mockPost.setId(UUID.randomUUID());
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+        mockPost.setAuthor(mockAccount);
+
+        when(postRepository.findById(mockPost.getId())).thenReturn(Optional.of(mockPost));
+        when(postRepository.save(any(Post.class))).thenReturn(mockPost);
+
+        postService.deletePost(mockPost.getId(), "test_user");
+
+        assertTrue(mockPost.isDeleted());
+    }
+
+    /**
+     * Convert a list of post to PostResponse objects.
+     * Expected result: returns a list that contains the PostResponse with fields corresponding with mockPost.
+     */
+    @Test
+    public void testToPostResponses() {
+        UUID postId = UUID.randomUUID();
+        Post mockPost = new Post();
+        mockPost.setId(postId);
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+
+        List<Post> mockList = new ArrayList<>();
+        mockList.add(mockPost);
+
+        List<UUID> mockIdList = new ArrayList<>();
+        mockIdList.add(postId);
+
+        Account mockAccount = new Account();
+        mockAccount.setUsername("test_user");
+        mockAccount.setId(1L);
+
+        when(accountRepository.findByUsername("test_user"))
+                .thenReturn(Optional.of(mockAccount));
+
+        Object[] upvoteRow = new Object[] { postId, (short) PostVote.UPVOTE, 3L };
+        Object[] downvoteRow = new Object[] { postId, (short) PostVote.DOWNVOTE, 1L };
+        Object[] commentRow = new Object[] { postId, 2L };
+        List<Object[]> voteCounts = Arrays.asList(upvoteRow, downvoteRow);
+        List<Object[]> commentCounts = Collections.singletonList(commentRow);
+
+        when(postVoteRepository.countGroupedByPostIds(mockIdList)).thenReturn(voteCounts);
+        when(commentRepository.countGroupedByPostIds(mockIdList)).thenReturn(commentCounts);
+
+        Object[] userVoteRow = new Object[]{ postId, (short) PostVote.UPVOTE };
+        List<Object[]> userVotes = Collections.singletonList(userVoteRow);
+
+        when(postVoteRepository.findVoteTypesByPostIdsAndAccountId(mockIdList, 1L))
+                .thenReturn(userVotes);
+
+        List<PostDto.PostResponse> responseList = postService.toPostResponses(mockList, "test_user");
+        PostDto.PostResponse response = responseList.get(0);
+
+        assertNotNull(response);
+        assertEquals("Test post", response.title());
+        assertEquals("This post is for testing", response.content());
+        assertEquals(3L, response.upvotes());
+        assertEquals(1L, response.downvotes());
+        assertEquals(2L, response.score());
+        assertEquals(2L, response.commentCount());
+    }
+
+    /**
+     * Convert a post to a PostResponse.
+     * Expected result: returns the PostResponse with fields corresponding with mockPost.
+     */
+    @Test
+    public void testToPostResponse() {
+        Post mockPost = new Post();
+        mockPost.setId(UUID.randomUUID());
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+
+        Object[] upvoteRow = new Object[] { (short) PostVote.UPVOTE, 3L };
+        Object[] downvoteRow = new Object[] { (short) PostVote.DOWNVOTE, 1L };
+        List<Object[]> voteCounts = Arrays.asList(upvoteRow, downvoteRow);
+
+        when(postVoteRepository.countGroupedByPostId(mockPost.getId())).thenReturn(voteCounts);
+        when(commentRepository.countByPost_Id(mockPost.getId())).thenReturn(2L);
+
+        PostDto.PostResponse response = postService.toPostResponse(mockPost, "up");
+
+        assertNotNull(response);
+        assertEquals("Test post", response.title());
+        assertEquals("This post is for testing", response.content());
+        assertEquals(3L, response.upvotes());
+        assertEquals(1L, response.downvotes());
+        assertEquals(2L, response.score());
+        assertEquals(2L, response.commentCount());
+    }
+}
