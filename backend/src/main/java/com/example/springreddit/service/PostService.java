@@ -68,9 +68,8 @@ public class PostService {
         String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(title));
         String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(content));
 
-        String aiSummary = aiService.generateSummary(title, content);
-
-        if(formattedContent != null && formattedContent.isBlank() && formattedContent.length() > 100){
+        if(formattedContent != null && !formattedContent.isBlank() && formattedContent.length() > 100){
+            String aiSummary = aiService.generateSummary(title, content);
             formattedContent = "/b{AI Summary}: " + aiSummary + "]} \n\n" + formattedContent;
         }
 
