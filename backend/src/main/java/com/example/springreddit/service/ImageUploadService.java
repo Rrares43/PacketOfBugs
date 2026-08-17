@@ -2,8 +2,8 @@ package com.example.springreddit.service;
 
 import com.example.springreddit.logging.CustomLogger;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -171,12 +171,6 @@ public class ImageUploadService {
         return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
     }
 
-    /**
-     * Extracts and validates the file extension from the uploaded multipart file.
-     *
-     * @param file the multipart file
-     * @return the file extension including the dot (e.g., ".jpg")
-     */
     private static @NonNull String getExtension(MultipartFile file) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("File is empty.");
