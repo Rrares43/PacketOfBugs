@@ -1,6 +1,7 @@
 package com.example.springreddit.service;
 
 import com.example.springreddit.dto.PostDto;
+import com.example.springreddit.dto.OptimizedImageResult;
 import com.example.springreddit.dto.UpdatePostRequest;
 import com.example.springreddit.exception.ForbiddenException;
 import com.example.springreddit.exception.ResourceNotFoundException;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Locale;
 
 @Service
 public class PostService {
@@ -38,6 +40,7 @@ public class PostService {
     private final CommentRepository commentRepository;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
     private final ImageUploadService imageUploadService;
+    private final ImageOptimizationService imageOptimizationService;
     private final FastContentFilterService contentFilterService;
     private final AiService aiService;
 
@@ -48,6 +51,7 @@ public class PostService {
                        PostVoteRepository postVoteRepository,
                        CommentRepository commentRepository,
                        ImageUploadService imageUploadService,
+                       ImageOptimizationService imageOptimizationService,
                        FastContentFilterService contentFilterService, AiService aiService) {
         this.postRepository = postRepository;
         this.subredditRepository = subredditRepository;
@@ -55,6 +59,7 @@ public class PostService {
         this.postVoteRepository = postVoteRepository;
         this.commentRepository = commentRepository;
         this.imageUploadService = imageUploadService;
+        this.imageOptimizationService = imageOptimizationService;
         this.contentFilterService = contentFilterService;
         this.aiService = aiService;
     }
@@ -68,10 +73,10 @@ public class PostService {
         String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(title));
         String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(content));
 
-        String aiSummary = aiService.generateSummary(title, content);
-
-        if(formattedContent != null && formattedContent.isBlank() && formattedContent.length() > 100){
-            formattedContent = "/b{AI Summary}: " + aiSummary + "]} \n\n" + formattedContent;
+        if(formattedContent != null && !formattedContent.isBlank() && formattedContent.length() > 100){
+            String aiSummary = aiService.generateSummary(title, content);
+            String rawAIText = "/b{[AI Summary]:} " + "  \n\n" + aiSummary + "\r\n\r\n ──────────────────────── \r\n\r\n" + formattedContent;
+            formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(rawAIText));
         }
 
         validateAuthor(authorUsername);
@@ -91,7 +96,17 @@ public class PostService {
 
         String imageUrl = null;
         if (image != null && !image.isEmpty()) {
-            imageUrl = imageUploadService.upload(image, filter);
+            OptimizedImageResult optimizedImage = imageOptimizationService.optimize(image);
+            String extension = "image/jpeg".equals(optimizedImage.getContentType())
+                    ? ".jpg"
+                    : extensionFromOriginalFilename(image.getOriginalFilename());
+            imageUrl = imageUploadService.upload(
+                    optimizedImage.getInputStream(),
+                    optimizedImage.getOptimizedSizeBytes(),
+                    optimizedImage.getContentType(),
+                    extension,
+                    filter);
+            formattedContent = appendImageOptimizationBadge(formattedContent, optimizedImage);
         }
 
         Post post = new Post(formattedTitle, formattedContent, author, subreddit, imageUrl, filter);
@@ -256,6 +271,35 @@ public class PostService {
         if (subredditName == null || subredditName.isBlank()) {
             throw new IllegalArgumentException("Subreddit is required and cannot be blank");
         }
+    }
+
+    private String appendImageOptimizationBadge(String content, OptimizedImageResult optimizedImage) {
+        if (!optimizedImage.isOptimized() || optimizedImage.getSavedPercentage() <= 0D) {
+            return content;
+        }
+
+        long savedPercentage = Math.max(1L, Math.round(optimizedImage.getSavedPercentage()));
+        String badge = String.format(
+                Locale.US,
+                "\u26A1 *Image optimized: %s \u2794 %.1f KB (-%d%% storage saved)*",
+                formatOriginalImageSize(optimizedImage.getOriginalSizeBytes()),
+                optimizedImage.getOptimizedSizeBytes() / 1024D,
+                savedPercentage);
+        return (content == null ? "" : content) + "\n\n" + badge;
+    }
+
+    private String formatOriginalImageSize(long sizeBytes) {
+        if (sizeBytes >= 1024L * 1024L) {
+            return String.format(Locale.US, "%.1f MB", sizeBytes / (1024D * 1024D));
+        }
+        return String.format(Locale.US, "%.1f KB", sizeBytes / 1024D);
+    }
+
+    private String extensionFromOriginalFilename(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return ".jpg";
+        }
+        return filename.substring(filename.lastIndexOf('.'));
     }
 
     @Transactional(readOnly = true)
