@@ -48,4 +48,15 @@ class ImageOptimizationServiceTest {
 
         assertThrows(ImageSizeExceededException.class, () -> service.optimize(file));
     }
+
+    @Test
+    void optimizeBytesKeepsSmallPayloadsUntouched() {
+        byte[] bytes = new byte[1024];
+
+        OptimizedImageResult result = service.optimize(bytes, "image/png");
+
+        assertEquals(bytes.length, result.getOriginalSizeBytes());
+        assertEquals(bytes.length, result.getOptimizedSizeBytes());
+        assertFalse(result.isOptimized());
+    }
 }

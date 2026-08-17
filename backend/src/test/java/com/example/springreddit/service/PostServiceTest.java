@@ -3,21 +3,30 @@ package com.example.springreddit.service;
 import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.UpdatePostRequest;
 import com.example.springreddit.model.Account;
+import com.example.springreddit.model.ImageStatus;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
 import com.example.springreddit.model.Subreddit;
 import com.example.springreddit.repository.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -40,7 +49,9 @@ public class PostServiceTest {
     @Mock
     private FastContentFilterService contentFilterService;
     @Mock
-    private ImageUploadService imageUploadService;
+    private AsyncImageProcessingService asyncImageProcessingService;
+    @Mock
+    private ImageOptimizationService imageOptimizationService;
 
     /**
      * Create a valid post.
@@ -79,6 +90,72 @@ public class PostServiceTest {
         );
 
         assertEquals(mockPost, createdPost);
+        verifyNoInteractions(asyncImageProcessingService);
+    }
+
+    /**
+     * Create a post with an image.
+     * Expected result: the post is persisted immediately and image processing is dispatched
+     * without waiting for compression or S3 upload.
+     */
+    @Test
+    public void testCreatePost_DispatchesImageProcessingWithoutBlocking() {
+        Account mockAccount = new Account();
+        mockAccount.setUsername("test_user");
+        mockAccount.setPassword("test_password");
+        mockAccount.setEmail("test@email.com");
+
+        Subreddit mockSubreddit = new Subreddit();
+        mockSubreddit.setName("test_sub");
+        mockSubreddit.setDisplayName("Test Sub");
+        mockSubreddit.setDescription("Sub for testing");
+        mockSubreddit.setCreator(mockAccount);
+
+        UUID postId = UUID.randomUUID();
+        Post mockPost = new Post();
+        mockPost.setId(postId);
+        mockPost.setTitle("Test post");
+        mockPost.setContent("This post is for testing");
+        mockPost.setAuthor(mockAccount);
+        mockPost.setSubreddit(mockSubreddit);
+
+        byte[] imageBytes = new byte[]{1, 2, 3, 4};
+        MockMultipartFile image = new MockMultipartFile(
+                "image", "photo.jpg", "image/jpeg", imageBytes);
+
+        when(accountRepository.findByUsername("test_user")).thenReturn(Optional.of(mockAccount));
+        when(subredditRepository.findByName("test_sub")).thenReturn(Optional.of(mockSubreddit));
+        when(postRepository.save(any(Post.class))).thenReturn(mockPost);
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            Post createdPost = postService.createPost(
+                    "Test post",
+                    "This post is for testing",
+                    "test_user",
+                    "test_sub",
+                    image,
+                    2
+            );
+
+            verify(asyncImageProcessingService, never()).processPostImage(
+                    any(), any(), any(), any(), any());
+
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(TransactionSynchronization::afterCommit);
+
+            assertEquals(mockPost, createdPost);
+            assertNull(createdPost.getImageUrl());
+            ArgumentCaptor<Post> savedPost = ArgumentCaptor.forClass(Post.class);
+            verify(postRepository).save(savedPost.capture());
+            assertEquals(ImageStatus.PENDING, savedPost.getValue().getImageStatus());
+            verify(imageOptimizationService).validateUpload(image);
+            verify(imageOptimizationService, never()).optimize(any(byte[].class), anyString());
+            verify(asyncImageProcessingService).processPostImage(
+                    eq(postId), eq(imageBytes), eq("photo.jpg"), eq("image/jpeg"), eq(2));
+        } finally {
+            TransactionSynchronizationManager.clear();
+        }
     }
 
     /**

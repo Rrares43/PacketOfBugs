@@ -1,13 +1,13 @@
 package com.example.springreddit.service;
 
 import com.example.springreddit.dto.PostDto;
-import com.example.springreddit.dto.OptimizedImageResult;
 import com.example.springreddit.dto.UpdatePostRequest;
 import com.example.springreddit.exception.ForbiddenException;
 import com.example.springreddit.exception.ResourceNotFoundException;
 import com.example.springreddit.exception.UnauthorizedException;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
+import com.example.springreddit.model.ImageStatus;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
 import com.example.springreddit.model.Subreddit;
@@ -19,8 +19,11 @@ import com.example.springreddit.repository.SubredditRepository;
 import com.example.springreddit.util.TextFormatterUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Locale;
 
 @Service
 public class PostService {
@@ -39,7 +41,7 @@ public class PostService {
     private final PostVoteRepository postVoteRepository;
     private final CommentRepository commentRepository;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
-    private final ImageUploadService imageUploadService;
+    private final AsyncImageProcessingService asyncImageProcessingService;
     private final ImageOptimizationService imageOptimizationService;
     private final FastContentFilterService contentFilterService;
     private final AiService aiService;
@@ -50,7 +52,7 @@ public class PostService {
                        AccountRepository accountRepository,
                        PostVoteRepository postVoteRepository,
                        CommentRepository commentRepository,
-                       ImageUploadService imageUploadService,
+                       AsyncImageProcessingService asyncImageProcessingService,
                        ImageOptimizationService imageOptimizationService,
                        FastContentFilterService contentFilterService, AiService aiService) {
         this.postRepository = postRepository;
@@ -58,7 +60,7 @@ public class PostService {
         this.accountRepository = accountRepository;
         this.postVoteRepository = postVoteRepository;
         this.commentRepository = commentRepository;
-        this.imageUploadService = imageUploadService;
+        this.asyncImageProcessingService = asyncImageProcessingService;
         this.imageOptimizationService = imageOptimizationService;
         this.contentFilterService = contentFilterService;
         this.aiService = aiService;
@@ -94,27 +96,30 @@ public class PostService {
                     return new IllegalArgumentException("Subreddit not found");
                 });
 
-        String imageUrl = null;
+        byte[] imageBytes = null;
+        String originalFilename = null;
+        String contentType = null;
         if (image != null && !image.isEmpty()) {
-            OptimizedImageResult optimizedImage = imageOptimizationService.optimize(image);
-            String extension = "image/jpeg".equals(optimizedImage.getContentType())
-                    ? ".jpg"
-                    : extensionFromOriginalFilename(image.getOriginalFilename());
-            imageUrl = imageUploadService.upload(
-                    optimizedImage.getInputStream(),
-                    optimizedImage.getOptimizedSizeBytes(),
-                    optimizedImage.getContentType(),
-                    extension,
-                    filter);
-            formattedContent = appendImageOptimizationBadge(formattedContent, optimizedImage);
+            imageOptimizationService.validateUpload(image);
+            imageBytes = readImageBytes(image);
+            originalFilename = image.getOriginalFilename();
+            contentType = image.getContentType();
         }
 
-        Post post = new Post(formattedTitle, formattedContent, author, subreddit, imageUrl, filter);
+        Post post = new Post(formattedTitle, formattedContent, author, subreddit, null, filter);
+        if (imageBytes != null) {
+            post.setImageStatus(ImageStatus.PENDING);
+        }
         Post savedPost = postRepository.save(post);
-        
+
         PostVote upvote = new PostVote(author, savedPost, PostVote.UPVOTE);
         postVoteRepository.save(upvote);
         subreddit.setPostCount(subreddit.getPostCount() + 1);
+
+        if (imageBytes != null) {
+            enqueueImageProcessingAfterCommit(savedPost.getId(), imageBytes, originalFilename, contentType, filter);
+        }
+
         LOGGER.info("Post created successfully with ID: {} in subreddit: {} by author: {}", savedPost.getId(), subredditName, authorUsername);
         return savedPost;
     }
@@ -273,33 +278,34 @@ public class PostService {
         }
     }
 
-    private String appendImageOptimizationBadge(String content, OptimizedImageResult optimizedImage) {
-        if (!optimizedImage.isOptimized() || optimizedImage.getSavedPercentage() <= 0D) {
-            return content;
+    private byte[] readImageBytes(MultipartFile image) {
+        try {
+            return image.getBytes();
+        } catch (IOException exception) {
+            throw new IllegalArgumentException("Image file could not be read.", exception);
         }
-
-        long savedPercentage = Math.max(1L, Math.round(optimizedImage.getSavedPercentage()));
-        String badge = String.format(
-                Locale.US,
-                "\u26A1 *Image optimized: %s \u2794 %.1f KB (-%d%% storage saved)*",
-                formatOriginalImageSize(optimizedImage.getOriginalSizeBytes()),
-                optimizedImage.getOptimizedSizeBytes() / 1024D,
-                savedPercentage);
-        return (content == null ? "" : content) + "\n\n" + badge;
     }
 
-    private String formatOriginalImageSize(long sizeBytes) {
-        if (sizeBytes >= 1024L * 1024L) {
-            return String.format(Locale.US, "%.1f MB", sizeBytes / (1024D * 1024D));
+    private void enqueueImageProcessingAfterCommit(UUID postId, byte[] imageBytes, String originalFilename,
+                                                   String contentType, Integer filter) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            throw new IllegalStateException(
+                    "Image processing for post " + postId
+                            + " cannot start before the createPost transaction is active");
         }
-        return String.format(Locale.US, "%.1f KB", sizeBytes / 1024D);
-    }
 
-    private String extensionFromOriginalFilename(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return ".jpg";
-        }
-        return filename.substring(filename.lastIndexOf('.'));
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    asyncImageProcessingService.processPostImage(
+                            postId, imageBytes, originalFilename, contentType, filter);
+                } catch (Exception exception) {
+                    LOGGER.error("Failed to enqueue image processing for post {}: {}",
+                            postId, exception.getMessage(), exception);
+                }
+            }
+        });
     }
 
     @Transactional(readOnly = true)
@@ -348,6 +354,7 @@ public class PostService {
         String title = post.getTitle();
         String content = post.getContent();
         String imageUrl = post.getImageUrl();
+        String imageStatus = post.getImageStatus() != null ? post.getImageStatus().name() : null;
         String authorName = "unknown";
 
 
@@ -363,6 +370,7 @@ public class PostService {
             title = "[deleted]";
             content = "[deleted]";
             imageUrl = null;
+            imageStatus = null;
             authorName = "[deleted]";
         }
 
@@ -373,6 +381,7 @@ public class PostService {
                 title,
                 content,
                 imageUrl,
+                imageStatus,
                 post.getFilter(),
                 authorName,
                 subredditName,

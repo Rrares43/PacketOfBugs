@@ -45,6 +45,10 @@ public class Post {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "image_status", length = 20)
+    private ImageStatus imageStatus;
+
     @Column(name = "filter_value")
     private Integer filter;
 

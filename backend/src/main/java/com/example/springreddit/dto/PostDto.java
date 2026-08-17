@@ -9,6 +9,7 @@ public class PostDto {
             String title,
             String content,
             String imageUrl,
+            String imageStatus,
             Integer filter,
             String author,
             String subreddit,
