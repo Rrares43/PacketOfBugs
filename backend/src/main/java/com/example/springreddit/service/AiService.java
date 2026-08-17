@@ -52,6 +52,7 @@ public class AiService {
         }
         catch (Exception e){
             LOGGER.error("Error generating summary: {}", e.getMessage());
+            e.printStackTrace();
             return "Error generating summary";
         }
     }
