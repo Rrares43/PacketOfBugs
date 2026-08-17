@@ -1,5 +1,6 @@
 package com.example.springreddit.service;
 
+import com.example.springreddit.dto.OptimizedImageResult;
 import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.UpdatePostRequest;
 import com.example.springreddit.model.Account;
@@ -8,6 +9,7 @@ import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
 import com.example.springreddit.model.Subreddit;
 import com.example.springreddit.repository.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -15,16 +17,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
+import java.util.concurrent.Executor;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -49,9 +51,19 @@ public class PostServiceTest {
     @Mock
     private FastContentFilterService contentFilterService;
     @Mock
-    private AsyncImageProcessingService asyncImageProcessingService;
+    private ImageUploadService imageUploadService;
     @Mock
     private ImageOptimizationService imageOptimizationService;
+    @Mock
+    private Executor imageThreadPool;
+
+    @BeforeEach
+    void runImageCompressionInline() {
+        lenient().doAnswer(invocation -> {
+            invocation.getArgument(0, Runnable.class).run();
+            return null;
+        }).when(imageThreadPool).execute(any(Runnable.class));
+    }
 
     /**
      * Create a valid post.
@@ -90,16 +102,16 @@ public class PostServiceTest {
         );
 
         assertEquals(mockPost, createdPost);
-        verifyNoInteractions(asyncImageProcessingService);
+        verifyNoInteractions(imageUploadService);
     }
 
     /**
      * Create a post with an image.
-     * Expected result: the post is persisted immediately and image processing is dispatched
-     * without waiting for compression or S3 upload.
+     * Expected result: compression and S3 upload complete before the post is persisted,
+     * so the returned entity already contains the public image URL.
      */
     @Test
-    public void testCreatePost_DispatchesImageProcessingWithoutBlocking() {
+    public void testCreatePost_ReturnsPopulatedImageUrl() {
         Account mockAccount = new Account();
         mockAccount.setUsername("test_user");
         mockAccount.setPassword("test_password");
@@ -111,51 +123,73 @@ public class PostServiceTest {
         mockSubreddit.setDescription("Sub for testing");
         mockSubreddit.setCreator(mockAccount);
 
-        UUID postId = UUID.randomUUID();
-        Post mockPost = new Post();
-        mockPost.setId(postId);
-        mockPost.setTitle("Test post");
-        mockPost.setContent("This post is for testing");
-        mockPost.setAuthor(mockAccount);
-        mockPost.setSubreddit(mockSubreddit);
+        byte[] imageBytes = new byte[]{1, 2, 3, 4};
+        MockMultipartFile image = new MockMultipartFile(
+                "image", "photo.jpg", "image/jpeg", imageBytes);
+        OptimizedImageResult optimizedImage = new OptimizedImageResult(imageBytes, imageBytes.length, "image/jpeg");
+        String imageUrl = "https://bucket.s3.eu-central-1.amazonaws.com/images/photo.jpg";
+
+        when(accountRepository.findByUsername("test_user")).thenReturn(Optional.of(mockAccount));
+        when(subredditRepository.findByName("test_sub")).thenReturn(Optional.of(mockSubreddit));
+        when(imageOptimizationService.optimize(imageBytes, "image/jpeg")).thenReturn(optimizedImage);
+        when(imageUploadService.upload(any(), eq((long) imageBytes.length), eq("image/jpeg"), eq(".jpg"), eq(2)))
+                .thenReturn(imageUrl);
+        when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Post createdPost = postService.createPost(
+                "Test post",
+                "This post is for testing",
+                "test_user",
+                "test_sub",
+                image,
+                2
+        );
+
+        assertEquals(imageUrl, createdPost.getImageUrl());
+        assertEquals(ImageStatus.COMPLETED, createdPost.getImageStatus());
+        verify(imageOptimizationService).validateUpload(image);
+        verify(imageOptimizationService).optimize(imageBytes, "image/jpeg");
+        ArgumentCaptor<Post> savedPost = ArgumentCaptor.forClass(Post.class);
+        verify(postRepository).save(savedPost.capture());
+        assertEquals(imageUrl, savedPost.getValue().getImageUrl());
+        assertEquals(ImageStatus.COMPLETED, savedPost.getValue().getImageStatus());
+    }
+
+    /**
+     * Create a post with an image when S3 upload fails.
+     * Expected result: a descriptive error is thrown and the post is not persisted.
+     */
+    @Test
+    public void testCreatePost_ImageUploadFailureDoesNotPersistPost() {
+        Account mockAccount = new Account();
+        mockAccount.setUsername("test_user");
+
+        Subreddit mockSubreddit = new Subreddit();
+        mockSubreddit.setName("test_sub");
 
         byte[] imageBytes = new byte[]{1, 2, 3, 4};
         MockMultipartFile image = new MockMultipartFile(
                 "image", "photo.jpg", "image/jpeg", imageBytes);
+        OptimizedImageResult optimizedImage = new OptimizedImageResult(imageBytes, imageBytes.length, "image/jpeg");
 
         when(accountRepository.findByUsername("test_user")).thenReturn(Optional.of(mockAccount));
         when(subredditRepository.findByName("test_sub")).thenReturn(Optional.of(mockSubreddit));
-        when(postRepository.save(any(Post.class))).thenReturn(mockPost);
+        when(imageOptimizationService.optimize(imageBytes, "image/jpeg")).thenReturn(optimizedImage);
+        when(imageUploadService.upload(any(), eq((long) imageBytes.length), eq("image/jpeg"), eq(".jpg"), isNull()))
+                .thenThrow(new RuntimeException("S3 unavailable"));
 
-        TransactionSynchronizationManager.initSynchronization();
-        try {
-            Post createdPost = postService.createPost(
-                    "Test post",
-                    "This post is for testing",
-                    "test_user",
-                    "test_sub",
-                    image,
-                    2
-            );
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                postService.createPost(
+                        "Test post",
+                        "This post is for testing",
+                        "test_user",
+                        "test_sub",
+                        image,
+                        null
+                ));
 
-            verify(asyncImageProcessingService, never()).processPostImage(
-                    any(), any(), any(), any(), any());
-
-            TransactionSynchronizationManager.getSynchronizations()
-                    .forEach(TransactionSynchronization::afterCommit);
-
-            assertEquals(mockPost, createdPost);
-            assertNull(createdPost.getImageUrl());
-            ArgumentCaptor<Post> savedPost = ArgumentCaptor.forClass(Post.class);
-            verify(postRepository).save(savedPost.capture());
-            assertEquals(ImageStatus.PENDING, savedPost.getValue().getImageStatus());
-            verify(imageOptimizationService).validateUpload(image);
-            verify(imageOptimizationService, never()).optimize(any(byte[].class), anyString());
-            verify(asyncImageProcessingService).processPostImage(
-                    eq(postId), eq(imageBytes), eq("photo.jpg"), eq("image/jpeg"), eq(2));
-        } finally {
-            TransactionSynchronizationManager.clear();
-        }
+        assertEquals("Image upload failed. Please try again.", exception.getMessage());
+        verifyNoInteractions(postRepository);
     }
 
     /**
