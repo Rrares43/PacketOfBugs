@@ -1,6 +1,7 @@
 package com.example.springreddit.controller;
 
 import com.example.springreddit.dto.ApiResponse;
+import com.example.springreddit.dto.UploadSizeErrorResponse;
 import com.example.springreddit.exception.BusinessLogicException;
 import com.example.springreddit.exception.ConflictException;
 import com.example.springreddit.exception.ForbiddenException;
@@ -21,6 +22,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.util.List;
 import java.util.UUID;
@@ -204,25 +206,23 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ApiResponse<Void>> handleMaxSizeException(
-            MaxUploadSizeExceededException exception, WebRequest request) {
-        String path = path(request);
-        LOGGER.warn("Max upload size exceeded on {}: {}", path, exception.getMessage());
-
-        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(
-                ApiResponse.error("Size of the image cannot exceed 5 MB", "PAYLOAD_TOO_LARGE", path)
-        );
+    @ExceptionHandler({MaxUploadSizeExceededException.class, MultipartException.class})
+    public ResponseEntity<UploadSizeErrorResponse> handleMultipartSizeException(
+            Exception exception, WebRequest request) {
+        LOGGER.warn("Multipart upload rejected on {}: {}", path(request), exception.getMessage());
+        return uploadSizeError();
     }
 
     @ExceptionHandler(ImageSizeExceededException.class)
-    public ResponseEntity<ApiResponse<Void>> handleImageSizeExceeded(
+    public ResponseEntity<UploadSizeErrorResponse> handleImageSizeExceeded(
             ImageSizeExceededException exception, WebRequest request) {
-        String path = path(request);
-        LOGGER.warn("Image size limit exceeded on {}", path);
-        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(
-                ApiResponse.error(exception.getMessage(), "PAYLOAD_TOO_LARGE", path)
-        );
+        LOGGER.warn("Image size limit exceeded on {}", path(request));
+        return uploadSizeError();
+    }
+
+    private ResponseEntity<UploadSizeErrorResponse> uploadSizeError() {
+        return ResponseEntity.badRequest().body(
+                new UploadSizeErrorResponse(400, "File size exceeds the 5 MB limit."));
     }
 
     @ExceptionHandler(Exception.class)

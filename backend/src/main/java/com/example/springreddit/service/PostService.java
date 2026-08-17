@@ -281,11 +281,11 @@ public class PostService {
         long savedPercentage = Math.max(1L, Math.round(optimizedImage.getSavedPercentage()));
         String badge = String.format(
                 Locale.US,
-                "⚡ *Image optimized: %s ➔ %.1f KB (-%d%% storage saved)*",
+                "\u26A1 *Image optimized: %s \u2794 %.1f KB (-%d%% storage saved)*",
                 formatOriginalImageSize(optimizedImage.getOriginalSizeBytes()),
                 optimizedImage.getOptimizedSizeBytes() / 1024D,
                 savedPercentage);
-        return (content == null || content.isBlank()) ? badge : content + "\n\n" + badge;
+        return (content == null ? "" : content) + "\n\n" + badge;
     }
 
     private String formatOriginalImageSize(long sizeBytes) {
