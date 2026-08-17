@@ -6,6 +6,8 @@ import com.example.springreddit.repository.FilterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
@@ -47,6 +49,42 @@ public class ImageEditService {
         }
 
         return null;
+    }
+
+    /** Applies a filter to in-memory image bytes and returns the filtered bytes. */
+    @Transactional
+    public byte[] applyFilter(byte[] imageBytes, Integer filterId) {
+        Filter filter = filterRepository.findById(filterId.longValue())
+                .orElseThrow(() -> new IllegalArgumentException("Filter with id = " + filterId + " not found"));
+        if ("none".equalsIgnoreCase(filter.getName())) {
+            return imageBytes;
+        }
+
+        MultipartBodyBuilder body = new MultipartBodyBuilder();
+        body.part("image", new ByteArrayResource(imageBytes) {
+            @Override
+            public String getFilename() {
+                return "image.jpg";
+            }
+        }).contentType(MediaType.IMAGE_JPEG);
+        body.part("filter", filter.getName());
+
+        try {
+            byte[] filteredBytes = restClient.post()
+                    .uri(url)
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(body.build())
+                    .retrieve()
+                    .body(byte[].class);
+            if (filteredBytes == null || filteredBytes.length == 0) {
+                throw new IllegalStateException("Image editing service returned an empty image.");
+            }
+            filterRepository.incrementUsageCount(filterId.longValue());
+            return filteredBytes;
+        } catch (RestClientException exception) {
+            LOGGER.error("Failed to communicate with image editing service for filterId {}: {}", filterId, exception.getMessage(), exception);
+            throw new IllegalArgumentException("Image filtering failed.", exception);
+        }
     }
 
     /**

@@ -55,6 +55,8 @@ public class PostServiceTest {
     @Mock
     private ImageOptimizationService imageOptimizationService;
     @Mock
+    private ImageEditService imageEditService;
+    @Mock
     private Executor imageThreadPool;
 
     @BeforeEach
@@ -131,8 +133,10 @@ public class PostServiceTest {
 
         when(accountRepository.findByUsername("test_user")).thenReturn(Optional.of(mockAccount));
         when(subredditRepository.findByName("test_sub")).thenReturn(Optional.of(mockSubreddit));
-        when(imageOptimizationService.optimize(imageBytes, "image/jpeg")).thenReturn(optimizedImage);
-        when(imageUploadService.upload(any(), eq((long) imageBytes.length), eq("image/jpeg"), eq(".jpg"), eq(2)))
+        when(imageOptimizationService.downscaleForFiltering(imageBytes, "image/jpeg")).thenReturn(imageBytes);
+        when(imageEditService.applyFilter(imageBytes, 2)).thenReturn(imageBytes);
+        when(imageOptimizationService.optimize(imageBytes, "image/jpeg", imageBytes.length)).thenReturn(optimizedImage);
+        when(imageUploadService.upload(any(), eq((long) imageBytes.length), eq("image/jpeg"), eq(".jpg"), isNull()))
                 .thenReturn(imageUrl);
         when(postRepository.save(any(Post.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -148,7 +152,9 @@ public class PostServiceTest {
         assertEquals(imageUrl, createdPost.getImageUrl());
         assertEquals(ImageStatus.COMPLETED, createdPost.getImageStatus());
         verify(imageOptimizationService).validateUpload(image);
-        verify(imageOptimizationService).optimize(imageBytes, "image/jpeg");
+        verify(imageOptimizationService).downscaleForFiltering(imageBytes, "image/jpeg");
+        verify(imageEditService).applyFilter(imageBytes, 2);
+        verify(imageOptimizationService).optimize(imageBytes, "image/jpeg", imageBytes.length);
         ArgumentCaptor<Post> savedPost = ArgumentCaptor.forClass(Post.class);
         verify(postRepository).save(savedPost.capture());
         assertEquals(imageUrl, savedPost.getValue().getImageUrl());
@@ -174,7 +180,8 @@ public class PostServiceTest {
 
         when(accountRepository.findByUsername("test_user")).thenReturn(Optional.of(mockAccount));
         when(subredditRepository.findByName("test_sub")).thenReturn(Optional.of(mockSubreddit));
-        when(imageOptimizationService.optimize(imageBytes, "image/jpeg")).thenReturn(optimizedImage);
+        when(imageOptimizationService.downscaleForFiltering(imageBytes, "image/jpeg")).thenReturn(imageBytes);
+        when(imageOptimizationService.optimize(imageBytes, "image/jpeg", imageBytes.length)).thenReturn(optimizedImage);
         when(imageUploadService.upload(any(), eq((long) imageBytes.length), eq("image/jpeg"), eq(".jpg"), isNull()))
                 .thenThrow(new RuntimeException("S3 unavailable"));
 

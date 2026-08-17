@@ -21,6 +21,8 @@ public class ImageOptimizationService {
     private static final long SKIP_OPTIMIZATION_BELOW_BYTES = 150L * 1024L;
     private static final long MAX_UPLOAD_SIZE_BYTES = 5L * 1024L * 1024L;
     private static final long TARGET_SIZE_BYTES = 200L * 1024L;
+    private static final int PRE_FILTER_MAX_DIMENSION = 1200;
+    private static final double PRE_FILTER_QUALITY = 0.80D;
     private static final int[] MAX_DIMENSIONS = {1200, 1000, 800, 600, 400, 300};
     private static final double[] JPEG_QUALITIES = {0.80D, 0.75D};
 
@@ -36,16 +38,49 @@ public class ImageOptimizationService {
     }
 
     public OptimizedImageResult optimize(byte[] originalBytes, String contentType) {
-        validateBytes(originalBytes);
+        return optimize(originalBytes, contentType, originalBytes == null ? 0L : originalBytes.length);
+    }
 
-        if (originalBytes.length < SKIP_OPTIMIZATION_BELOW_BYTES || !isSupportedForOptimization(contentType)) {
-            return original(originalBytes, contentType);
+    /**
+     * Re-encodes the source to a bounded JPEG before any expensive external filter runs.
+     * The result never touches the filesystem and is safe to send directly to another service.
+     */
+    public byte[] downscaleForFiltering(byte[] originalBytes, String contentType) {
+        validateBytes(originalBytes);
+        if (!isSupportedForOptimization(contentType)) {
+            throw new IllegalArgumentException("Only JPEG and PNG images are supported.");
         }
 
         try {
             BufferedImage source = ImageIO.read(new ByteArrayInputStream(originalBytes));
             if (source == null) {
-                return original(originalBytes, contentType);
+                throw new IllegalArgumentException("Image file could not be decoded.");
+            }
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            Thumbnails.of(source)
+                    .size(PRE_FILTER_MAX_DIMENSION, PRE_FILTER_MAX_DIMENSION)
+                    .outputFormat("jpg")
+                    .outputQuality(PRE_FILTER_QUALITY)
+                    .toOutputStream(output);
+            return output.toByteArray();
+        } catch (IOException exception) {
+            throw new IllegalArgumentException("Image file could not be resized.", exception);
+        }
+    }
+
+    /** Performs final storage compression while retaining the raw-upload size for the badge. */
+    public OptimizedImageResult optimize(byte[] sourceBytes, String contentType, long originalSizeBytes) {
+        validateBytes(sourceBytes);
+
+        if (sourceBytes.length < SKIP_OPTIMIZATION_BELOW_BYTES || !isSupportedForOptimization(contentType)) {
+            return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
+        }
+
+        try {
+            BufferedImage source = ImageIO.read(new ByteArrayInputStream(sourceBytes));
+            if (source == null) {
+                return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
             }
 
             byte[] bestCandidate = null;
@@ -63,23 +98,23 @@ public class ImageOptimizationService {
                         bestCandidate = candidate;
                     }
                     if (candidate.length <= TARGET_SIZE_BYTES) {
-                        return optimized(originalBytes.length, candidate);
+                        return optimized(originalSizeBytes, candidate);
                     }
                 }
             }
 
-            if (bestCandidate == null || bestCandidate.length >= originalBytes.length) {
-                return original(originalBytes, contentType);
+            if (bestCandidate == null || bestCandidate.length >= sourceBytes.length) {
+                return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
             }
 
             LOGGER.warn("Image could not reach the {} KB target; using the smallest valid result of {} bytes",
                     TARGET_SIZE_BYTES / 1024, bestCandidate.length);
-            return optimized(originalBytes.length, bestCandidate);
+            return optimized(originalSizeBytes, bestCandidate);
         } catch (ImageSizeExceededException exception) {
             throw exception;
         } catch (Exception exception) {
             LOGGER.warn("Image optimization skipped; raw file will be stored. Reason: {}", exception.getMessage());
-            return original(originalBytes, contentType);
+            return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
         }
     }
 

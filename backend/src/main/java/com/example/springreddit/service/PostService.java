@@ -49,6 +49,7 @@ public class PostService {
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
     private final ImageUploadService imageUploadService;
     private final ImageOptimizationService imageOptimizationService;
+    private final ImageEditService imageEditService;
     private final Executor imageThreadPool;
     private final FastContentFilterService contentFilterService;
     private final AiService aiService;
@@ -61,6 +62,7 @@ public class PostService {
                        CommentRepository commentRepository,
                        ImageUploadService imageUploadService,
                        ImageOptimizationService imageOptimizationService,
+                       ImageEditService imageEditService,
                        @Qualifier("imageThreadPool") Executor imageThreadPool,
                        FastContentFilterService contentFilterService, AiService aiService) {
         this.postRepository = postRepository;
@@ -70,6 +72,7 @@ public class PostService {
         this.commentRepository = commentRepository;
         this.imageUploadService = imageUploadService;
         this.imageOptimizationService = imageOptimizationService;
+        this.imageEditService = imageEditService;
         this.imageThreadPool = imageThreadPool;
         this.contentFilterService = contentFilterService;
         this.aiService = aiService;
@@ -87,7 +90,7 @@ public class PostService {
             imageOptimizationService.validateUpload(image);
             byte[] imageBytes = readImageBytes(image);
             originalFilename = image.getOriginalFilename();
-            compressionFuture = startImageCompression(imageBytes, image.getContentType());
+            compressionFuture = startImageProcessing(imageBytes, image.getContentType(), filter);
         }
 
         String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(title));
@@ -297,17 +300,26 @@ public class PostService {
         }
     }
 
-    private CompletableFuture<OptimizedImageResult> startImageCompression(byte[] imageBytes, String contentType) {
+    private CompletableFuture<OptimizedImageResult> startImageProcessing(byte[] imageBytes, String contentType, Integer filter) {
         try {
             return CompletableFuture.supplyAsync(
-                    () -> imageOptimizationService.optimize(imageBytes, contentType),
+                    () -> processImage(imageBytes, contentType, filter),
                     imageThreadPool);
         } catch (RejectedExecutionException exception) {
-            LOGGER.warn("Image thread pool rejected compression; running on the request thread. Reason: {}",
+            LOGGER.warn("Image thread pool rejected processing; running on the request thread. Reason: {}",
                     exception.getMessage());
             return CompletableFuture.completedFuture(
-                    imageOptimizationService.optimize(imageBytes, contentType));
+                    processImage(imageBytes, contentType, filter));
         }
+    }
+
+    private OptimizedImageResult processImage(byte[] rawBytes, String contentType, Integer filter) {
+        // The .NET service never sees the raw upload: Thumbnailator bounds it to 1200x1200 first.
+        byte[] resizedBytes = imageOptimizationService.downscaleForFiltering(rawBytes, contentType);
+        byte[] filteredBytes = filter == null
+                ? resizedBytes
+                : imageEditService.applyFilter(resizedBytes, filter);
+        return imageOptimizationService.optimize(filteredBytes, "image/jpeg", rawBytes.length);
     }
 
     private OptimizedImageResult awaitImageCompression(CompletableFuture<OptimizedImageResult> compressionFuture) {
@@ -340,7 +352,7 @@ public class PostService {
                     optimizedImage.getOptimizedSizeBytes(),
                     optimizedImage.getContentType(),
                     extension,
-                    filter);
+                    null);
         } catch (ImageSizeExceededException | IllegalArgumentException exception) {
             throw exception;
         } catch (Exception exception) {
