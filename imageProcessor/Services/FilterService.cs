@@ -47,6 +47,19 @@ namespace ImageProcessor.Services
             response.EnsureSuccessStatusCode();
         }
 
+        /// <summary>Filters an uploaded stream entirely in memory and returns its encoded bytes.</summary>
+        public async Task<(byte[] Data, string MimeType)> ProcessImageAsync(Stream input, string filter)
+        {
+            if (!Enum.TryParse<FilterType>(filter, true, out var filterType))
+            {
+                throw new ArgumentException($"Filter {filter} is not implemented.");
+            }
+
+            using var memStream = new MemoryStream();
+            await input.CopyToAsync(memStream);
+            return await ProcessImageBytesAsync(memStream.ToArray(), filterType);
+        }
+
         /// <summary>
         /// Processing method: takes bytes, applies filter, returns processed bytes and MIME type.
         /// </summary>

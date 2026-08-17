@@ -12,6 +12,11 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 /** Optimizes uploaded raster images entirely in RAM; no temporary files are created. */
 @Service
@@ -21,25 +26,101 @@ public class ImageOptimizationService {
     private static final long SKIP_OPTIMIZATION_BELOW_BYTES = 150L * 1024L;
     private static final long MAX_UPLOAD_SIZE_BYTES = 5L * 1024L * 1024L;
     private static final long TARGET_SIZE_BYTES = 200L * 1024L;
-    private static final int[] MAX_DIMENSIONS = {1200, 1000, 800, 600, 400, 300};
+    private static final int PRE_FILTER_MAX_DIMENSION = 1000;
+    private static final double PRE_FILTER_QUALITY = 0.75D;
+    private static final int MAX_PRE_FILTER_OUTPUT_BYTES = 2 * 1024 * 1024;
+    private static final int[] MAX_DIMENSIONS = {1000, 800, 600, 400, 300};
     private static final double[] JPEG_QUALITIES = {0.80D, 0.75D};
 
     public OptimizedImageResult optimize(MultipartFile file) {
         validateUpload(file);
+        byte[] resizedBytes = downscaleForFiltering(file);
+        return optimize(resizedBytes, "image/jpeg", file.getSize());
+    }
 
-        if (file.getSize() < SKIP_OPTIMIZATION_BELOW_BYTES || !isSupportedForOptimization(file)) {
-            return original(file);
+    public OptimizedImageResult optimize(byte[] originalBytes, String contentType) {
+        return optimize(originalBytes, contentType, originalBytes == null ? 0L : originalBytes.length);
+    }
+
+    /**
+     * Re-encodes the source to a bounded JPEG before any expensive external filter runs.
+     * The result never touches the filesystem and is safe to send directly to another service.
+     */
+    public byte[] downscaleForFiltering(MultipartFile file) {
+        validateUpload(file);
+        try (InputStream input = file.getInputStream()) {
+            return downscaleForFiltering(input, file.getContentType());
+        } catch (IOException exception) {
+            throw new IllegalArgumentException("Image file could not be read.", exception);
+        }
+    }
+
+    /**
+     * Decodes from the upload stream with ImageIO subsampling, then uses Thumbnailator to
+     * encode a 1000x1000-at-most JPEG. No raw upload byte array is ever created.
+     */
+    public byte[] downscaleForFiltering(InputStream input, String contentType) {
+        if (input == null) {
+            throw new IllegalArgumentException("Image stream is empty.");
+        }
+        if (!isSupportedForOptimization(contentType)) {
+            throw new IllegalArgumentException("Only JPEG and PNG images are supported.");
+        }
+
+        try (ImageInputStream imageInput = ImageIO.createImageInputStream(input);
+             ByteArrayOutputStream output = new BoundedByteArrayOutputStream(MAX_PRE_FILTER_OUTPUT_BYTES)) {
+            BufferedImage source = readSampled(imageInput);
+            Thumbnails.of(source)
+                    .size(PRE_FILTER_MAX_DIMENSION, PRE_FILTER_MAX_DIMENSION)
+                    .outputFormat("jpg")
+                    .outputQuality(PRE_FILTER_QUALITY)
+                    .toOutputStream(output);
+            return output.toByteArray();
+        } catch (IOException exception) {
+            throw new IllegalArgumentException("Image file could not be resized.", exception);
+        }
+    }
+
+    private BufferedImage readSampled(ImageInputStream input) throws IOException {
+        if (input == null) {
+            throw new IllegalArgumentException("Image file could not be decoded.");
+        }
+        Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+        if (!readers.hasNext()) {
+            throw new IllegalArgumentException("Image file could not be decoded.");
+        }
+
+        ImageReader reader = readers.next();
+        try {
+            reader.setInput(input, true, true);
+            int width = reader.getWidth(0);
+            int height = reader.getHeight(0);
+            int sampling = Math.max(1, (int) Math.ceil(
+                    Math.max(width, height) / (double) PRE_FILTER_MAX_DIMENSION));
+            ImageReadParam parameters = reader.getDefaultReadParam();
+            parameters.setSourceSubsampling(sampling, sampling, 0, 0);
+            BufferedImage source = reader.read(0, parameters);
+            if (source == null) {
+                throw new IllegalArgumentException("Image file could not be decoded.");
+            }
+            return source;
+        } finally {
+            reader.dispose();
+        }
+    }
+
+    /** Performs final storage compression while retaining the raw-upload size for the badge. */
+    public OptimizedImageResult optimize(byte[] sourceBytes, String contentType, long originalSizeBytes) {
+        validateBytes(sourceBytes);
+
+        if (sourceBytes.length < SKIP_OPTIMIZATION_BELOW_BYTES || !isSupportedForOptimization(contentType)) {
+            return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
         }
 
         try {
-            byte[] originalBytes = file.getBytes();
-            if (originalBytes.length > MAX_UPLOAD_SIZE_BYTES) {
-                throw new ImageSizeExceededException();
-            }
-
-            BufferedImage source = ImageIO.read(new ByteArrayInputStream(originalBytes));
+            BufferedImage source = ImageIO.read(new ByteArrayInputStream(sourceBytes));
             if (source == null) {
-                return original(originalBytes, file.getContentType());
+                return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
             }
 
             byte[] bestCandidate = null;
@@ -57,36 +138,28 @@ public class ImageOptimizationService {
                         bestCandidate = candidate;
                     }
                     if (candidate.length <= TARGET_SIZE_BYTES) {
-                        return optimized(originalBytes.length, candidate);
+                        return optimized(originalSizeBytes, candidate);
                     }
                 }
             }
 
-            if (bestCandidate == null || bestCandidate.length >= originalBytes.length) {
-                return original(originalBytes, file.getContentType());
+            if (bestCandidate == null || bestCandidate.length >= sourceBytes.length) {
+                return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
             }
 
             LOGGER.warn("Image could not reach the {} KB target; using the smallest valid result of {} bytes",
                     TARGET_SIZE_BYTES / 1024, bestCandidate.length);
-            return optimized(originalBytes.length, bestCandidate);
+            return optimized(originalSizeBytes, bestCandidate);
         } catch (ImageSizeExceededException exception) {
             throw exception;
         } catch (Exception exception) {
             LOGGER.warn("Image optimization skipped; raw file will be stored. Reason: {}", exception.getMessage());
-            return original(file);
+            return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
         }
     }
 
     private OptimizedImageResult optimized(long originalSize, byte[] bytes) {
         return new OptimizedImageResult(bytes, originalSize, "image/jpeg");
-    }
-
-    private OptimizedImageResult original(MultipartFile file) {
-        try {
-            return original(file.getBytes(), file.getContentType());
-        } catch (IOException exception) {
-            throw new IllegalArgumentException("Image file could not be read.", exception);
-        }
     }
 
     private OptimizedImageResult original(byte[] bytes, String contentType) {
@@ -96,17 +169,53 @@ public class ImageOptimizationService {
         return new OptimizedImageResult(bytes, bytes.length, safeContentType);
     }
 
-    private boolean isSupportedForOptimization(MultipartFile file) {
-        String contentType = file.getContentType();
+    private boolean isSupportedForOptimization(String contentType) {
         return "image/jpeg".equalsIgnoreCase(contentType) || "image/png".equalsIgnoreCase(contentType);
     }
 
-    private void validateUpload(MultipartFile file) {
+    public void validateUpload(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Image file is empty.");
         }
         if (file.getSize() > MAX_UPLOAD_SIZE_BYTES) {
             throw new ImageSizeExceededException();
+        }
+    }
+
+    private void validateBytes(byte[] originalBytes) {
+        if (originalBytes == null || originalBytes.length == 0) {
+            throw new IllegalArgumentException("Image file is empty.");
+        }
+        if (originalBytes.length > MAX_UPLOAD_SIZE_BYTES) {
+            throw new ImageSizeExceededException();
+        }
+    }
+
+    /** Prevents a malformed image from expanding the in-memory JPEG output without limit. */
+    private static final class BoundedByteArrayOutputStream extends ByteArrayOutputStream {
+        private final int maximumBytes;
+
+        private BoundedByteArrayOutputStream(int maximumBytes) {
+            super(Math.min(32 * 1024, maximumBytes));
+            this.maximumBytes = maximumBytes;
+        }
+
+        @Override
+        public synchronized void write(int value) {
+            ensureCapacity(1);
+            super.write(value);
+        }
+
+        @Override
+        public synchronized void write(byte[] bytes, int offset, int length) {
+            ensureCapacity(length);
+            super.write(bytes, offset, length);
+        }
+
+        private void ensureCapacity(int additionalBytes) {
+            if (additionalBytes < 0 || count > maximumBytes - additionalBytes) {
+                throw new ImageSizeExceededException();
+            }
         }
     }
 }

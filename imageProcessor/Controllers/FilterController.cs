@@ -16,20 +16,18 @@ namespace ImageProcessor.Controllers
         }
 
         [HttpPost("/api/filter")]
-        public async Task<IActionResult> ApplyFilter([FromBody] ImageProcessingRequest request)
+        public async Task<IActionResult> ApplyFilter([FromForm] IFormFile image, [FromForm] string filter)
         {
-            
-            if (request == null || string.IsNullOrEmpty(request.DownloadUrl) || string.IsNullOrEmpty(request.UploadUrl))
+            if (image == null || image.Length == 0 || string.IsNullOrWhiteSpace(filter))
             {
-                return BadRequest("Invalid request. DownloadUrl and UploadUrl are required.");
+                return BadRequest("An image and filter are required.");
             }
 
             try
             {
-                
-                await _filterService.ProcessAndUploadImageAsync(request);
-
-                return Ok(new { message = "Image processed and uploaded to S3 successfully." });
+                await using var input = image.OpenReadStream();
+                var (processedBytes, contentType) = await _filterService.ProcessImageAsync(input, filter);
+                return File(processedBytes, contentType);
             }
             catch (ArgumentException argEx)
             {

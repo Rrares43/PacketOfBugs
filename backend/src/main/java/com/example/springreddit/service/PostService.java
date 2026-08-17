@@ -1,13 +1,15 @@
 package com.example.springreddit.service;
 
-import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.OptimizedImageResult;
+import com.example.springreddit.dto.PostDto;
 import com.example.springreddit.dto.UpdatePostRequest;
 import com.example.springreddit.exception.ForbiddenException;
+import com.example.springreddit.exception.ImageSizeExceededException;
 import com.example.springreddit.exception.ResourceNotFoundException;
 import com.example.springreddit.exception.UnauthorizedException;
 import com.example.springreddit.logging.CustomLogger;
 import com.example.springreddit.model.Account;
+import com.example.springreddit.model.ImageStatus;
 import com.example.springreddit.model.Post;
 import com.example.springreddit.model.PostVote;
 import com.example.springreddit.model.Subreddit;
@@ -17,6 +19,7 @@ import com.example.springreddit.repository.PostRepository;
 import com.example.springreddit.repository.PostVoteRepository;
 import com.example.springreddit.repository.SubredditRepository;
 import com.example.springreddit.util.TextFormatterUtil;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,10 +28,14 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 
 @Service
 public class PostService {
@@ -41,6 +48,8 @@ public class PostService {
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
     private final ImageUploadService imageUploadService;
     private final ImageOptimizationService imageOptimizationService;
+    private final ImageEditService imageEditService;
+    private final Executor imageThreadPool;
     private final FastContentFilterService contentFilterService;
     private final AiService aiService;
 
@@ -52,6 +61,8 @@ public class PostService {
                        CommentRepository commentRepository,
                        ImageUploadService imageUploadService,
                        ImageOptimizationService imageOptimizationService,
+                       ImageEditService imageEditService,
+                       @Qualifier("imageThreadPool") Executor imageThreadPool,
                        FastContentFilterService contentFilterService, AiService aiService) {
         this.postRepository = postRepository;
         this.subredditRepository = subredditRepository;
@@ -60,6 +71,8 @@ public class PostService {
         this.commentRepository = commentRepository;
         this.imageUploadService = imageUploadService;
         this.imageOptimizationService = imageOptimizationService;
+        this.imageEditService = imageEditService;
+        this.imageThreadPool = imageThreadPool;
         this.contentFilterService = contentFilterService;
         this.aiService = aiService;
     }
@@ -69,6 +82,16 @@ public class PostService {
                           MultipartFile image, Integer filter) {
         validatePostTitle(title);
         validateContent(content);
+
+        CompletableFuture<OptimizedImageResult> compressionFuture = null;
+        String originalFilename = null;
+        if (image != null && !image.isEmpty()) {
+            imageOptimizationService.validateUpload(image);
+            // Read and bound the upload while its request stream is still open; never materialize raw bytes.
+            byte[] resizedBytes = imageOptimizationService.downscaleForFiltering(image);
+            originalFilename = image.getOriginalFilename();
+            compressionFuture = startImageProcessing(resizedBytes, image.getSize(), filter);
+        }
 
         String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(title));
         String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(content));
@@ -95,26 +118,22 @@ public class PostService {
                 });
 
         String imageUrl = null;
-        if (image != null && !image.isEmpty()) {
-            OptimizedImageResult optimizedImage = imageOptimizationService.optimize(image);
-            String extension = "image/jpeg".equals(optimizedImage.getContentType())
-                    ? ".jpg"
-                    : extensionFromOriginalFilename(image.getOriginalFilename());
-            imageUrl = imageUploadService.upload(
-                    optimizedImage.getInputStream(),
-                    optimizedImage.getOptimizedSizeBytes(),
-                    optimizedImage.getContentType(),
-                    extension,
-                    filter);
+        ImageStatus imageStatus = null;
+        if (compressionFuture != null) {
+            OptimizedImageResult optimizedImage = awaitImageCompression(compressionFuture);
+            imageUrl = uploadOptimizedImage(optimizedImage, originalFilename, filter);
             formattedContent = appendImageOptimizationBadge(formattedContent, optimizedImage);
+            imageStatus = ImageStatus.COMPLETED;
         }
 
         Post post = new Post(formattedTitle, formattedContent, author, subreddit, imageUrl, filter);
+        post.setImageStatus(imageStatus);
         Post savedPost = postRepository.save(post);
-        
+
         PostVote upvote = new PostVote(author, savedPost, PostVote.UPVOTE);
         postVoteRepository.save(upvote);
         subreddit.setPostCount(subreddit.getPostCount() + 1);
+
         LOGGER.info("Post created successfully with ID: {} in subreddit: {} by author: {}", savedPost.getId(), subredditName, authorUsername);
         return savedPost;
     }
@@ -273,6 +292,66 @@ public class PostService {
         }
     }
 
+    private CompletableFuture<OptimizedImageResult> startImageProcessing(byte[] resizedBytes, long originalSizeBytes, Integer filter) {
+        try {
+            return CompletableFuture.supplyAsync(
+                    () -> processImage(resizedBytes, originalSizeBytes, filter),
+                    imageThreadPool);
+        } catch (RejectedExecutionException exception) {
+            LOGGER.warn("Image thread pool rejected processing; running on the request thread. Reason: {}",
+                    exception.getMessage());
+            return CompletableFuture.completedFuture(
+                    processImage(resizedBytes, originalSizeBytes, filter));
+        }
+    }
+
+    private OptimizedImageResult processImage(byte[] resizedBytes, long originalSizeBytes, Integer filter) {
+        // Only the bounded JPEG is retained after the request thread releases the upload stream.
+        byte[] filteredBytes = filter == null
+                ? resizedBytes
+                : imageEditService.applyFilter(resizedBytes, filter);
+        return imageOptimizationService.optimize(filteredBytes, "image/jpeg", originalSizeBytes);
+    }
+
+    private OptimizedImageResult awaitImageCompression(CompletableFuture<OptimizedImageResult> compressionFuture) {
+        try {
+            return compressionFuture.join();
+        } catch (CompletionException exception) {
+            Throwable cause = exception.getCause() != null ? exception.getCause() : exception;
+            if (cause instanceof ImageSizeExceededException imageSizeExceededException) {
+                throw imageSizeExceededException;
+            }
+            if (cause instanceof IllegalArgumentException illegalArgumentException) {
+                throw illegalArgumentException;
+            }
+            LOGGER.error("Image compression failed: {}", cause.getMessage(), cause);
+            throw new IllegalArgumentException("Image could not be processed.", cause);
+        } catch (Exception exception) {
+            compressionFuture.cancel(true);
+            LOGGER.error("Image compression was interrupted: {}", exception.getMessage(), exception);
+            throw new IllegalArgumentException("Image could not be processed.", exception);
+        }
+    }
+
+    private String uploadOptimizedImage(OptimizedImageResult optimizedImage, String originalFilename, Integer filter) {
+        try {
+            String extension = "image/jpeg".equals(optimizedImage.getContentType())
+                    ? ".jpg"
+                    : extensionFromOriginalFilename(originalFilename);
+            return imageUploadService.upload(
+                    optimizedImage.getInputStream(),
+                    optimizedImage.getOptimizedSizeBytes(),
+                    optimizedImage.getContentType(),
+                    extension,
+                    null);
+        } catch (ImageSizeExceededException | IllegalArgumentException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            LOGGER.error("Image upload to S3 failed: {}", exception.getMessage(), exception);
+            throw new IllegalArgumentException("Image upload failed. Please try again.", exception);
+        }
+    }
+
     private String appendImageOptimizationBadge(String content, OptimizedImageResult optimizedImage) {
         if (!optimizedImage.isOptimized() || optimizedImage.getSavedPercentage() <= 0D) {
             return content;
@@ -348,6 +427,7 @@ public class PostService {
         String title = post.getTitle();
         String content = post.getContent();
         String imageUrl = post.getImageUrl();
+        String imageStatus = post.getImageStatus() != null ? post.getImageStatus().name() : null;
         String authorName = "unknown";
 
 
@@ -363,6 +443,7 @@ public class PostService {
             title = "[deleted]";
             content = "[deleted]";
             imageUrl = null;
+            imageStatus = null;
             authorName = "[deleted]";
         }
 
@@ -373,6 +454,7 @@ public class PostService {
                 title,
                 content,
                 imageUrl,
+                imageStatus,
                 post.getFilter(),
                 authorName,
                 subredditName,
