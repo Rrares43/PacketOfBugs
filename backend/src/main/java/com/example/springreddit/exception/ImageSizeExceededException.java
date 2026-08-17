@@ -4,6 +4,6 @@ package com.example.springreddit.exception;
 public class ImageSizeExceededException extends RuntimeException {
 
     public ImageSizeExceededException() {
-        super("Dimensiunea imaginii nu poate depăși 5 MB");
+        super("File size exceeds the 5 MB limit.");
     }
 }
