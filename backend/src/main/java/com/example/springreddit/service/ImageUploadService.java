@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Service responsible for uploading images to AWS S3, generating pre-signed URLs,
@@ -53,14 +52,31 @@ public class ImageUploadService {
         LOGGER.info("Starting image upload process. Original filename: {}, size: {} bytes",
                 file.getOriginalFilename(), file.getSize());
 
-        Integer validFilterId = imageEditService.getValidFilterId(filterId);
-
         String extension = getExtension(file);
-        String key = "images/" + UUID.randomUUID() + extension;
+        try {
+            return upload(file.getInputStream(), file.getSize(), file.getContentType(), extension, filterId);
+        } catch (IOException e) {
+            LOGGER.error("IO error during file upload processing: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to read upload file stream.", e);
+        }
+    }
+
+    /**
+     * Uploads image bytes already processed in memory. This keeps image optimization
+     * and S3 storage decoupled while preserving the existing optional filter flow.
+     */
+    public String upload(InputStream inputStream, long contentLength, String contentType,
+                         String extension, Integer filterId) {
+        if (inputStream == null || contentLength <= 0) {
+            throw new IllegalArgumentException("Image stream is empty.");
+        }
+
+        Integer validFilterId = imageEditService.getValidFilterId(filterId);
+        String safeExtension = extension == null || extension.isBlank() ? ".jpg" : extension;
+        String key = "images/" + UUID.randomUUID() + safeExtension;
 
         try {
-
-            uploadStream(file.getInputStream(), file.getSize(), key, file.getContentType());
+            uploadStream(inputStream, contentLength, key, contentType);
             String finalUrl = buildPublicUrl(key);
             LOGGER.info("Image successfully uploaded to S3 with key: {}", key);
 
@@ -79,9 +95,6 @@ public class ImageUploadService {
 
             return finalUrl;
 
-        } catch (IOException e) {
-            LOGGER.error("IO error during file upload processing for key {}: {}", key, e.getMessage(), e);
-            throw new RuntimeException("Failed to read upload file stream.", e);
         } catch (S3Exception e) {
             LOGGER.error("AWS S3 error during upload for key {}: {}", key, e.awsErrorDetails().errorMessage(), e);
             throw new RuntimeException("Failed to upload image to cloud storage.", e);
