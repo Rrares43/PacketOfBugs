@@ -31,7 +31,7 @@ public class AiService {
                     )
             );
 
-            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=" + apiKey;
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=" + apiKey;
             LOGGER.info("Generating AI summary with prompt: {}", prompt);
 
             JsonNode response = restClient.post()
