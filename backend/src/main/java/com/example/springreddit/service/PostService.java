@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -88,9 +87,10 @@ public class PostService {
         String originalFilename = null;
         if (image != null && !image.isEmpty()) {
             imageOptimizationService.validateUpload(image);
-            byte[] imageBytes = readImageBytes(image);
+            // Read and bound the upload while its request stream is still open; never materialize raw bytes.
+            byte[] resizedBytes = imageOptimizationService.downscaleForFiltering(image);
             originalFilename = image.getOriginalFilename();
-            compressionFuture = startImageProcessing(imageBytes, image.getContentType(), filter);
+            compressionFuture = startImageProcessing(resizedBytes, image.getSize(), filter);
         }
 
         String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(title));
@@ -292,34 +292,25 @@ public class PostService {
         }
     }
 
-    private byte[] readImageBytes(MultipartFile image) {
-        try {
-            return image.getBytes();
-        } catch (IOException exception) {
-            throw new IllegalArgumentException("Image file could not be read.", exception);
-        }
-    }
-
-    private CompletableFuture<OptimizedImageResult> startImageProcessing(byte[] imageBytes, String contentType, Integer filter) {
+    private CompletableFuture<OptimizedImageResult> startImageProcessing(byte[] resizedBytes, long originalSizeBytes, Integer filter) {
         try {
             return CompletableFuture.supplyAsync(
-                    () -> processImage(imageBytes, contentType, filter),
+                    () -> processImage(resizedBytes, originalSizeBytes, filter),
                     imageThreadPool);
         } catch (RejectedExecutionException exception) {
             LOGGER.warn("Image thread pool rejected processing; running on the request thread. Reason: {}",
                     exception.getMessage());
             return CompletableFuture.completedFuture(
-                    processImage(imageBytes, contentType, filter));
+                    processImage(resizedBytes, originalSizeBytes, filter));
         }
     }
 
-    private OptimizedImageResult processImage(byte[] rawBytes, String contentType, Integer filter) {
-        // The .NET service never sees the raw upload: Thumbnailator bounds it to 1200x1200 first.
-        byte[] resizedBytes = imageOptimizationService.downscaleForFiltering(rawBytes, contentType);
+    private OptimizedImageResult processImage(byte[] resizedBytes, long originalSizeBytes, Integer filter) {
+        // Only the bounded JPEG is retained after the request thread releases the upload stream.
         byte[] filteredBytes = filter == null
                 ? resizedBytes
                 : imageEditService.applyFilter(resizedBytes, filter);
-        return imageOptimizationService.optimize(filteredBytes, "image/jpeg", rawBytes.length);
+        return imageOptimizationService.optimize(filteredBytes, "image/jpeg", originalSizeBytes);
     }
 
     private OptimizedImageResult awaitImageCompression(CompletableFuture<OptimizedImageResult> compressionFuture) {

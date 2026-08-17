@@ -133,7 +133,7 @@ public class PostServiceTest {
 
         when(accountRepository.findByUsername("test_user")).thenReturn(Optional.of(mockAccount));
         when(subredditRepository.findByName("test_sub")).thenReturn(Optional.of(mockSubreddit));
-        when(imageOptimizationService.downscaleForFiltering(imageBytes, "image/jpeg")).thenReturn(imageBytes);
+        when(imageOptimizationService.downscaleForFiltering(image)).thenReturn(imageBytes);
         when(imageEditService.applyFilter(imageBytes, 2)).thenReturn(imageBytes);
         when(imageOptimizationService.optimize(imageBytes, "image/jpeg", imageBytes.length)).thenReturn(optimizedImage);
         when(imageUploadService.upload(any(), eq((long) imageBytes.length), eq("image/jpeg"), eq(".jpg"), isNull()))
@@ -152,7 +152,7 @@ public class PostServiceTest {
         assertEquals(imageUrl, createdPost.getImageUrl());
         assertEquals(ImageStatus.COMPLETED, createdPost.getImageStatus());
         verify(imageOptimizationService).validateUpload(image);
-        verify(imageOptimizationService).downscaleForFiltering(imageBytes, "image/jpeg");
+        verify(imageOptimizationService).downscaleForFiltering(image);
         verify(imageEditService).applyFilter(imageBytes, 2);
         verify(imageOptimizationService).optimize(imageBytes, "image/jpeg", imageBytes.length);
         ArgumentCaptor<Post> savedPost = ArgumentCaptor.forClass(Post.class);
@@ -180,7 +180,7 @@ public class PostServiceTest {
 
         when(accountRepository.findByUsername("test_user")).thenReturn(Optional.of(mockAccount));
         when(subredditRepository.findByName("test_sub")).thenReturn(Optional.of(mockSubreddit));
-        when(imageOptimizationService.downscaleForFiltering(imageBytes, "image/jpeg")).thenReturn(imageBytes);
+        when(imageOptimizationService.downscaleForFiltering(image)).thenReturn(imageBytes);
         when(imageOptimizationService.optimize(imageBytes, "image/jpeg", imageBytes.length)).thenReturn(optimizedImage);
         when(imageUploadService.upload(any(), eq((long) imageBytes.length), eq("image/jpeg"), eq(".jpg"), isNull()))
                 .thenThrow(new RuntimeException("S3 unavailable"));

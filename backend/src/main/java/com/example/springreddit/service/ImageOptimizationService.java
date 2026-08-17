@@ -12,6 +12,11 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 /** Optimizes uploaded raster images entirely in RAM; no temporary files are created. */
 @Service
@@ -21,20 +26,16 @@ public class ImageOptimizationService {
     private static final long SKIP_OPTIMIZATION_BELOW_BYTES = 150L * 1024L;
     private static final long MAX_UPLOAD_SIZE_BYTES = 5L * 1024L * 1024L;
     private static final long TARGET_SIZE_BYTES = 200L * 1024L;
-    private static final int PRE_FILTER_MAX_DIMENSION = 1200;
-    private static final double PRE_FILTER_QUALITY = 0.80D;
-    private static final int[] MAX_DIMENSIONS = {1200, 1000, 800, 600, 400, 300};
+    private static final int PRE_FILTER_MAX_DIMENSION = 1000;
+    private static final double PRE_FILTER_QUALITY = 0.75D;
+    private static final int MAX_PRE_FILTER_OUTPUT_BYTES = 2 * 1024 * 1024;
+    private static final int[] MAX_DIMENSIONS = {1000, 800, 600, 400, 300};
     private static final double[] JPEG_QUALITIES = {0.80D, 0.75D};
 
     public OptimizedImageResult optimize(MultipartFile file) {
         validateUpload(file);
-        try {
-            return optimize(file.getBytes(), file.getContentType());
-        } catch (ImageSizeExceededException exception) {
-            throw exception;
-        } catch (IOException exception) {
-            throw new IllegalArgumentException("Image file could not be read.", exception);
-        }
+        byte[] resizedBytes = downscaleForFiltering(file);
+        return optimize(resizedBytes, "image/jpeg", file.getSize());
     }
 
     public OptimizedImageResult optimize(byte[] originalBytes, String contentType) {
@@ -45,19 +46,30 @@ public class ImageOptimizationService {
      * Re-encodes the source to a bounded JPEG before any expensive external filter runs.
      * The result never touches the filesystem and is safe to send directly to another service.
      */
-    public byte[] downscaleForFiltering(byte[] originalBytes, String contentType) {
-        validateBytes(originalBytes);
+    public byte[] downscaleForFiltering(MultipartFile file) {
+        validateUpload(file);
+        try (InputStream input = file.getInputStream()) {
+            return downscaleForFiltering(input, file.getContentType());
+        } catch (IOException exception) {
+            throw new IllegalArgumentException("Image file could not be read.", exception);
+        }
+    }
+
+    /**
+     * Decodes from the upload stream with ImageIO subsampling, then uses Thumbnailator to
+     * encode a 1000x1000-at-most JPEG. No raw upload byte array is ever created.
+     */
+    public byte[] downscaleForFiltering(InputStream input, String contentType) {
+        if (input == null) {
+            throw new IllegalArgumentException("Image stream is empty.");
+        }
         if (!isSupportedForOptimization(contentType)) {
             throw new IllegalArgumentException("Only JPEG and PNG images are supported.");
         }
 
-        try {
-            BufferedImage source = ImageIO.read(new ByteArrayInputStream(originalBytes));
-            if (source == null) {
-                throw new IllegalArgumentException("Image file could not be decoded.");
-            }
-
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (ImageInputStream imageInput = ImageIO.createImageInputStream(input);
+             ByteArrayOutputStream output = new BoundedByteArrayOutputStream(MAX_PRE_FILTER_OUTPUT_BYTES)) {
+            BufferedImage source = readSampled(imageInput);
             Thumbnails.of(source)
                     .size(PRE_FILTER_MAX_DIMENSION, PRE_FILTER_MAX_DIMENSION)
                     .outputFormat("jpg")
@@ -66,6 +78,34 @@ public class ImageOptimizationService {
             return output.toByteArray();
         } catch (IOException exception) {
             throw new IllegalArgumentException("Image file could not be resized.", exception);
+        }
+    }
+
+    private BufferedImage readSampled(ImageInputStream input) throws IOException {
+        if (input == null) {
+            throw new IllegalArgumentException("Image file could not be decoded.");
+        }
+        Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+        if (!readers.hasNext()) {
+            throw new IllegalArgumentException("Image file could not be decoded.");
+        }
+
+        ImageReader reader = readers.next();
+        try {
+            reader.setInput(input, true, true);
+            int width = reader.getWidth(0);
+            int height = reader.getHeight(0);
+            int sampling = Math.max(1, (int) Math.ceil(
+                    Math.max(width, height) / (double) PRE_FILTER_MAX_DIMENSION));
+            ImageReadParam parameters = reader.getDefaultReadParam();
+            parameters.setSourceSubsampling(sampling, sampling, 0, 0);
+            BufferedImage source = reader.read(0, parameters);
+            if (source == null) {
+                throw new IllegalArgumentException("Image file could not be decoded.");
+            }
+            return source;
+        } finally {
+            reader.dispose();
         }
     }
 
@@ -148,6 +188,34 @@ public class ImageOptimizationService {
         }
         if (originalBytes.length > MAX_UPLOAD_SIZE_BYTES) {
             throw new ImageSizeExceededException();
+        }
+    }
+
+    /** Prevents a malformed image from expanding the in-memory JPEG output without limit. */
+    private static final class BoundedByteArrayOutputStream extends ByteArrayOutputStream {
+        private final int maximumBytes;
+
+        private BoundedByteArrayOutputStream(int maximumBytes) {
+            super(Math.min(32 * 1024, maximumBytes));
+            this.maximumBytes = maximumBytes;
+        }
+
+        @Override
+        public synchronized void write(int value) {
+            ensureCapacity(1);
+            super.write(value);
+        }
+
+        @Override
+        public synchronized void write(byte[] bytes, int offset, int length) {
+            ensureCapacity(length);
+            super.write(bytes, offset, length);
+        }
+
+        private void ensureCapacity(int additionalBytes) {
+            if (additionalBytes < 0 || count > maximumBytes - additionalBytes) {
+                throw new ImageSizeExceededException();
+            }
         }
     }
 }
