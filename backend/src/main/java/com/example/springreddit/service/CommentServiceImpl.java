@@ -41,18 +41,18 @@ public class CommentServiceImpl implements CommentService {
     private final VoteRepository voteRepository;
     private final PostRepository postRepository;
     private final AccountRepository accountRepository;
-    private final FastContentFilterService contentFilterService;
+    private final AiService aiService;
 
     public CommentServiceImpl(CommentRepository commentRepository,
                               VoteRepository voteRepository,
                               PostRepository postRepository,
                               AccountRepository accountRepository,
-                              FastContentFilterService contentFilterService) {
+                              AiService aiService) {
         this.commentRepository = commentRepository;
         this.voteRepository = voteRepository;
         this.postRepository = postRepository;
         this.accountRepository = accountRepository;
-        this.contentFilterService = contentFilterService;
+        this.aiService = aiService;
     }
 
     @Override
@@ -70,7 +70,8 @@ public class CommentServiceImpl implements CommentService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found: " + postId));
 
-        String formattedContent = contentFilterService.sanitize(
+        // Cenzurare automată cu Gemini AI
+        String formattedContent = aiService.censorText(
                 TextFormatterUtil.formatText(request.content().trim()));
 
         Comment comment = new Comment(formattedContent, author, post);
@@ -108,7 +109,8 @@ public class CommentServiceImpl implements CommentService {
             throw new AccessDeniedException("Only the comment author can update it");
         }
 
-        String formattedContent = contentFilterService.sanitize(
+        // Cenzurare automată cu Gemini AI la editare
+        String formattedContent = aiService.censorText(
                 TextFormatterUtil.formatText(request.content().trim()));
 
         comment.editContent(formattedContent);
