@@ -274,13 +274,25 @@ public class PostService {
     }
 
     private String appendImageOptimizationBadge(String content, OptimizedImageResult optimizedImage) {
+        if (!optimizedImage.isOptimized() || optimizedImage.getSavedPercentage() <= 0D) {
+            return content;
+        }
+
+        long savedPercentage = Math.max(1L, Math.round(optimizedImage.getSavedPercentage()));
         String badge = String.format(
                 Locale.US,
-                "⚡ *Imagine optimizată: %.1f MB ➔ %.1f KB (-%.0f%% storage saved)*",
-                optimizedImage.getOriginalSizeBytes() / (1024D * 1024D),
+                "⚡ *Image optimized: %s ➔ %.1f KB (-%d%% storage saved)*",
+                formatOriginalImageSize(optimizedImage.getOriginalSizeBytes()),
                 optimizedImage.getOptimizedSizeBytes() / 1024D,
-                optimizedImage.getSavedPercentage());
+                savedPercentage);
         return (content == null || content.isBlank()) ? badge : content + "\n\n" + badge;
+    }
+
+    private String formatOriginalImageSize(long sizeBytes) {
+        if (sizeBytes >= 1024L * 1024L) {
+            return String.format(Locale.US, "%.1f MB", sizeBytes / (1024D * 1024D));
+        }
+        return String.format(Locale.US, "%.1f KB", sizeBytes / 1024D);
     }
 
     private String extensionFromOriginalFilename(String filename) {

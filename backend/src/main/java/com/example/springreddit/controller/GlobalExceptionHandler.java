@@ -4,6 +4,7 @@ import com.example.springreddit.dto.ApiResponse;
 import com.example.springreddit.exception.BusinessLogicException;
 import com.example.springreddit.exception.ConflictException;
 import com.example.springreddit.exception.ForbiddenException;
+import com.example.springreddit.exception.ImageSizeExceededException;
 import com.example.springreddit.exception.RateLimitExceededException;
 import com.example.springreddit.exception.ResourceNotFoundException;
 import com.example.springreddit.exception.UnauthorizedException;
@@ -210,7 +211,17 @@ public class GlobalExceptionHandler {
         LOGGER.warn("Max upload size exceeded on {}: {}", path, exception.getMessage());
 
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(
-                ApiResponse.error("File too large", "PAYLOAD_TOO_LARGE", path)
+                ApiResponse.error("Size of the image cannot exceed 5 MB", "PAYLOAD_TOO_LARGE", path)
+        );
+    }
+
+    @ExceptionHandler(ImageSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleImageSizeExceeded(
+            ImageSizeExceededException exception, WebRequest request) {
+        String path = path(request);
+        LOGGER.warn("Image size limit exceeded on {}", path);
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(
+                ApiResponse.error(exception.getMessage(), "PAYLOAD_TOO_LARGE", path)
         );
     }
 

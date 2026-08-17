@@ -43,4 +43,8 @@ public final class OptimizedImageResult {
     public String getContentType() {
         return contentType;
     }
+
+    public boolean isOptimized() {
+        return optimizedSizeBytes < originalSizeBytes;
+    }
 }
