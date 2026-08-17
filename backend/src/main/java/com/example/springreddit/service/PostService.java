@@ -70,7 +70,8 @@ public class PostService {
 
         if(formattedContent != null && !formattedContent.isBlank() && formattedContent.length() > 100){
             String aiSummary = aiService.generateSummary(title, content);
-            formattedContent = "<b>[AI Summary]:</b> " + aiSummary + "<br><br>" + formattedContent;
+            String rawAItext = "/b[AI Summary]: " + aiSummary + "\n\n" + formattedContent;
+            formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(rawAItext));
         }
 
         validateAuthor(authorUsername);
