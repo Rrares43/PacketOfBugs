@@ -64,7 +64,19 @@ public class AiService {
         }
 
         try {
-            String prompt = "You are a strict text filter. Replace every profane, offensive, or slur word in the text below with asterisks (***), regardless of language. Keep all punctuation, spacing, and non-offensive words exactly as they are. Do not add any formatting, explanations, quotes, or extra text. Return STRICTLY only the filtered text and nothing else. Text: " + text;
+            String prompt = """
+                    You are an advanced multilingual content moderation engine.
+                    Replace EVERY profanity, slur, insult, vulgarity, or sexually explicit term in ANY language with asterisks (*).
+                    
+                    STRICT RULES:
+                    1. EXACT CHARACTER MATCHING: For every censored word, replace each character with exactly ONE asterisk (*) so the number of asterisks matches the exact length of the original word (e.g., a 4-letter word becomes '****', a 5-letter word becomes '*****', 'muie' becomes '****', 'fuck' becomes '****', 'asshole' becomes '*******').
+                    2. Detect and censor obfuscated words and LEETSPEAK (e.g. '@$$hole' -> '*******', 'm!erd@' -> '******', 'p3nd3j0' -> '*******', 'c@zz0' -> '*****').
+                    3. Detect and censor spaced-out bad words (e.g. 'f u c k' -> '*******' or '****', 'm.u.i.e' -> '*******').
+                    4. Detect and censor elongated bad words (e.g. 'c@caaaat' -> '********').
+                    5. Keep all clean words, legitimate punctuation, and casing intact.
+                    6. Return STRICTLY the processed text. Do NOT add notes, explanations, quotes, or markdown.
+                    
+                    Text: """ + text;
 
             Map<String, Object> safetySettings = Map.of(
                     "category", "HARM_CATEGORY_HARASSMENT",
