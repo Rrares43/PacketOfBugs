@@ -42,17 +42,20 @@ public class CommentServiceImpl implements CommentService {
     private final PostRepository postRepository;
     private final AccountRepository accountRepository;
     private final FastContentFilterService contentFilterService;
+    private final AiService aiService;
 
     public CommentServiceImpl(CommentRepository commentRepository,
                               VoteRepository voteRepository,
                               PostRepository postRepository,
                               AccountRepository accountRepository,
-                              FastContentFilterService contentFilterService) {
+                              FastContentFilterService contentFilterService,
+                              AiService aiService) {
         this.commentRepository = commentRepository;
         this.voteRepository = voteRepository;
         this.postRepository = postRepository;
         this.accountRepository = accountRepository;
         this.contentFilterService = contentFilterService;
+        this.aiService = aiService;
     }
 
     @Override
@@ -72,8 +75,10 @@ public class CommentServiceImpl implements CommentService {
 
         String formattedContent = contentFilterService.sanitize(
                 TextFormatterUtil.formatText(request.content().trim()));
+        
+        String censoredContent = aiService.censorText(formattedContent);
 
-        Comment comment = new Comment(formattedContent, author, post);
+        Comment comment = new Comment(censoredContent, author, post);
         if (request.parentId() == null) {
             post.addComment(comment);
         } else {
@@ -110,8 +115,10 @@ public class CommentServiceImpl implements CommentService {
 
         String formattedContent = contentFilterService.sanitize(
                 TextFormatterUtil.formatText(request.content().trim()));
+        
+        String censoredContent = aiService.censorText(formattedContent);
 
-        comment.editContent(formattedContent);
+        comment.editContent(censoredContent);
         Comment saved = commentRepository.save(comment);
         LOGGER.info("Comment updated with ID: {}", saved.getId());
         return toResponse(saved, currentAccount);
