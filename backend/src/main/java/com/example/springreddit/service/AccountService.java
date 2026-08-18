@@ -21,6 +21,10 @@ public class AccountService {
     private PasswordEncoder passwordEncoder;
     private static final CustomLogger LOGGER = CustomLogger.getInstance();
 
+    private static final int MAX_USERNAME_LENGTH = 50;
+    private static final int MAX_EMAIL_LENGTH = 100;
+    private static final int MAX_PASSWORD_LENGTH = 100;
+
     public Account registerAccount(AccountDto.RegistrationRequest request) {
         LOGGER.info("Attempting to register account with username: {}", request.getUsername());
         validateRegistrationRequest(request);
@@ -188,19 +192,19 @@ public class AccountService {
         if (request.getUsername() == null || request.getUsername().isBlank()) {
             throw new IllegalArgumentException("Username cannot be blank");
         }
-        if (request.getUsername().length() > 50) {
+        if (request.getUsername().length() > MAX_USERNAME_LENGTH) {
             throw new IllegalArgumentException("Username must not exceed 50 characters");
         }
         if (request.getEmail() == null || request.getEmail().isBlank()) {
             throw new IllegalArgumentException("Email cannot be blank");
         }
-        if (request.getEmail().length() > 100) {
+        if (request.getEmail().length() > MAX_EMAIL_LENGTH) {
             throw new IllegalArgumentException("Email must not exceed 100 characters");
         }
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new IllegalArgumentException("Password cannot be blank");
         }
-        if (request.getPassword().length() > 100) {
+        if (request.getPassword().length() > MAX_PASSWORD_LENGTH) {
             throw new IllegalArgumentException("Password must not exceed 100 characters");
         }
     }
