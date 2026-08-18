@@ -76,8 +76,9 @@ public class AiService {
                     2. Detect and censor obfuscated words and LEETSPEAK (e.g. '@$$hole' -> '*******', 'm!erd@' -> '******', 'p3nd3j0' -> '*******', 'c@zz0' -> '*****').
                     3. Detect and censor spaced-out bad words (e.g. 'f u c k' -> '*******' or '****', 'm.u.i.e' -> '*******').
                     4. Detect and censor elongated bad words (e.g. 'c@caaaat' -> '********').
-                    5. Keep all clean words, legitimate punctuation, and casing intact.
-                    6. Return STRICTLY the processed text. Do NOT add notes, explanations, quotes, or markdown.
+                    5. Identify and replace EVERY profanity, insult, or vulgar token even when repeated or glued together without spaces (e.g., 'FUCKFUCKFUCKMUIEMUIE' -> '********************', 'fuckshit' -> '********'). Scan for SUBSTRINGS and CONCATENATED/COMPOUND bad words. Replace each character of the offensive substring/sequence with an asterisk (*) matching its length.
+                    6. Keep all clean words, legitimate punctuation, and casing intact.
+                    7. Return STRICTLY the processed text. Do NOT add notes, explanations, quotes, or markdown.
                     
                     Text: """ + text;
 

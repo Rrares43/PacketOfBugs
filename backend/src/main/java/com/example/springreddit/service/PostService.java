@@ -102,6 +102,13 @@ public class PostService {
             formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(rawAIText));
         }
 
+        // Censor title and content asynchronously using the AI service
+        CompletableFuture<String> censorTitleFuture = aiService.censorText(formattedTitle);
+        CompletableFuture<String> censorContentFuture = aiService.censorText(formattedContent);
+        
+        String censoredTitle = censorTitleFuture.join();
+        String censoredContent = censorContentFuture.join();
+
         validateAuthor(authorUsername);
         validateSubreddit(subredditName);
         
@@ -122,11 +129,11 @@ public class PostService {
         if (compressionFuture != null) {
             OptimizedImageResult optimizedImage = awaitImageCompression(compressionFuture);
             imageUrl = uploadOptimizedImage(optimizedImage, originalFilename, filter);
-            formattedContent = appendImageOptimizationBadge(formattedContent, optimizedImage);
+            censoredContent = appendImageOptimizationBadge(censoredContent, optimizedImage);
             imageStatus = ImageStatus.COMPLETED;
         }
 
-        Post post = new Post(formattedTitle, formattedContent, author, subreddit, imageUrl, filter);
+        Post post = new Post(censoredTitle, censoredContent, author, subreddit, imageUrl, filter);
         post.setImageStatus(imageStatus);
         Post savedPost = postRepository.save(post);
 
@@ -197,7 +204,9 @@ public class PostService {
 
         if (request.getTitle() != null) {
             validatePostTitle(request.getTitle());
-            post.setTitle(contentFilterService.sanitize(request.getTitle().trim()));
+            String sanitizedTitle = contentFilterService.sanitize(request.getTitle().trim());
+            String censoredTitle = aiService.censorText(sanitizedTitle).join();
+            post.setTitle(censoredTitle);
         }
         if (request.getContent() != null) {
             validateContent(request.getContent());
@@ -205,8 +214,11 @@ public class PostService {
             String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(request.getContent()));
             String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(request.getTitle()));
 
-            post.setContent(formattedContent);
-            post.setTitle(formattedTitle);
+            String censoredContent = aiService.censorText(formattedContent).join();
+            String censoredTitle = aiService.censorText(formattedTitle).join();
+            
+            post.setContent(censoredContent);
+            post.setTitle(censoredTitle);
         }
 
         post.setUpdatedAt(Instant.now());
