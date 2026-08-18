@@ -3,12 +3,14 @@ package com.example.springreddit.service;
 import com.example.springreddit.logging.CustomLogger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class AiService {
@@ -18,7 +20,8 @@ public class AiService {
     @Value("${gemini.api.key}")
     private String apiKey;
 
-    public String generateSummary(String title, String content){
+    @Async
+    public CompletableFuture<String> generateSummary(String title, String content){
         try{
             String prompt = "Summarize the following forum post in one single, short sentence. " +
                     "Do not use formatting. Title: " + title + "Content: " + content;
@@ -43,24 +46,24 @@ public class AiService {
 
             if(response != null && response.has("candidates")){
                 LOGGER.info("AI summary generated successfully");
-                return response.get("candidates").get(0)
+                return CompletableFuture.completedFuture(response.get("candidates").get(0)
                         .get("content").get("parts").get(0)
-                        .get("text").asText().trim();
+                        .get("text").asText().trim());
             }
 
             LOGGER.warn("AI summary not available");
-            return "AI summary not available.";
+            return CompletableFuture.completedFuture("AI summary not available.");
         }
         catch (Exception e){
             LOGGER.error("Error generating summary: {}", e.getMessage());
-            e.printStackTrace();
-            return "Error generating summary";
+            return CompletableFuture.completedFuture("Error generating summary");
         }
     }
 
-    public String censorText(String text) {
+    @Async
+    public CompletableFuture<String> censorText(String text) {
         if (text == null || text.isBlank()) {
-            return text;
+            return CompletableFuture.completedFuture(text);
         }
 
         try {
@@ -112,14 +115,14 @@ public class AiService {
                         .get("content").get("parts").get(0)
                         .get("text").asText().trim();
                 LOGGER.info("Text censored successfully");
-                return censoredText;
+                return CompletableFuture.completedFuture(censoredText);
             }
 
             LOGGER.warn("Text censorship returned empty response, returning original text");
-            return text;
+            return CompletableFuture.completedFuture(text);
         } catch (Exception e) {
             LOGGER.error("Error censoring text: {}", e.getMessage());
-            return text;
+            return CompletableFuture.completedFuture(text);
         }
     }
 
