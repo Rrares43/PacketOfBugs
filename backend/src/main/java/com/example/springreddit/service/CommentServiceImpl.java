@@ -76,7 +76,7 @@ public class CommentServiceImpl implements CommentService {
         String formattedContent = contentFilterService.sanitize(
                 TextFormatterUtil.formatText(request.content().trim()));
         
-        String censoredContent = aiService.censorText(formattedContent);
+        String censoredContent = aiService.censorText(formattedContent).join();
 
         Comment comment = new Comment(censoredContent, author, post);
         if (request.parentId() == null) {
@@ -116,7 +116,7 @@ public class CommentServiceImpl implements CommentService {
         String formattedContent = contentFilterService.sanitize(
                 TextFormatterUtil.formatText(request.content().trim()));
         
-        String censoredContent = aiService.censorText(formattedContent);
+        String censoredContent = aiService.censorText(formattedContent).join();
 
         comment.editContent(censoredContent);
         Comment saved = commentRepository.save(comment);
