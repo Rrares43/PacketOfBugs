@@ -58,4 +58,57 @@ public class AiService {
         }
     }
 
+    public String censorText(String text) {
+        if (text == null || text.isBlank()) {
+            return text;
+        }
+
+        try {
+            String prompt = "You are a strict text filter. Replace every profane, offensive, or slur word in the text below with asterisks (***), regardless of language. Keep all punctuation, spacing, and non-offensive words exactly as they are. Do not add any formatting, explanations, quotes, or extra text. Return STRICTLY only the filtered text and nothing else. Text: " + text;
+
+            Map<String, Object> safetySettings = Map.of(
+                    "category", "HARM_CATEGORY_HARASSMENT",
+                    "threshold", "BLOCK_NONE"
+            );
+
+            Map<String, Object> requestBody = Map.of(
+                    "contents",
+                    List.of(Map.of("parts",
+                            List.of(Map.of("text", prompt))
+                    )),
+                    "safetySettings",
+                    List.of(
+                            Map.of("category", "HARM_CATEGORY_HARASSMENT", "threshold", "BLOCK_NONE"),
+                            Map.of("category", "HARM_CATEGORY_HATE_SPEECH", "threshold", "BLOCK_NONE"),
+                            Map.of("category", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold", "BLOCK_NONE"),
+                            Map.of("category", "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold", "BLOCK_NONE")
+                    )
+            );
+
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=" + apiKey;
+            LOGGER.info("Censoring text with AI filter");
+
+            JsonNode response = restClient.post()
+                    .uri(url)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(requestBody)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            if (response != null && response.has("candidates")) {
+                String censoredText = response.get("candidates").get(0)
+                        .get("content").get("parts").get(0)
+                        .get("text").asText().trim();
+                LOGGER.info("Text censored successfully");
+                return censoredText;
+            }
+
+            LOGGER.warn("Text censorship returned empty response, returning original text");
+            return text;
+        } catch (Exception e) {
+            LOGGER.error("Error censoring text: {}", e.getMessage());
+            return text;
+        }
+    }
+
 }
