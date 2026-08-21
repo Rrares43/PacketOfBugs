@@ -11,6 +11,9 @@ import com.example.springreddit.model.Post;
 import com.example.springreddit.service.AuthenticationService;
 import com.example.springreddit.service.PostService;
 import com.example.springreddit.service.PostVoteService;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.Part;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -80,18 +83,41 @@ public class PostController {
             @RequestParam(required = false) String content,
             @RequestParam String subreddit,
             @RequestParam(required = false) MultipartFile image,
-            @RequestParam(required = false) Integer filter) throws IOException {
+            @RequestParam(required = false) Integer filter,
+            HttpServletRequest request) throws IOException {
         String authorUsername = authenticationService.requireAuthenticatedUsername();
 
         LOGGER.info(
                 "POST /posts request received - title: {}, author: {}, subreddit: {}",
                 title, authorUsername, subreddit);
 
-        Post post = postService.createPost(title, content, authorUsername, subreddit, image, filter);
-        PostDto.PostResponse postResponse = postService.toPostResponse(post, "up");
+        try {
+            Post post = postService.createPost(title, content, authorUsername, subreddit, image, filter);
+            PostDto.PostResponse postResponse = postService.toPostResponse(post, "up");
 
-        LOGGER.info("POST /posts request successful - created post ID: {}", post.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(postResponse));
+            LOGGER.info("POST /posts request successful - created post ID: {}", post.getId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(postResponse));
+        } finally {
+            deleteMultipartTempFile(request, image);
+        }
+    }
+
+    /**
+     * Spring also cleans multipart parts at request completion. Deleting the servlet Part here
+     * makes removal deterministic even when the service or S3 upload throws first.
+     */
+    private void deleteMultipartTempFile(HttpServletRequest request, MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            return;
+        }
+        try {
+            Part part = request.getPart("image");
+            if (part != null) {
+                part.delete();
+            }
+        } catch (IOException | ServletException | IllegalStateException exception) {
+            LOGGER.warn("Could not delete multipart temporary file: {}", exception.getMessage());
+        }
     }
 
     @PutMapping(value = "/posts/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)

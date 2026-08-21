@@ -67,9 +67,10 @@ public class ImageOptimizationService {
             throw new IllegalArgumentException("Only JPEG and PNG images are supported.");
         }
 
+        BufferedImage source = null;
         try (ImageInputStream imageInput = ImageIO.createImageInputStream(input);
              ByteArrayOutputStream output = new BoundedByteArrayOutputStream(MAX_PRE_FILTER_OUTPUT_BYTES)) {
-            BufferedImage source = readSampled(imageInput);
+            source = readSampled(imageInput);
             Thumbnails.of(source)
                     .size(PRE_FILTER_MAX_DIMENSION, PRE_FILTER_MAX_DIMENSION)
                     .outputFormat("jpg")
@@ -78,6 +79,8 @@ public class ImageOptimizationService {
             return output.toByteArray();
         } catch (IOException exception) {
             throw new IllegalArgumentException("Image file could not be resized.", exception);
+        } finally {
+            flush(source);
         }
     }
 
@@ -117,8 +120,9 @@ public class ImageOptimizationService {
             return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
         }
 
-        try {
-            BufferedImage source = ImageIO.read(new ByteArrayInputStream(sourceBytes));
+        BufferedImage source = null;
+        try (ByteArrayInputStream input = new ByteArrayInputStream(sourceBytes)) {
+            source = ImageIO.read(input);
             if (source == null) {
                 return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
             }
@@ -126,14 +130,15 @@ public class ImageOptimizationService {
             byte[] bestCandidate = null;
             for (int maxDimension : MAX_DIMENSIONS) {
                 for (double quality : JPEG_QUALITIES) {
-                    ByteArrayOutputStream output = new ByteArrayOutputStream();
-                    Thumbnails.of(source)
-                            .size(maxDimension, maxDimension)
-                            .outputFormat("jpg")
-                            .outputQuality(quality)
-                            .toOutputStream(output);
-
-                    byte[] candidate = output.toByteArray();
+                    byte[] candidate;
+                    try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                        Thumbnails.of(source)
+                                .size(maxDimension, maxDimension)
+                                .outputFormat("jpg")
+                                .outputQuality(quality)
+                                .toOutputStream(output);
+                        candidate = output.toByteArray();
+                    }
                     if (bestCandidate == null || candidate.length < bestCandidate.length) {
                         bestCandidate = candidate;
                     }
@@ -155,6 +160,15 @@ public class ImageOptimizationService {
         } catch (Exception exception) {
             LOGGER.warn("Image optimization skipped; raw file will be stored. Reason: {}", exception.getMessage());
             return new OptimizedImageResult(sourceBytes, originalSizeBytes, contentType);
+        } finally {
+            flush(source);
+        }
+    }
+
+    /** Releases the native image buffers held by AWT as soon as processing finishes. */
+    private static void flush(BufferedImage image) {
+        if (image != null) {
+            image.flush();
         }
     }
 
