@@ -53,8 +53,8 @@ public class ImageUploadService {
                 file.getOriginalFilename(), file.getSize());
 
         String extension = getExtension(file);
-        try {
-            return upload(file.getInputStream(), file.getSize(), file.getContentType(), extension, filterId);
+        try (InputStream inputStream = file.getInputStream()) {
+            return uploadOpenStream(inputStream, file.getSize(), file.getContentType(), extension, filterId);
         } catch (IOException e) {
             LOGGER.error("IO error during file upload processing: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to read upload file stream.", e);
@@ -70,6 +70,21 @@ public class ImageUploadService {
         if (inputStream == null || contentLength <= 0) {
             throw new IllegalArgumentException("Image stream is empty.");
         }
+
+        try (InputStream stream = inputStream) {
+            return uploadOpenStream(stream, contentLength, contentType, extension, filterId);
+        } catch (IOException exception) {
+            LOGGER.error("IO error while closing image upload stream: {}", exception.getMessage(), exception);
+            throw new RuntimeException("Failed to close upload file stream.", exception);
+        }
+    }
+
+    /**
+     * Uploads an already-open stream. This method never escapes the stream and is only called
+     * by public methods that close it with try-with-resources.
+     */
+    private String uploadOpenStream(InputStream inputStream, long contentLength, String contentType,
+                                    String extension, Integer filterId) {
 
         Integer validFilterId = imageEditService.getValidFilterId(filterId);
         String safeExtension = extension == null || extension.isBlank() ? ".jpg" : extension;

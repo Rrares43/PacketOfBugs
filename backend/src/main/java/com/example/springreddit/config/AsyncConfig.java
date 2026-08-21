@@ -13,9 +13,10 @@ public class AsyncConfig {
     @Bean(name = "imageThreadPool")
     public Executor imageThreadPool() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(8);
-        executor.setQueueCapacity(50);
+        // A t2.micro-class instance cannot safely decode several images at once.
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(1);
+        executor.setQueueCapacity(1);
         executor.setThreadNamePrefix("ImgOpt-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.setWaitForTasksToCompleteOnShutdown(true);
