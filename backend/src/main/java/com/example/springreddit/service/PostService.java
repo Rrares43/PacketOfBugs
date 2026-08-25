@@ -96,18 +96,25 @@ public class PostService {
         String formattedTitle = contentFilterService.sanitize(TextFormatterUtil.formatText(title));
         String formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(content));
 
+        CompletableFuture<String> censorTitleFuture = aiService.censorText(formattedTitle);
+        CompletableFuture<String> censorContentFuture = aiService.censorText(formattedContent);
+
+
         if(formattedContent != null && !formattedContent.isBlank() && formattedContent.length() > 100){
             String aiSummary = aiService.generateSummary(title, content).join();
-            String rawAIText = "/b{[AI Summary]:} " + "  \n\n" + aiSummary + "\u3164".repeat(100) + formattedContent + "\u3164".repeat(50);
-            formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(rawAIText));
+            String separator = "\u2029\u2029";
+            // String rawAIText = "/b{[AI Summary]:} " + "  \n\n" + aiSummary + "\u3164".repeat(100) + formattedContent + "\u3164".repeat(50);
+            String rawAIText = "/b{[AI Summary]:}" + separator +
+                    aiSummary + separator +
+                    " ──────────────────────── " + separator +
+                    formattedContent;
+            formattedContent = TextFormatterUtil.formatText(rawAIText);
         }
 
         // Censor title and content asynchronously using the AI service
-        CompletableFuture<String> censorTitleFuture = aiService.censorText(formattedTitle);
-        CompletableFuture<String> censorContentFuture = aiService.censorText(formattedContent);
-        
         String censoredTitle = censorTitleFuture.join();
-        String censoredContent = censorContentFuture.join();
+       //  String censoredContent = censorContentFuture.join();
+        String censoredContent = formattedContent;
 
         validateAuthor(authorUsername);
         validateSubreddit(subredditName);
