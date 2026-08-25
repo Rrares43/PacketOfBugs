@@ -98,7 +98,7 @@ public class PostService {
 
         if(formattedContent != null && !formattedContent.isBlank() && formattedContent.length() > 100){
             String aiSummary = aiService.generateSummary(title, content).join();
-            String rawAIText = "/b{[AI Summary]:} " + "  \n\n" + aiSummary + "\u3164".repeat(150) + "\r\n\r\n ──────────────────────── \r\n\r\n" + "\u3164".repeat(150) + formattedContent;
+            String rawAIText = "/b{[AI Summary]:} " + "  \n\n" + aiSummary + "\u3164".repeat(100) + formattedContent + "\u3164".repeat(50);
             formattedContent = contentFilterService.sanitize(TextFormatterUtil.formatText(rawAIText));
         }
 
